@@ -9,7 +9,7 @@ import {
 import { API_BASE, request, type AcademicLevel, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
 import type { User } from 'firebase/auth'
 
-type Page = 'overview' | 'students' | 'teams' | 'workshops' | 'settings'
+type Page = 'overview' | 'students' | 'projects' | 'teams' | 'workshops' | 'settings'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
 type Candidate = Student & { level: AcademicLevel; average: number }
 type TeamDraft = { name: string; members: Candidate[]; score?: number; explanation?: string }
@@ -62,6 +62,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [workshopResult, setWorkshopResult] = useState<GeneratedWorkshop | null>(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
 
   const notify = useCallback((message: string, kind: Toast['kind'] = 'success') => {
     setToast({ message, kind })
@@ -108,7 +109,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
 
   const openEditStudent = (student: Student) => { setEditingStudent(student); setStudentModal(true) }
   const openCreateStudent = () => { setEditingStudent(null); setStudentModal(true) }
-  const title = page === 'settings' ? 'Configuración' : navItems.find(item => item.id === page)?.label || 'Resumen'
+  const title = page === 'settings' ? 'Configuración' : page === 'projects' ? 'Proyectos' : navItems.find(item => item.id === page)?.label || 'Resumen'
 
   return (
     <div className="app-shell">
@@ -128,7 +129,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
         </nav>
         <div className="side-divider" />
         <div className="nav-caption">TU ESPACIO</div>
-        <button className="nav-link" onClick={() => setPage('teams')}><FolderKanban size={18} /><span>Proyectos</span></button>
+        <button className={`nav-link ${page === 'projects' ? 'active' : ''}`} onClick={() => { setPage('projects'); setMobileNav(false) }}><FolderKanban size={18} /><span>Proyectos</span></button>
         <button className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><Lightbulb size={17} /></div><strong>Un aula que aprende junta</strong><p>Equipos diversos, oportunidades para todos.</p><button onClick={() => setPage('teams')}>Conoce cómo funciona <ArrowRight size={14} /></button></div>
@@ -145,7 +146,8 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
         <div className="page-content">
           {page === 'overview' && <Overview students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
           {page === 'students' && <StudentsPage students={candidates} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} notify={notify} />}
-          {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} onRefresh={() => void refresh()} notify={notify} />}
+          {page === 'projects' && <ProjectsPage projects={projects} teams={teams} onRefresh={() => void refresh()} onManageTeams={projectId => { setActiveProjectId(String(projectId)); setPage('teams') }} notify={notify} />}
+          {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} initialProjectId={activeProjectId} onRefresh={() => void refresh()} notify={notify} />}
           {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
           {page === 'settings' && <SettingsPage user={user} apiStatus={apiStatus} students={students} grades={grades} projects={projects} teams={teams} workshops={savedWorkshops} onRefresh={() => void refresh()} onClearWorkshops={() => setSavedWorkshops([])} onLogout={onLogout} notify={notify} />}
           <footer className="page-footer"><span>FairTeam · Aprender en equipo</span><span>Diseñado para construir aulas más equilibradas</span></footer>
@@ -324,7 +326,58 @@ function Modal({ children, onClose, title }: { children: ReactNode; onClose: () 
   return <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}><section className="modal-card" role="dialog" aria-modal="true" aria-label={title}><div className="modal-heading"><div><div className="eyebrow">FAIRTEAM</div><h2>{title}</h2></div><button className="icon-button" onClick={onClose} aria-label="Cerrar"><X size={19} /></button></div>{children}</section></div>
 }
 
-function TeamsPage({ students, projects, teams, onRefresh, notify }: { students: Candidate[]; projects: Project[]; teams: Team[]; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+function ProjectsPage({ projects, teams, onRefresh, onManageTeams, notify }: { projects: Project[]; teams: Team[]; onRefresh: () => void; onManageTeams: (projectId: number) => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+  const [dialog, setDialog] = useState<Project | null | false>(false)
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const create = () => setDialog(null)
+  const edit = (project: Project) => setDialog(project)
+  const remove = async (project: Project) => {
+    const projectTeams = teams.filter(team => Number(team.project?.id) === Number(project.id)).length
+    const warning = projectTeams ? ` Este proyecto tiene ${projectTeams} equipo(s); si la base de datos los protege, tendrás que eliminarlos primero.` : ''
+    if (!window.confirm(`¿Eliminar el proyecto “${project.name}”?${warning}`)) return
+    setDeleting(project.id)
+    try {
+      await request<void>(`/api/projects/${project.id}`, { method: 'DELETE' })
+      notify('Proyecto eliminado.')
+      onRefresh()
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar el proyecto.', 'error') }
+    finally { setDeleting(null) }
+  }
+  return <>
+    <PageHeading eyebrow="ORGANIZA EL TRABAJO" title="Proyectos" description="Crea espacios de trabajo, define el tamaño de los equipos y organiza a tus estudiantes." action={<button className="button button-dark" onClick={create}><Plus size={16} /> Nuevo proyecto</button>} />
+    {projects.length ? <div className="projects-grid">{projects.map(project => {
+      const projectTeams = teams.filter(team => Number(team.project?.id) === Number(project.id))
+      return <article className="panel project-card" key={project.id}><div className="project-card-top"><span className="project-icon"><FolderKanban size={20} /></span><span className="project-card-id">PROYECTO #{project.id}</span><button className="icon-button small-icon project-edit-button" onClick={() => edit(project)} aria-label={`Editar ${project.name}`} title="Editar proyecto"><MoreHorizontal size={18} /></button></div><h2>{project.name}</h2><p className="project-description">{project.description || 'Sin descripción. Edita el proyecto para agregar objetivos y contexto.'}</p><div className="project-meta"><span><Users size={14} /> Equipos <b>{projectTeams.length}</b></span><span><Grid2X2 size={14} /> {project.teamSize || 3} personas por equipo</span></div><div className="project-card-actions"><button className="button button-dark" onClick={() => onManageTeams(project.id)}><Users size={15} /> Organizar equipos <ArrowRight size={14} /></button><button className="icon-button small-icon danger-hover" onClick={() => void remove(project)} disabled={deleting === project.id} aria-label={`Eliminar ${project.name}`} title="Eliminar proyecto">{deleting === project.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></article>
+    })}</div> : <section className="panel projects-empty-panel"><EmptyState icon={<FolderKanban size={23} />} title="Crea el primer proyecto" text="Cada proyecto reúne a sus equipos y define cuántas personas pueden participar en cada uno." action={<button className="button button-dark" onClick={create}><Plus size={15} /> Crear proyecto</button>} /></section>}
+    {dialog !== false && <ProjectDialog project={dialog} onClose={() => setDialog(false)} onSaved={() => { setDialog(false); onRefresh() }} notify={notify} />}
+  </>
+}
+
+function ProjectDialog({ project, onClose, onSaved, notify }: { project: Project | null; onClose: () => void; onSaved: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+  const savedSize = Number(localStorage.getItem('fairteam.defaultTeamSize'))
+  const defaultSize = [2, 3, 4, 5, 6].includes(savedSize) ? savedSize : 3
+  const [name, setName] = useState(project?.name || '')
+  const [description, setDescription] = useState(project?.description || '')
+  const [teamSize, setTeamSize] = useState(project?.teamSize || defaultSize)
+  const [saving, setSaving] = useState(false)
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
+    setSaving(true)
+    try {
+      await request<Project>(project ? `/api/projects/${project.id}` : '/api/projects', {
+        method: project ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), description: description.trim(), teamSize }),
+      })
+      notify(project ? 'Proyecto actualizado.' : 'Proyecto creado.')
+      onSaved()
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo guardar el proyecto.', 'error') }
+    finally { setSaving(false) }
+  }
+  return <Modal onClose={onClose} title={project ? 'Editar proyecto' : 'Crear proyecto'}><form className="form-stack" onSubmit={submit}><label>Nombre del proyecto<input required maxLength={150} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Laboratorio de ideas" /></label><label>Descripción <span className="optional-label">Opcional</span><textarea rows={3} maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} placeholder="Objetivos, asignatura o contexto del proyecto…" /></label><label>Personas por equipo<select value={teamSize} disabled={Boolean(project)} onChange={event => setTeamSize(Number(event.target.value))}>{[2, 3, 4, 5, 6].map(size => <option key={size} value={size}>{size} personas</option>)}</select></label>{project && <div className="form-note"><Lightbulb size={15} /> El tamaño se define al crear el proyecto y no se puede cambiar desde este formulario.</div>}<div className="modal-actions"><button type="button" className="button button-outline" onClick={onClose}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}>{saving && <LoaderCircle size={15} className="spin" />}{saving ? 'Guardando…' : project ? 'Guardar cambios' : 'Crear proyecto'}</button></div></form></Modal>
+}
+
+function TeamsPage({ students, projects, teams, initialProjectId, onRefresh, notify }: { students: Candidate[]; projects: Project[]; teams: Team[]; initialProjectId: string | null; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
   const defaultTeamSize = Number(localStorage.getItem('fairteam.defaultTeamSize'))
   const validDefaultTeamSize = [2, 3, 4, 5, 6].includes(defaultTeamSize) ? defaultTeamSize : 3
   const [selectedIds, setSelectedIds] = useState<number[]>([])
@@ -338,6 +391,7 @@ function TeamsPage({ students, projects, teams, onRefresh, notify }: { students:
   const [savingProject, setSavingProject] = useState(false)
   useEffect(() => { setSelectedIds(students.map(student => student.id)) }, [students])
   useEffect(() => { if (projects.length && !projectId) { setProjectId(String(projects[0].id)); setTeamSize(projects[0].teamSize || 3); setProjectName(projects[0].name) } }, [projects, projectId])
+  useEffect(() => { const project = projects.find(item => String(item.id) === initialProjectId); if (project) { setProjectId(String(project.id)); setTeamSize(project.teamSize || 3); setProjectName(project.name) } }, [initialProjectId, projects])
   const selected = students.filter(student => selectedIds.includes(student.id))
   const toggleStudent = (id: number) => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
   const pickProject = (id: string) => { setProjectId(id); const project = projects.find(item => String(item.id) === id); if (project) { setTeamSize(project.teamSize || 3); setProjectName(project.name) } }
