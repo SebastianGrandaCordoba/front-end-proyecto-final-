@@ -12,7 +12,7 @@ Aplicación web para docentes: tablero del aula, directorio de estudiantes, impo
 ## Ejecutar en local
 
 Requiere Node.js 20.19 o posterior y pnpm. 
-
+ 
 ```bash
 pnpm install
 pnpm dev
