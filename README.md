@@ -16,7 +16,7 @@ Requiere Node.js 20.19 o posterior y pnpm.
 ```bash
 pnpm install
 pnpm dev 
-``` 
+```  
 
 El front usa por defecto el backend desplegado en `https://backend-proyect-junz.onrender.com`. Para otro ambiente, copia `.env.example` a `.env.local` y cambia `VITE_API_BASE_URL`.
 
