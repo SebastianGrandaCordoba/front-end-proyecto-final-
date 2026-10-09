@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: fairteam-frontend
+    runtime: static
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://backend-proyect-junz.onrender.com
