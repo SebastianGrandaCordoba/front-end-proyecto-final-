@@ -3,13 +3,13 @@ import {
   Activity, ArrowDownToLine, ArrowRight, ArrowUpRight, Bell, BookOpen, BrainCircuit,
   Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3,
   Download, FileText, Filter, FolderKanban, GraduationCap, Grid2X2, Lightbulb,
-  LoaderCircle, LogOut, Menu, MoreHorizontal, Plus, Search, Settings2, Sparkles, Target,
-  Trash2, Trophy, Upload, Users, WandSparkles, X,
+  LoaderCircle, LogOut, Menu, MoreHorizontal, Plus, Search, Settings2, ShieldCheck, Sparkles, Target,
+  Trash2, Trophy, Upload, Users, WandSparkles, X, BellRing, Database, RotateCw,
 } from 'lucide-react'
-import { request, type AcademicLevel, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
+import { API_BASE, request, type AcademicLevel, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
 import type { User } from 'firebase/auth'
 
-type Page = 'overview' | 'students' | 'teams' | 'workshops'
+type Page = 'overview' | 'students' | 'teams' | 'workshops' | 'settings'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
 type Candidate = Student & { level: AcademicLevel; average: number }
 type TeamDraft = { name: string; members: Candidate[]; score?: number; explanation?: string }
@@ -61,6 +61,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
   const [studentModal, setStudentModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [workshopResult, setWorkshopResult] = useState<GeneratedWorkshop | null>(null)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const notify = useCallback((message: string, kind: Toast['kind'] = 'success') => {
     setToast({ message, kind })
@@ -94,6 +95,12 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
     return { ...student, level, average }
   }), [students, grades])
 
+  const notifications = [
+    ...(apiStatus === 'error' ? [{ id: 'backend', title: 'Backend sin conexión', detail: 'Comprueba el servicio y vuelve a cargar los datos.', page: 'settings' as Page }] : []),
+    ...(candidates.some(student => student.level === 'LOW') ? [{ id: 'support', title: `${candidates.filter(student => student.level === 'LOW').length} estudiante(s) en refuerzo`, detail: 'Revisa sus promedios y prepara acompañamiento.', page: 'students' as Page }] : []),
+    ...(savedWorkshops.length ? [{ id: 'workshops', title: `${savedWorkshops.length} taller(es) en tu biblioteca`, detail: 'Abre tus talleres recientes para consultarlos.', page: 'workshops' as Page }] : []),
+  ]
+
   const setSaved = (workshop: GeneratedWorkshop) => {
     setWorkshopResult(workshop)
     setSavedWorkshops(current => [{ ...workshop, savedAt: new Date().toISOString() }, ...current.filter(item => item.title !== workshop.title)].slice(0, 20))
@@ -101,7 +108,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
 
   const openEditStudent = (student: Student) => { setEditingStudent(student); setStudentModal(true) }
   const openCreateStudent = () => { setEditingStudent(null); setStudentModal(true) }
-  const title = navItems.find(item => item.id === page)?.label || 'Resumen'
+  const title = page === 'settings' ? 'Configuración' : navItems.find(item => item.id === page)?.label || 'Resumen'
 
   return (
     <div className="app-shell">
@@ -122,7 +129,7 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
         <div className="side-divider" />
         <div className="nav-caption">TU ESPACIO</div>
         <button className="nav-link" onClick={() => setPage('teams')}><FolderKanban size={18} /><span>Proyectos</span></button>
-        <button className="nav-link" onClick={() => notify('La configuración de cuenta estará disponible cuando se agregue inicio de sesión.', 'info')}><Settings2 size={18} /><span>Configuración</span></button>
+        <button className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><Lightbulb size={17} /></div><strong>Un aula que aprende junta</strong><p>Equipos diversos, oportunidades para todos.</p><button onClick={() => setPage('teams')}>Conoce cómo funciona <ArrowRight size={14} /></button></div>
           <button className="profile-row profile-action" onClick={onLogout} title="Cerrar sesión"><div className="profile-avatar">{user?.photoURL ? <img src={user.photoURL} alt="" /> : (user?.displayName || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</div><div className="profile-meta"><strong>{user?.displayName || 'Vista previa local'}</strong><span>{user?.email || 'Docente · sesión de desarrollo'}</span></div><LogOut size={17} /></button>
@@ -132,14 +139,15 @@ function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div className="breadcrumb"><span>FairTeam</span><ChevronRight size={14} /><strong>{title}</strong></div></div>
-          <div className="topbar-actions"><div className={`connection-pill ${apiStatus}`}><span className="connection-dot" />{apiStatus === 'loading' ? 'Conectando' : apiStatus === 'online' ? 'Sistema activo' : 'Sin conexión'}</div><button className="icon-button notification-button" onClick={() => notify('No tienes notificaciones nuevas.', 'info')} aria-label="Notificaciones"><Bell size={18} /><i /></button>{user?.photoURL ? <img className="top-avatar top-avatar-image" src={user.photoURL} alt={user.displayName || 'Cuenta docente'} /> : <div className="top-avatar">{user?.displayName?.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'PG'}</div>}</div>
+          <div className="topbar-actions"><div className={`connection-pill ${apiStatus}`}><span className="connection-dot" />{apiStatus === 'loading' ? 'Conectando' : apiStatus === 'online' ? 'Sistema activo' : 'Sin conexión'}</div><div className="notification-wrap"><button className="icon-button notification-button" onClick={() => setNotificationsOpen(open => !open)} aria-label="Notificaciones" aria-expanded={notificationsOpen}><Bell size={18} />{notifications.length > 0 && <i />}</button>{notificationsOpen && <NotificationsPanel notifications={notifications} onSelect={target => { setPage(target); setNotificationsOpen(false) }} />}</div><button className="top-account-button" onClick={() => setPage('settings')} title="Abrir configuración de cuenta">{user?.photoURL ? <img className="top-avatar-image" src={user.photoURL} alt="" /> : <div className="top-avatar">{user?.displayName?.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'PG'}</div>}</button></div>
         </header>
 
         <div className="page-content">
-          {page === 'overview' && <Overview students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} />}
+          {page === 'overview' && <Overview students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
           {page === 'students' && <StudentsPage students={candidates} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} notify={notify} />}
           {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} onRefresh={() => void refresh()} notify={notify} />}
           {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
+          {page === 'settings' && <SettingsPage user={user} apiStatus={apiStatus} students={students} grades={grades} projects={projects} teams={teams} workshops={savedWorkshops} onRefresh={() => void refresh()} onClearWorkshops={() => setSavedWorkshops([])} onLogout={onLogout} notify={notify} />}
           <footer className="page-footer"><span>FairTeam · Aprender en equipo</span><span>Diseñado para construir aulas más equilibradas</span></footer>
         </div>
       </main>
@@ -155,7 +163,67 @@ function PageHeading({ eyebrow, title, description, action }: { eyebrow: string;
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{action && <div className="heading-action">{action}</div>}</div>
 }
 
-function Overview({ students, teams, grades, workshops, onNavigate, onCreateStudent, onRefresh }: { students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onCreateStudent: () => void; onRefresh: () => void }) {
+type AppNotice = { id: string; title: string; detail: string; page: Page }
+
+function NotificationsPanel({ notifications, onSelect }: { notifications: AppNotice[]; onSelect: (page: Page) => void }) {
+  return <section className="notification-popover" aria-label="Notificaciones"><div className="notification-popover-head"><div><strong>Notificaciones</strong><span>{notifications.length ? `${notifications.length} aviso(s) para revisar` : 'Estás al día'}</span></div><BellRing size={17} /></div>{notifications.length ? <div className="notification-list">{notifications.map(item => <button className="notification-item" key={item.id} onClick={() => onSelect(item.page)}><i className={`notice-dot notice-${item.id}`} /><span><b>{item.title}</b><small>{item.detail}</small></span><ChevronRight size={15} /></button>)}</div> : <div className="notification-empty"><CheckCircle2 size={20} /><span>No hay avisos pendientes. Los avisos aparecerán aquí cuando haya estudiantes en refuerzo o una conexión que revisar.</span></div>}</section>
+}
+
+function SettingsPage({ user, apiStatus, students, grades, projects, teams, workshops, onRefresh, onClearWorkshops, onLogout, notify }: { user: User | null; apiStatus: 'loading' | 'online' | 'error'; students: Student[]; grades: Grade[]; projects: Project[]; teams: Team[]; workshops: GeneratedWorkshop[]; onRefresh: () => void; onClearWorkshops: () => void; onLogout: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+  const [checking, setChecking] = useState(false)
+  const [teamSize, setTeamSize] = useState(() => {
+    const stored = Number(localStorage.getItem('fairteam.defaultTeamSize'))
+    return [2, 3, 4, 5, 6].includes(stored) ? stored : 3
+  })
+  const exportBackup = () => {
+    const backup = { exportedAt: new Date().toISOString(), account: user?.email || 'Vista previa local', students, grades, projects, teams, generatedWorkshops: workshops }
+    downloadFile(`fairteam-respaldo-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(backup, null, 2), 'application/json;charset=utf-8')
+    notify('Respaldo descargado en tu dispositivo.')
+  }
+  const verifyConnection = async () => {
+    setChecking(true)
+    try {
+      const status = await request<{ application?: string; status?: string }>('/')
+      notify(`Backend disponible${status.application ? `: ${status.application}` : ''}.`)
+      onRefresh()
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo conectar con el backend.', 'error') }
+    finally { setChecking(false) }
+  }
+  const clearWorkshops = () => {
+    if (!workshops.length) return notify('Tu biblioteca de talleres ya está vacía.', 'info')
+    if (!window.confirm(`¿Eliminar los ${workshops.length} talleres guardados en este navegador?`)) return
+    onClearWorkshops()
+    notify('Biblioteca de talleres vaciada.')
+  }
+  return <>
+    <PageHeading eyebrow="PREFERENCIAS Y CUENTA" title="Configuración" description="Administra tu sesión, comprueba la conexión y descarga una copia de los datos que carga esta vista." />
+    <div className="settings-grid">
+      <section className="panel settings-card account-settings"><div className="settings-card-heading"><span className="settings-icon mint-icon"><ShieldCheck size={19} /></span><div><div className="eyebrow">CUENTA</div><h2>Tu sesión</h2></div></div><div className="settings-account-row">{user?.photoURL ? <img src={user.photoURL} alt="" /> : <span className="settings-account-fallback">{(user?.displayName || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span>}<div><strong>{user?.displayName || 'Vista previa local'}</strong><span>{user?.email || 'Sesión de desarrollo'}</span></div></div><div className="settings-detail-row"><span>Proveedor de inicio</span><b>{user ? 'Google' : 'Vista previa'}</b></div><div className="settings-detail-row"><span>Correo verificado</span><b>{user ? (user.emailVerified ? 'Sí' : 'No') : 'Entorno local'}</b></div><button className="button button-outline settings-full-button" onClick={onLogout} disabled={!user}><LogOut size={16} /> Cerrar sesión</button></section>
+      <section className="panel settings-card connection-settings"><div className="settings-card-heading"><span className={`settings-icon ${apiStatus === 'online' ? 'mint-icon' : 'peach-icon'}`}><Database size={19} /></span><div><div className="eyebrow">SERVICIO</div><h2>Conexión con FairTeam</h2></div></div><div className={`settings-status settings-status-${apiStatus}`}><i />{apiStatus === 'loading' ? 'Comprobando conexión' : apiStatus === 'online' ? 'Backend conectado' : 'No se pudo conectar'}</div><div className="settings-detail-row"><span>URL de API</span><code>{API_BASE}</code></div><p>Las listas de estudiantes, notas, proyectos y equipos se consultan desde este backend.</p><button className="button button-outline settings-full-button" onClick={() => void verifyConnection()} disabled={checking}>{checking ? <LoaderCircle size={16} className="spin" /> : <RotateCw size={16} />}{checking ? 'Comprobando…' : 'Comprobar y actualizar datos'}</button></section>
+      <section className="panel settings-card preference-settings"><div className="settings-card-heading"><span className="settings-icon lilac-icon"><Users size={19} /></span><div><div className="eyebrow">PREFERENCIAS</div><h2>Formación de equipos</h2></div></div><label className="settings-select-label">Tamaño predeterminado de equipos<select value={teamSize} onChange={event => { const value = Number(event.target.value); setTeamSize(value); localStorage.setItem('fairteam.defaultTeamSize', String(value)); notify(`El tamaño predeterminado será de ${value} personas.`) }}>{[2, 3, 4, 5, 6].map(size => <option value={size} key={size}>{size} personas</option>)}</select></label><p>Este valor se usa al abrir el organizador. Si eliges un proyecto que ya existe, se conserva el tamaño definido en ese proyecto.</p></section>
+      <section className="panel settings-card data-settings"><div className="settings-card-heading"><span className="settings-icon blue-icon"><Download size={19} /></span><div><div className="eyebrow">TUS DATOS</div><h2>Respaldo y biblioteca</h2></div></div><div className="settings-counts"><span><b>{students.length}</b> estudiantes</span><span><b>{grades.length}</b> notas</span><span><b>{projects.length}</b> proyectos</span><span><b>{teams.length}</b> equipos</span></div><button className="button button-dark settings-full-button" onClick={exportBackup}><Download size={16} /> Descargar respaldo JSON</button><button className="button button-outline settings-full-button" onClick={downloadGradeTemplate}><FileText size={16} /> Descargar plantilla de notas CSV</button><button className="text-button settings-clear-button" onClick={clearWorkshops} disabled={!workshops.length}><Trash2 size={14} /> Vaciar biblioteca de talleres ({workshops.length})</button><small>El respaldo contiene los datos disponibles en esta sesión y los talleres guardados en este navegador.</small></section>
+    </div>
+    <div className="info-banner settings-note"><ShieldCheck size={18} /><div><strong>Acceso protegido por la sesión</strong><p>Las solicitudes a la API incluyen el token de Firebase de tu cuenta. No compartas contraseñas ni claves de Gemini.</p></div></div>
+  </>
+}
+
+function downloadFile(filename: string, contents: string, type: string) {
+  const blob = new Blob([contents], { type })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function downloadGradeTemplate() {
+  downloadFile('plantilla-notas-fairteam.csv', '\uFEFFid,studentId,subjectId,grade,period\r\n', 'text/csv;charset=utf-8')
+}
+
+function Overview({ students, teams, grades, workshops, onNavigate, onCreateStudent, onRefresh, onSelectWorkshop }: { students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
   const low = students.filter(student => student.level === 'LOW').length
   const medium = students.filter(student => student.level === 'MEDIUM').length
   const high = students.filter(student => student.level === 'HIGH').length
@@ -175,7 +243,7 @@ function Overview({ students, teams, grades, workshops, onNavigate, onCreateStud
     </div>
     <div className="dashboard-grid lower-grid">
       <section className="panel shortcuts-panel"><div className="panel-heading"><div><div className="eyebrow">SIGUIENTE PASO</div><h2>¿Qué quieres hacer?</h2></div></div><div className="shortcut-grid"><button className="shortcut-card" onClick={() => onNavigate('students')}><span className="shortcut-icon peach-icon"><ArrowDownToLine size={19} /></span><span><b>Importar notas</b><small>Actualiza niveles con un CSV</small></span><ArrowUpRight size={16} /></button><button className="shortcut-card" onClick={() => onNavigate('teams')}><span className="shortcut-icon mint-icon"><Users size={19} /></span><span><b>Equilibrar equipos</b><small>Distribuye fortalezas del aula</small></span><ArrowUpRight size={16} /></button><button className="shortcut-card" onClick={() => onNavigate('workshops')}><span className="shortcut-icon lilac-icon"><BrainCircuit size={19} /></span><span><b>Crear un taller con IA</b><small>Parte del material de estudio</small></span><ArrowUpRight size={16} /></button></div></section>
-      <section className="panel recent-panel"><div className="panel-heading"><div><div className="eyebrow">TU ACTIVIDAD</div><h2>Lo más reciente</h2></div><button className="icon-button small-icon" onClick={onRefresh} aria-label="Actualizar"><Activity size={16} /></button></div>{workshops.length || teams.length ? <div className="activity-list">{workshops.slice(0, 2).map((workshop, index) => <div className="activity-item" key={`${workshop.title}-${index}`}><div className="activity-icon lilac-icon"><BookOpen size={16} /></div><div><b>{workshop.title}</b><span>Taller guardado en este navegador</span></div><ChevronRight size={15} /></div>)}{teams.slice(0, 2).map(team => <div className="activity-item" key={team.id}><div className="activity-icon mint-icon"><Users size={16} /></div><div><b>{team.name}</b><span>{team.project?.name || 'Equipo guardado'}</span></div><ChevronRight size={15} /></div>)}</div> : <EmptyState icon={<Clock3 size={20} />} title="Tu actividad aparecerá aquí" text="Cuando importes notas, crees grupos o generes talleres, los verás en este espacio." />}</section>
+      <section className="panel recent-panel"><div className="panel-heading"><div><div className="eyebrow">TU ACTIVIDAD</div><h2>Lo más reciente</h2></div><button className="icon-button small-icon" onClick={onRefresh} aria-label="Actualizar"><Activity size={16} /></button></div>{workshops.length || teams.length ? <div className="activity-list">{workshops.slice(0, 2).map((workshop, index) => <button className="activity-item activity-action" key={`${workshop.title}-${index}`} onClick={() => onSelectWorkshop(workshop)}><div className="activity-icon lilac-icon"><BookOpen size={16} /></div><div><b>{workshop.title}</b><span>Taller guardado en este navegador</span></div><ChevronRight size={15} /></button>)}{teams.slice(0, 2).map(team => <button className="activity-item activity-action" key={team.id} onClick={() => onNavigate('teams')}><div className="activity-icon mint-icon"><Users size={16} /></div><div><b>{team.name}</b><span>{team.project?.name || 'Equipo guardado'}</span></div><ChevronRight size={15} /></button>)}</div> : <EmptyState icon={<Clock3 size={20} />} title="Tu actividad aparecerá aquí" text="Cuando importes notas, crees grupos o generes talleres, los verás en este espacio." />}</section>
     </div>
   </>
 }
@@ -227,7 +295,7 @@ function StudentsPage({ students, query, setQuery, busy, onCreate, onEdit, onRef
         {!busy && filtered.length === 0 && <EmptyState icon={<GraduationCap size={22} />} title={students.length ? 'No encontramos coincidencias' : 'Aún no hay estudiantes'} text={students.length ? 'Prueba con otro nombre o cambia el filtro.' : 'Agrega tu grupo manualmente o importa una lista de notas para comenzar.'} action={!students.length ? <button className="button button-dark" onClick={onCreate}><Plus size={15} /> Agregar primer estudiante</button> : undefined} />}
       </div><div className="table-footer"><span>Mostrando <b>{filtered.length}</b> de <b>{students.length}</b> estudiantes</span><span className="api-footnote">Niveles calculados con notas importadas; si no hay notas, se usa el nivel del perfil.</span></div>
     </section>
-    <div className="info-banner"><FileText size={18} /><div><strong>Formato de archivo para importar notas</strong><p>El CSV debe tener las columnas <code>id,studentId,subjectId,grade,period</code>, con IDs que ya existan en la base de datos. Para consultar el formato completo, pide al administrador del backend una plantilla válida.</p></div><button className="text-button" onClick={() => notify('El backend espera id,studentId,subjectId,grade,period y relaciones ya registradas.', 'info')}>Ver detalles <ArrowRight size={14} /></button></div>
+    <div className="info-banner"><FileText size={18} /><div><strong>Formato de archivo para importar notas</strong><p>El CSV debe incluir <code>id,studentId,subjectId,grade,period</code>. Los tres IDs deben existir en la base de datos. Usa la plantilla descargable para evitar errores de encabezado.</p></div><button className="text-button" onClick={downloadGradeTemplate}>Descargar plantilla <Download size={14} /></button></div>
   </>
 }
 
@@ -248,7 +316,7 @@ function StudentDialog({ student, onClose, onSaved, notify }: { student: Student
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo guardar el perfil.', 'error') }
     finally { setSaving(false) }
   }
-  return <Modal onClose={onClose} title={student ? 'Editar estudiante' : 'Agregar estudiante'}><form className="form-stack" onSubmit={submit}><label>Nombre completo<input required maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Valentina Rojas" /></label><label>Correo electrónico <span className="optional-label">Opcional</span><input type="email" maxLength={180} value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@institucion.edu.co" /></label><label>Nivel inicial<select value={level} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select></label>{student && <div className="form-note"><Lightbulb size={15} /> El backend actualiza nombre y correo; para cambiar el nivel debes contar con notas importadas.</div>}<div className="modal-actions"><button type="button" className="button button-outline" onClick={onClose}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}>{saving && <LoaderCircle size={15} className="spin" />}{saving ? 'Guardando…' : 'Guardar estudiante'}</button></div></form></Modal>
+  return <Modal onClose={onClose} title={student ? 'Editar estudiante' : 'Agregar estudiante'}><form className="form-stack" onSubmit={submit}><label>Nombre completo<input required maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Valentina Rojas" /></label><label>Correo electrónico <span className="optional-label">Opcional</span><input type="email" maxLength={180} value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@institucion.edu.co" /></label><label>Nivel inicial<select value={level} disabled={Boolean(student)} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select></label>{student && <div className="form-note"><Lightbulb size={15} /> El backend permite editar nombre y correo. El nivel se calcula con las notas importadas y por eso no se puede cambiar aquí.</div>}<div className="modal-actions"><button type="button" className="button button-outline" onClick={onClose}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}>{saving && <LoaderCircle size={15} className="spin" />}{saving ? 'Guardando…' : 'Guardar estudiante'}</button></div></form></Modal>
 }
 
 function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
@@ -257,14 +325,16 @@ function Modal({ children, onClose, title }: { children: ReactNode; onClose: () 
 }
 
 function TeamsPage({ students, projects, teams, onRefresh, notify }: { students: Candidate[]; projects: Project[]; teams: Team[]; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+  const defaultTeamSize = Number(localStorage.getItem('fairteam.defaultTeamSize'))
+  const validDefaultTeamSize = [2, 3, 4, 5, 6].includes(defaultTeamSize) ? defaultTeamSize : 3
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [teamSize, setTeamSize] = useState(3)
+  const [teamSize, setTeamSize] = useState(validDefaultTeamSize)
   const [projectId, setProjectId] = useState('')
   const [projectName, setProjectName] = useState('Proyecto colaborativo')
   const [drafts, setDrafts] = useState<TeamDraft[]>([])
   const [working, setWorking] = useState(false)
   const [projectModal, setProjectModal] = useState(false)
-  const [newProject, setNewProject] = useState({ name: '', description: '', teamSize: 3 })
+  const [newProject, setNewProject] = useState({ name: '', description: '', teamSize: validDefaultTeamSize })
   const [savingProject, setSavingProject] = useState(false)
   useEffect(() => { setSelectedIds(students.map(student => student.id)) }, [students])
   useEffect(() => { if (projects.length && !projectId) { setProjectId(String(projects[0].id)); setTeamSize(projects[0].teamSize || 3); setProjectName(projects[0].name) } }, [projects, projectId])
@@ -304,7 +374,7 @@ function TeamsPage({ students, projects, teams, onRefresh, notify }: { students:
     event.preventDefault(); setSavingProject(true)
     try {
       const created = await request<Project>('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newProject.name.trim(), description: newProject.description.trim(), teamSize: Number(newProject.teamSize) }) })
-      notify('Proyecto creado.'); setProjectModal(false); setNewProject({ name: '', description: '', teamSize: 3 }); setProjectId(String(created.id)); setProjectName(created.name); setTeamSize(created.teamSize || 3); await onRefresh()
+      notify('Proyecto creado.'); setProjectModal(false); setNewProject({ name: '', description: '', teamSize: validDefaultTeamSize }); setProjectId(String(created.id)); setProjectName(created.name); setTeamSize(created.teamSize || validDefaultTeamSize); await onRefresh()
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear el proyecto.', 'error') }
     finally { setSavingProject(false) }
   }
