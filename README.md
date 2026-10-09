@@ -15,14 +15,14 @@ Requiere Node.js 20.19 o posterior y pnpm.
  
 ```bash
 pnpm install
-pnpm dev
+pnpm dev 
 ``` 
 
 El front usa por defecto el backend desplegado en `https://backend-proyect-junz.onrender.com`. Para otro ambiente, copia `.env.example` a `.env.local` y cambia `VITE_API_BASE_URL`.
 
 ## Publicar en Render
 
-El repositorio incluye `render.yaml`. Crea un **Static Site** desde este repositorio. Render instalará dependencias, ejecutará `pnpm build` y publicará `dist`. Configura `VITE_API_BASE_URL` con la URL del backend.
+El repositorio incluye `render.yaml`. Crea un **Static Site** desde este repositorio. Render instalará d ependencias, ejecutará `pnpm build` y publicará `dist`. Configura `VITE_API_BASE_URL` con la URL del backend.
 
 ## Funciones
 
