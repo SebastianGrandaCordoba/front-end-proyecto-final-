@@ -3,10 +3,11 @@ import {
   Activity, ArrowDownToLine, ArrowRight, ArrowUpRight, Bell, BookOpen, BrainCircuit,
   Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3,
   Download, FileText, Filter, FolderKanban, GraduationCap, Grid2X2, Lightbulb,
-  LoaderCircle, Menu, MoreHorizontal, Plus, Search, Settings2, Sparkles, Target,
+  LoaderCircle, LogOut, Menu, MoreHorizontal, Plus, Search, Settings2, Sparkles, Target,
   Trash2, Trophy, Upload, Users, WandSparkles, X,
 } from 'lucide-react'
 import { request, type AcademicLevel, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
+import type { User } from 'firebase/auth'
 
 type Page = 'overview' | 'students' | 'teams' | 'workshops'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
@@ -43,7 +44,7 @@ function estimateBalance(members: Candidate[]) {
   return Math.round(diversity * 0.7 + academicSpread * 0.3)
 }
 
-function App() {
+function App({ user, onLogout }: { user: User | null; onLogout: () => void }) {
   const [page, setPage] = useState<Page>('overview')
   const [mobileNav, setMobileNav] = useState(false)
   const [students, setStudents] = useState<Student[]>([])
@@ -124,14 +125,14 @@ function App() {
         <button className="nav-link" onClick={() => notify('La configuración de cuenta estará disponible cuando se agregue inicio de sesión.', 'info')}><Settings2 size={18} /><span>Configuración</span></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><Lightbulb size={17} /></div><strong>Un aula que aprende junta</strong><p>Equipos diversos, oportunidades para todos.</p><button onClick={() => setPage('teams')}>Conoce cómo funciona <ArrowRight size={14} /></button></div>
-          <div className="profile-row"><div className="profile-avatar">PG</div><div className="profile-meta"><strong>Profe guía</strong><span>Docente</span></div><MoreHorizontal size={20} /></div>
+          <button className="profile-row profile-action" onClick={onLogout} title="Cerrar sesión"><div className="profile-avatar">{user?.photoURL ? <img src={user.photoURL} alt="" /> : (user?.displayName || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</div><div className="profile-meta"><strong>{user?.displayName || 'Vista previa local'}</strong><span>{user?.email || 'Docente · sesión de desarrollo'}</span></div><LogOut size={17} /></button>
         </div>
       </aside>
 
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div className="breadcrumb"><span>FairTeam</span><ChevronRight size={14} /><strong>{title}</strong></div></div>
-          <div className="topbar-actions"><div className={`connection-pill ${apiStatus}`}><span className="connection-dot" />{apiStatus === 'loading' ? 'Conectando' : apiStatus === 'online' ? 'Sistema activo' : 'Sin conexión'}</div><button className="icon-button notification-button" onClick={() => notify('No tienes notificaciones nuevas.', 'info')} aria-label="Notificaciones"><Bell size={18} /><i /></button><div className="top-avatar">PG</div></div>
+          <div className="topbar-actions"><div className={`connection-pill ${apiStatus}`}><span className="connection-dot" />{apiStatus === 'loading' ? 'Conectando' : apiStatus === 'online' ? 'Sistema activo' : 'Sin conexión'}</div><button className="icon-button notification-button" onClick={() => notify('No tienes notificaciones nuevas.', 'info')} aria-label="Notificaciones"><Bell size={18} /><i /></button>{user?.photoURL ? <img className="top-avatar top-avatar-image" src={user.photoURL} alt={user.displayName || 'Cuenta docente'} /> : <div className="top-avatar">{user?.displayName?.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'PG'}</div>}</div>
         </header>
 
         <div className="page-content">
