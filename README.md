@@ -8,7 +8,7 @@ Aplicación web para docentes: tablero del aula, directorio de estudiantes, impo
 - CSS responsive propio
 - Lucide para iconografía
 - API Spring Boot existente como único backend público
-
+ 
 ## Ejecutar en local
 
 Requiere Node.js 20.19 o posterior y pnpm.
