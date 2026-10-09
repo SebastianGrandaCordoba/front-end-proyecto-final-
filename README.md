@@ -2,7 +2,7 @@
  
 Aplicación web para docentes: tablero del aula, directorio de estudiantes, importación de notas, propuestas de equipos equilibrados y generación de talleres con IA.
 
-## Stack
+## Stack 
 
 - React + TypeScript + Vite
 - CSS responsive propio
