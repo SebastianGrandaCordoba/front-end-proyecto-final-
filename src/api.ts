@@ -1,11 +1,12 @@
-import { firebaseAuth } from './auth'
-
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://backend-proyect-junz.onrender.com').replace(/\/$/, '')
+export const TOKEN_KEY = 'fairteam.accessToken'
+export function saveAccessToken(token: string) { sessionStorage.setItem(TOKEN_KEY, token) }
+export function clearAccessToken() { sessionStorage.removeItem(TOKEN_KEY) }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers)
   if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  const token = await firebaseAuth?.currentUser?.getIdToken()
+  const token = sessionStorage.getItem(TOKEN_KEY)
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (!response.ok) {
@@ -22,6 +23,8 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
 }
 
 export type AcademicLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+export interface TeacherProfile { id: number; name: string; email: string; role: string }
+export interface AuthResponse extends TeacherProfile { accessToken: string }
 export interface Student {
   id: number
   name: string
