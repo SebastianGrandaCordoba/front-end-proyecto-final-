@@ -42,6 +42,14 @@ export interface Student {
   email?: string | null
   academicLevel?: string | null
   createdAt?: string
+  courseId?: number | null
+}
+export interface Course {
+  id: number
+  name: string
+  period?: string | null
+  description?: string | null
+  createdAt?: string
 }
 export interface Grade {
   id: number
@@ -49,6 +57,7 @@ export interface Grade {
   subjectId?: number
   grade: number | string
   period: string
+  courseId?: number | null
 }
 export interface Project {
   id: number

@@ -28,8 +28,8 @@ En Render crea un Static Site de este repositorio con build `pnpm install --froz
 ## Flujos principales
 
 - Registro abierto e inicio de sesión con cuenta FairTeam; los datos académicos se aíslan por cuenta en PostgreSQL.
-- Panel de curso con conteos y alertas rápidas calculadas desde las notas existentes.
-- Listado de estudiantes, filtros, edición e importación de notas CSV.
+- Organización de cursos por docente (por ejemplo, Cuarto semestre A/B), con selector de curso y panel separado.
+- Listado por curso, alta/edición, filtros e importación independiente de estudiantes y notas CSV.
 - Alertas con su promedio y una explicación del criterio usado.
 - Generación explícita de talleres desde PDF, DOCX o TXT usando el backend y Gemini.
 - Revisión, copia e impresión de talleres; la biblioteca se guarda localmente y se separa por cuenta.
@@ -38,6 +38,6 @@ El análisis de alertas no espera a Gemini. La IA solo se consulta al pedir un t
 
 ## Contrato de datos
 
-El CSV de notas requiere `id,studentId,subjectId,grade,period`; estudiante y asignatura deben existir. Los niveles actuales se calculan como promedio menor de 3.0 (refuerzo), de 3.0 a menos de 4.0 (seguimiento) y 4.0 o más (progreso adecuado). Sin notas, la interfaz marca que faltan datos en vez de inferir un riesgo basado en un promedio inventado.
+La lista CSV usa `name,email,academicLevel` (email y nivel opcionales). Las notas aceptan `studentName` o `studentEmail`, `subject`, `grade`, `period`; las materias se crean al importarlas. Los niveles actuales se calculan como promedio menor de 3.0 (refuerzo), de 3.0 a menos de 4.0 (seguimiento) y 4.0 o más (progreso adecuado). Sin notas, la interfaz marca que faltan datos en vez de inferir un riesgo basado en un promedio inventado.
 
-La API separa los datos por cuenta mediante Row Level Security de PostgreSQL. Los datos que ya existían se asignan a la primera cuenta que se registre después de instalar las migraciones.
+La API separa los datos por cuenta mediante Row Level Security de PostgreSQL. Las notas y estudiantes cargados se filtran por curso; las migraciones conservan lo existente en un curso inicial por docente.

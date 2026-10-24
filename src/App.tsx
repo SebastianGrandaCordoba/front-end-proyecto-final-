@@ -6,16 +6,17 @@ import {
   LoaderCircle, LogOut, Menu, MoreHorizontal, Plus, Search, Settings2, ShieldCheck, Sparkles, Target,
   Trash2, Trophy, Upload, Users, WandSparkles, X, BellRing, Database, RotateCw, AlertTriangle,
 } from 'lucide-react'
-import { API_BASE, request, type AcademicLevel, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
+import { API_BASE, request, type AcademicLevel, type Course, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
 import type { TeacherProfile } from './api'
 
-type Page = 'overview' | 'students' | 'alerts' | 'projects' | 'teams' | 'workshops' | 'settings'
+type Page = 'overview' | 'courses' | 'students' | 'alerts' | 'projects' | 'teams' | 'workshops' | 'settings'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
 type Candidate = Student & { level: AcademicLevel; average: number; gradeCount: number }
 type TeamDraft = { name: string; members: Candidate[]; score?: number; explanation?: string }
 
 const navItems: { id: Page; label: string; icon: typeof Grid2X2 }[] = [
   { id: 'overview', label: 'Resumen', icon: Grid2X2 },
+  { id: 'courses', label: 'Mis cursos', icon: FolderKanban },
   { id: 'students', label: 'Estudiantes', icon: GraduationCap },
   { id: 'alerts', label: 'Alertas de aprendizaje', icon: AlertTriangle },
   { id: 'workshops', label: 'Talleres IA', icon: BrainCircuit },
@@ -51,10 +52,17 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
   const [grades, setGrades] = useState<Grade[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [teams, setTeams] = useState<Team[]>([])
-  const workshopStorageKey = `fairteam.workshops.${user?.id ?? 'guest'}`
+  const [courses, setCourses] = useState<Course[]>([])
+  const courseSelectionKey = `fairteam.activeCourse.${user?.id ?? 'guest'}`
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(() => {
+    const stored = Number(localStorage.getItem(courseSelectionKey))
+    return Number.isInteger(stored) && stored > 0 ? stored : null
+  })
+  const workshopStorageKey = `fairteam.workshops.${user?.id ?? 'guest'}.${selectedCourseId ?? 'none'}`
   const [savedWorkshops, setSavedWorkshops] = useState<GeneratedWorkshop[]>(() => {
     try { return JSON.parse(localStorage.getItem(workshopStorageKey) || '[]') as GeneratedWorkshop[] } catch { return [] }
   })
+  const [loadedWorkshopKey, setLoadedWorkshopKey] = useState<string | null>(workshopStorageKey)
   const [apiStatus, setApiStatus] = useState<'loading' | 'online' | 'error'>('loading')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<Toast | null>(null)
@@ -70,10 +78,11 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
     window.setTimeout(() => setToast(null), 4200)
   }, [])
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (courseId: number | null = selectedCourseId) => {
     setLoading(true)
     const results = await Promise.allSettled([
-      request<Student[]>('/api/students'), request<Grade[]>('/api/grades'),
+      courseId ? request<Student[]>(`/api/students?courseId=${courseId}`) : Promise.resolve<Student[]>([]),
+      courseId ? request<Grade[]>(`/api/grades?courseId=${courseId}`) : Promise.resolve<Grade[]>([]),
       request<Project[]>('/api/projects'), request<Team[]>('/api/teams'),
     ])
     const [studentResult, gradeResult, projectResult, teamResult] = results
@@ -85,10 +94,43 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
     setApiStatus(online ? 'online' : 'error')
     if (!online) notify('No pudimos conectar con el backend. Revisa tu conexión y vuelve a intentar.', 'error')
     setLoading(false)
-  }, [notify])
+  }, [notify, selectedCourseId])
 
-  useEffect(() => { void refresh() }, [refresh])
-  useEffect(() => { localStorage.setItem(workshopStorageKey, JSON.stringify(savedWorkshops)) }, [savedWorkshops, workshopStorageKey])
+  useEffect(() => {
+    let active = true
+    void request<Course[]>('/api/courses').then(items => {
+      if (!active) return
+      setCourses(items)
+      const stored = Number(localStorage.getItem(courseSelectionKey))
+      if (items.some(item => item.id === stored)) setSelectedCourseId(stored)
+      else setSelectedCourseId(items[0]?.id ?? null)
+      setApiStatus('online')
+    }).catch(() => { if (active) { setApiStatus('error'); notify('No pudimos cargar tus cursos. Revisa la conexión e inténtalo de nuevo.', 'error') } })
+    return () => { active = false }
+  }, [courseSelectionKey, notify])
+  useEffect(() => {
+    if (selectedCourseId) {
+      localStorage.setItem(courseSelectionKey, String(selectedCourseId))
+      void refresh(selectedCourseId)
+    } else {
+      localStorage.removeItem(courseSelectionKey)
+      setStudents([]); setGrades([])
+      if (courses.length === 0) { void refresh(null) }
+    }
+  }, [selectedCourseId, courseSelectionKey, refresh, courses.length])
+  useEffect(() => {
+    let workshops: GeneratedWorkshop[] = []
+    try {
+      const stored = localStorage.getItem(workshopStorageKey)
+      const legacy = localStorage.getItem(`fairteam.workshops.${user?.id ?? 'guest'}`)
+      workshops = JSON.parse(stored ?? legacy ?? '[]') as GeneratedWorkshop[]
+    } catch { workshops = [] }
+    setSavedWorkshops(workshops)
+    setLoadedWorkshopKey(workshopStorageKey)
+  }, [workshopStorageKey, user?.id])
+  useEffect(() => {
+    if (loadedWorkshopKey === workshopStorageKey) localStorage.setItem(workshopStorageKey, JSON.stringify(savedWorkshops))
+  }, [savedWorkshops, workshopStorageKey, loadedWorkshopKey])
 
   const candidates = useMemo<Candidate[]>(() => students.map(student => {
     const marks = grades.filter(grade => Number(grade.studentId) === Number(student.id)).map(grade => Number(grade.grade)).filter(Number.isFinite)
@@ -109,8 +151,12 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
   }
 
   const openEditStudent = (student: Student) => { setEditingStudent(student); setStudentModal(true) }
-  const openCreateStudent = () => { setEditingStudent(null); setStudentModal(true) }
-  const title = page === 'settings' ? 'Configuración' : page === 'projects' ? 'Proyectos' : navItems.find(item => item.id === page)?.label || 'Resumen'
+  const openCreateStudent = () => {
+    if (!selectedCourseId) { setPage('courses'); notify('Crea o selecciona un curso antes de agregar estudiantes.', 'info'); return }
+    setEditingStudent(null); setStudentModal(true)
+  }
+  const title = page === 'settings' ? 'Configuración' : page === 'projects' ? 'Proyectos' : page === 'teams' ? 'Equipos' : navItems.find(item => item.id === page)?.label || 'Resumen'
+  const selectedCourse = courses.find(course => course.id === selectedCourseId) ?? null
 
   return (
     <div className="app-shell">
@@ -120,7 +166,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
           <span>fair<span className="brand-green">team</span><sup>✳</sup></span>
           <button className="icon-button mobile-close" onClick={() => setMobileNav(false)} aria-label="Cerrar menú"><X size={18} /></button>
         </div>
-        <div className="workspace-switch"><div className="workspace-icon">A</div><div><strong>Aula de aprendizaje</strong><span>Asistente docente</span></div><ChevronDown size={15} /></div>
+        <button className="workspace-switch workspace-switch-action" onClick={() => setPage('courses')} title="Administrar tus cursos"><div className="workspace-icon"><FolderKanban size={16} /></div><div><strong>{selectedCourse?.name || 'Organiza tus cursos'}</strong><span>{selectedCourse?.period || 'Asistente docente'}</span></div><ChevronDown size={15} /></button>
         <div className="nav-caption">MENÚ PRINCIPAL</div>
         <nav className="main-nav" aria-label="Navegación principal">
           {navItems.map(item => {
@@ -140,13 +186,14 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
 
       <main className="main-area">
         <header className="topbar">
-          <div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div className="breadcrumb"><span>FairTeam</span><ChevronRight size={14} /><strong>{title}</strong></div></div>
+          <div className="topbar-left"><button className="icon-button mobile-menu" aria-label="Abrir menú" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div className="breadcrumb"><span>FairTeam</span>{selectedCourse && <><ChevronRight size={14} /><span>{selectedCourse.name}</span></>}<ChevronRight size={14} /><strong>{title}</strong></div><label className="course-switcher-wrap"><FolderKanban size={15} /><select className="course-switcher" aria-label="Curso activo" value={selectedCourseId ?? ''} onChange={event => setSelectedCourseId(event.target.value ? Number(event.target.value) : null)}><option value="">Selecciona un curso</option>{courses.map(course => <option key={course.id} value={course.id}>{course.name}{course.period ? ` · ${course.period}` : ''}</option>)}</select><ChevronDown size={13} /></label></div>
           <div className="topbar-actions"><div className={`connection-pill ${apiStatus}`}><span className="connection-dot" />{apiStatus === 'loading' ? 'Conectando' : apiStatus === 'online' ? 'Sistema activo' : 'Sin conexión'}</div><div className="notification-wrap"><button className="icon-button notification-button" onClick={() => setNotificationsOpen(open => !open)} aria-label="Notificaciones" aria-expanded={notificationsOpen}><Bell size={18} />{notifications.length > 0 && <i />}</button>{notificationsOpen && <NotificationsPanel notifications={notifications} onSelect={target => { setPage(target); setNotificationsOpen(false) }} />}</div><button className="top-account-button" onClick={() => setPage('settings')} title="Abrir configuración de cuenta"><div className="top-avatar">{user?.name?.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'PG'}</div></button></div>
         </header>
 
         <div className="page-content">
-          {page === 'overview' && <Overview students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
-          {page === 'students' && <StudentsPage students={candidates} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} notify={notify} />}
+          {page === 'overview' && <Overview course={selectedCourse} students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
+          {page === 'courses' && <CoursesPage courses={courses} selectedCourseId={selectedCourseId} onSelect={id => { setSelectedCourseId(id); setPage('overview') }} onCreate={course => { setCourses(current => [course, ...current]); setSelectedCourseId(course.id); setPage('overview') }} onDelete={id => { setCourses(current => current.filter(course => course.id !== id)); if (selectedCourseId === id) setSelectedCourseId(courses.find(course => course.id !== id)?.id ?? null) }} notify={notify} />}
+          {page === 'students' && <StudentsPage students={candidates} courseId={selectedCourseId} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} notify={notify} />}
           {page === 'alerts' && <LearningAlerts students={candidates} onWorkshops={() => setPage('workshops')} onStudents={() => setPage('students')} />}
           {page === 'projects' && <ProjectsPage projects={projects} teams={teams} onRefresh={() => void refresh()} onManageTeams={projectId => { setActiveProjectId(String(projectId)); setPage('teams') }} notify={notify} />}
           {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} initialProjectId={activeProjectId} onRefresh={() => void refresh()} notify={notify} />}
@@ -158,13 +205,50 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
 
       {mobileNav && <button className="scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} />}
       {toast && <div className={`toast toast-${toast.kind}`} role="status">{toast.kind === 'success' ? <CheckCircle2 size={18} /> : toast.kind === 'error' ? <CircleHelp size={18} /> : <Lightbulb size={18} />}{toast.message}<button onClick={() => setToast(null)} aria-label="Cerrar aviso"><X size={15} /></button></div>}
-      {studentModal && <StudentDialog student={editingStudent} onClose={() => setStudentModal(false)} onSaved={() => { setStudentModal(false); void refresh() }} notify={notify} />}
+      {studentModal && <StudentDialog student={editingStudent} courseId={selectedCourseId} onClose={() => setStudentModal(false)} onSaved={() => { setStudentModal(false); void refresh() }} notify={notify} />}
     </div>
   )
 }
 
 function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{action && <div className="heading-action">{action}</div>}</div>
+}
+
+function CoursesPage({ courses, selectedCourseId, onSelect, onCreate, onDelete, notify }: {
+  courses: Course[]; selectedCourseId: number | null; onSelect: (id: number) => void; onCreate: (course: Course) => void;
+  onDelete: (id: number) => void; notify: (message: string, kind?: Toast['kind']) => void
+}) {
+  const [creating, setCreating] = useState(false)
+  const [name, setName] = useState('')
+  const [period, setPeriod] = useState('')
+  const [description, setDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const createCourse = async (event: FormEvent) => {
+    event.preventDefault(); setSaving(true)
+    try {
+      const course = await request<Course>('/api/courses', { method: 'POST', body: JSON.stringify({ name: name.trim(), period: period.trim() || null, description: description.trim() || null }) })
+      onCreate(course); setCreating(false); setName(''); setPeriod(''); setDescription(''); notify(`Creaste el curso ${course.name}.`)
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear el curso.', 'error') }
+    finally { setSaving(false) }
+  }
+  const deleteCourse = async (course: Course) => {
+    if (!window.confirm(`¿Eliminar la carpeta “${course.name}”? Solo se puede eliminar si no contiene estudiantes ni notas.`)) return
+    setDeleting(course.id)
+    try { await request<void>(`/api/courses/${course.id}`, { method: 'DELETE' }); onDelete(course.id); notify('Curso eliminado.') }
+    catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar el curso.', 'error') }
+    finally { setDeleting(null) }
+  }
+  return <>
+    <PageHeading eyebrow="ESPACIOS DE APRENDIZAJE" title="Tus cursos" description="Cada curso tiene su propia lista de estudiantes, notas, alertas y biblioteca de talleres." action={<button className="button button-dark" onClick={() => setCreating(true)}><Plus size={16} /> Crear curso</button>} />
+    <div className="course-intro panel"><span className="course-intro-icon"><FolderKanban size={21} /></span><div><strong>Un espacio separado para cada grupo</strong><p>Por ejemplo, “Cuarto semestre A” y “Cuarto semestre B”. Selecciona un curso arriba para trabajar solo con sus datos.</p></div><span className="course-count">{courses.length} {courses.length === 1 ? 'curso' : 'cursos'}</span></div>
+    {courses.length ? <div className="course-folder-grid">{courses.map((course, index) => <article className={`course-folder-card course-tone-${index % 4} ${selectedCourseId === course.id ? 'selected' : ''}`} key={course.id}>
+      <div className="course-folder-top"><span className="course-folder-icon"><FolderKanban size={21} /></span><span className="course-folder-period">{course.period || 'Periodo sin indicar'}</span><button className="icon-button small-icon danger-hover" onClick={() => void deleteCourse(course)} disabled={deleting === course.id} aria-label={`Eliminar curso ${course.name}`}>{deleting === course.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div>
+      <h2>{course.name}</h2><p>{course.description || 'Lista, notas y seguimiento de aprendizaje de este grupo.'}</p>
+      <div className="course-folder-footer"><span><GraduationCap size={14} /> Curso docente</span><button className="button button-outline" onClick={() => onSelect(course.id)}>{selectedCourseId === course.id ? 'Curso activo' : 'Abrir curso'} <ArrowRight size={14} /></button></div>
+    </article>)}</div> : <section className="panel courses-empty"><EmptyState icon={<FolderKanban size={22} />} title="Crea tu primer curso" text="Organiza tus grupos por semestre, sección o periodo. Después podrás cargar estudiantes y notas dentro de cada uno." action={<button className="button button-dark" onClick={() => setCreating(true)}><Plus size={15} /> Crear primer curso</button>} /></section>}
+    {creating && <Modal title="Crear curso" onClose={() => setCreating(false)}><form className="form-stack" onSubmit={createCourse}><label>Nombre del curso<input required autoFocus maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Cuarto semestre A" /></label><label>Periodo <span className="optional-label">Opcional</span><input maxLength={40} value={period} onChange={event => setPeriod(event.target.value)} placeholder="Ej. 2026-2" /></label><label>Descripción <span className="optional-label">Opcional</span><textarea rows={3} maxLength={500} value={description} onChange={event => setDescription(event.target.value)} placeholder="Materia, jornada o detalles del grupo" /></label><div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setCreating(false)}>Cancelar</button><button type="submit" className="button button-dark" disabled={saving}>{saving && <LoaderCircle size={15} className="spin" />}{saving ? 'Creando…' : 'Crear curso'}</button></div></form></Modal>}
+  </>
 }
 
 type AppNotice = { id: string; title: string; detail: string; page: Page }
@@ -224,19 +308,24 @@ function downloadFile(filename: string, contents: string, type: string) {
 }
 
 function downloadGradeTemplate() {
-  downloadFile('plantilla-notas-fairteam.csv', '\uFEFFid,studentId,subjectId,grade,period\r\n', 'text/csv;charset=utf-8')
+  downloadFile('plantilla-notas-fairteam.csv', '\uFEFFstudentName,studentEmail,subject,grade,period\r\n', 'text/csv;charset=utf-8')
 }
 
-function Overview({ students, teams, grades, workshops, onNavigate, onCreateStudent, onRefresh, onSelectWorkshop }: { students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
+function downloadRosterTemplate() {
+  downloadFile('plantilla-estudiantes-fairteam.csv', '\uFEFFname,email,academicLevel\r\n', 'text/csv;charset=utf-8')
+}
+
+function Overview({ course, students, teams, grades, workshops, onNavigate, onCreateStudent, onRefresh, onSelectWorkshop }: { course: Course | null; students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
   const low = students.filter(student => student.gradeCount > 0 && student.level === 'LOW').length
   const medium = students.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length
   const high = students.filter(student => student.gradeCount > 0 && student.level === 'HIGH').length
   const avg = grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null
   const focusStudents = students.filter(student => student.gradeCount > 0 && student.level === 'LOW').slice(0, 4)
+  if (!course) return <section className="panel no-course-state"><EmptyState icon={<FolderKanban size={23} />} title="Primero organiza tus grupos" text="Crea un curso para cargar la lista de estudiantes y sus notas en su propio espacio." action={<button className="button button-dark" onClick={() => onNavigate('courses')}><Plus size={15} /> Crear o abrir un curso</button>} /></section>
   return <>
-    <div className="welcome-banner"><div className="welcome-text"><div className="welcome-date">{displayDate()}</div><h1>Hola, profe <span>👋</span></h1><p>Una vista rápida del progreso y de quién podría necesitar acompañamiento.</p><div className="welcome-actions"><button className="button button-dark" onClick={() => onNavigate('alerts')}><Activity size={16} /> Revisar alertas <ArrowRight size={15} /></button><button className="button button-ghost" onClick={onCreateStudent}><Plus size={16} /> Agregar estudiante</button></div></div><div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="art-spark spark-a">✦</div><div className="art-spark spark-b">✳</div><div className="art-card card-a"><div className="mini-avatar mint">✓</div><div><b>Progreso</b><i>Seguimiento</i></div><span className="mini-check"><Check size={12} /></span></div><div className="art-card card-b"><div className="mini-avatar lilac">✧</div><div><b>Refuerzo</b><i>Acción sugerida</i></div><span className="mini-check"><Check size={12} /></span></div><div className="art-center"><BrainCircuit size={31} /><span>acompañar</span></div></div></div>
+    <div className="welcome-banner"><div className="welcome-text"><div className="welcome-date">{displayDate()} · {course.name}{course.period ? ` · ${course.period}` : ''}</div><h1>Hola, profe <span>👋</span></h1><p>Revisa el progreso de este curso y acompaña a quienes necesitan apoyo.</p><div className="welcome-actions"><button className="button button-dark" onClick={() => onNavigate('alerts')}><Activity size={16} /> Revisar alertas <ArrowRight size={15} /></button><button className="button button-ghost" onClick={onCreateStudent}><Plus size={16} /> Agregar estudiante</button></div></div><div className="welcome-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="art-spark spark-a">✦</div><div className="art-spark spark-b">✳</div><div className="art-card card-a"><div className="mini-avatar mint">✓</div><div><b>Progreso</b><i>Seguimiento</i></div><span className="mini-check"><Check size={12} /></span></div><div className="art-card card-b"><div className="mini-avatar lilac">✧</div><div><b>Refuerzo</b><i>Acción sugerida</i></div><span className="mini-check"><Check size={12} /></span></div><div className="art-center"><BrainCircuit size={31} /><span>acompañar</span></div></div></div>
     <div className="metric-grid">
-      <MetricCard icon={<GraduationCap size={19} />} label="Estudiantes" value={students.length} note="en tu aula" tone="mint" onClick={() => onNavigate('students')} />
+      <MetricCard icon={<GraduationCap size={19} />} label="Estudiantes" value={students.length} note={`en ${course.name}`} tone="mint" onClick={() => onNavigate('students')} />
       <MetricCard icon={<AlertTriangle size={19} />} label="Necesitan atención" value={low} note={students.length ? `${Math.round(low / students.length * 100)}% del grupo` : 'según notas disponibles'} tone="peach" onClick={() => onNavigate('alerts')} />
       <MetricCard icon={<Activity size={19} />} label="Promedio general" value={avg === null ? '—' : `${avg.toFixed(1)}`} note={avg === null ? 'importa notas para calcularlo' : 'sobre 5.0'} tone="blue" onClick={() => onNavigate('students')} />
     </div>
@@ -294,9 +383,10 @@ function Avatar({ name, small = false }: { name: string; small?: boolean }) {
   return <span className={`student-avatar ${color} ${small ? 'avatar-small' : ''}`}>{initials(name)}</span>
 }
 
-function StudentsPage({ students, query, setQuery, busy, onCreate, onEdit, onRefresh, notify }: { students: Candidate[]; query: string; setQuery: (query: string) => void; busy: boolean; onCreate: () => void; onEdit: (student: Student) => void; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onEdit, onRefresh, notify }: { students: Candidate[]; courseId: number | null; query: string; setQuery: (query: string) => void; busy: boolean; onCreate: () => void; onEdit: (student: Student) => void; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
   const [filter, setFilter] = useState<'ALL' | AcademicLevel>('ALL')
   const [importing, setImporting] = useState(false)
+  const [importingRoster, setImportingRoster] = useState(false)
   const [deleting, setDeleting] = useState<number | null>(null)
   const filtered = students.filter(student => (filter === 'ALL' || student.level === filter) && `${student.name} ${student.email || ''}`.toLowerCase().includes(query.toLowerCase()))
   const importFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -305,13 +395,29 @@ function StudentsPage({ students, query, setQuery, busy, onCreate, onEdit, onRef
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.csv')) return notify('El archivo debe tener formato CSV.', 'error')
     setImporting(true)
+    if (!courseId) return notify('Selecciona un curso antes de importar notas.', 'error')
     const form = new FormData(); form.append('file', file)
     try {
-      const imported = await request<Grade[]>('/api/grades/import', { method: 'POST', body: form })
+      const imported = await request<Grade[]>(`/api/grades/import?courseId=${courseId}`, { method: 'POST', body: form })
       notify(`Se importaron ${imported.length} registros de notas.`)
       onRefresh()
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo importar el archivo.', 'error') }
     finally { setImporting(false) }
+  }
+  const importRoster = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv')) return notify('La lista debe estar en formato CSV.', 'error')
+    if (!courseId) return notify('Selecciona un curso antes de importar estudiantes.', 'error')
+    setImportingRoster(true)
+    const form = new FormData(); form.append('file', file)
+    try {
+      const imported = await request<Student[]>(`/api/students/import?courseId=${courseId}`, { method: 'POST', body: form })
+      notify(`Se cargaron ${imported.length} estudiante(s) en este curso.`)
+      onRefresh()
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo importar la lista.', 'error') }
+    finally { setImportingRoster(false) }
   }
   const deleteStudent = async (student: Student) => {
     if (!window.confirm(`¿Eliminar a ${student.name}? Esta acción no se puede deshacer.`)) return
@@ -321,18 +427,18 @@ function StudentsPage({ students, query, setQuery, busy, onCreate, onEdit, onRef
     finally { setDeleting(null) }
   }
   return <>
-    <PageHeading eyebrow="TU COMUNIDAD" title="Estudiantes" description="Conoce el punto de partida de cada persona y acompaña su progreso." action={<><label className={`button button-outline upload-button ${importing ? 'is-loading' : ''}`}><input type="file" accept=".csv,text/csv" onChange={importFile} disabled={importing} />{importing ? <LoaderCircle size={16} className="spin" /> : <Upload size={16} />}{importing ? 'Importando…' : 'Importar notas'}</label><button className="button button-dark" onClick={onCreate}><Plus size={16} /> Agregar estudiante</button></>} />
+    <PageHeading eyebrow="TU COMUNIDAD" title="Estudiantes" description="Importa la lista de este curso y luego sus notas para ver niveles y alertas." action={<><label className={`button button-outline upload-button ${importingRoster ? 'is-loading' : ''}`}><input type="file" accept=".csv,text/csv" onChange={importRoster} disabled={importingRoster || !courseId} />{importingRoster ? <LoaderCircle size={16} className="spin" /> : <Users size={16} />}{importingRoster ? 'Importando…' : 'Importar lista'}</label><label className={`button button-outline upload-button ${importing ? 'is-loading' : ''}`}><input type="file" accept=".csv,text/csv" onChange={importFile} disabled={importing || !courseId} />{importing ? <LoaderCircle size={16} className="spin" /> : <Upload size={16} />}{importing ? 'Importando…' : 'Importar notas'}</label><button className="button button-dark" onClick={onCreate} disabled={!courseId}><Plus size={16} /> Agregar estudiante</button></>} />
     <section className="panel directory-panel"><div className="directory-toolbar"><div className="search-box"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por nombre o correo…" /></div><div className="filter-control"><Filter size={16} /><select value={filter} onChange={event => setFilter(event.target.value as 'ALL' | AcademicLevel)} aria-label="Filtrar por nivel"><option value="ALL">Todos los niveles</option><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select><ChevronDown size={14} /></div><button className="icon-button small-icon" onClick={onRefresh} aria-label="Actualizar lista"><Activity size={16} /></button></div>
-      <div className="table-wrap"><table className="student-table"><thead><tr><th>ESTUDIANTE</th><th>NIVEL ACTUAL</th><th>PROMEDIO</th><th>PROGRESO</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{filtered.map(student => <tr key={student.id}><td><div className="student-cell"><Avatar name={student.name} /><span><strong>{student.name}</strong><small>{student.email || `ID ${student.id}`}</small></span></div></td><td><span className={`level-badge level-${student.level.toLowerCase()}`}><i />{formatLevel(student.level)}</span></td><td><strong className="grade-number">{student.average.toFixed(1)}</strong><span className="grade-total"> / 5.0</span></td><td><div className="progress-cell"><div className="progress-track"><i style={{ width: `${Math.min(100, student.average / 5 * 100)}%` }} /></div><small>{Math.round(student.average / 5 * 100)}%</small></div></td><td><div className="row-actions"><button className="icon-button small-icon" onClick={() => onEdit(student)} aria-label={`Editar ${student.name}`}><MoreHorizontal size={17} /></button><button className="icon-button small-icon danger-hover" onClick={() => void deleteStudent(student)} disabled={deleting === student.id} aria-label={`Eliminar ${student.name}`}>{deleting === student.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></td></tr>)}</tbody></table>
+      <div className="table-wrap"><table className="student-table"><thead><tr><th>ESTUDIANTE</th><th>NIVEL ACTUAL</th><th>PROMEDIO</th><th>PROGRESO</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{filtered.map(student => <tr key={student.id}><td><div className="student-cell"><Avatar name={student.name} /><span><strong>{student.name}</strong><small>{student.email || `ID ${student.id}`}</small></span></div></td><td><span className={`level-badge level-${student.level.toLowerCase()}`}><i />{formatLevel(student.level)}</span></td><td>{student.gradeCount > 0 ? <><strong className="grade-number">{student.average.toFixed(1)}</strong><span className="grade-total"> / 5.0</span></> : <span className="grade-total">Sin notas</span>}</td><td><div className="progress-cell"><div className="progress-track"><i style={{ width: `${Math.min(100, (student.gradeCount > 0 ? student.average : 0) / 5 * 100)}%` }} /></div><small>{student.gradeCount > 0 ? `${Math.round(student.average / 5 * 100)}%` : "—"}</small></div></td><td><div className="row-actions"><button className="icon-button small-icon" onClick={() => onEdit(student)} aria-label={`Editar ${student.name}`}><MoreHorizontal size={17} /></button><button className="icon-button small-icon danger-hover" onClick={() => void deleteStudent(student)} disabled={deleting === student.id} aria-label={`Eliminar ${student.name}`}>{deleting === student.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></td></tr>)}</tbody></table>
         {busy && <div className="table-loading"><LoaderCircle size={19} className="spin" /> Actualizando estudiantes…</div>}
         {!busy && filtered.length === 0 && <EmptyState icon={<GraduationCap size={22} />} title={students.length ? 'No encontramos coincidencias' : 'Aún no hay estudiantes'} text={students.length ? 'Prueba con otro nombre o cambia el filtro.' : 'Agrega tu grupo manualmente o importa una lista de notas para comenzar.'} action={!students.length ? <button className="button button-dark" onClick={onCreate}><Plus size={15} /> Agregar primer estudiante</button> : undefined} />}
       </div><div className="table-footer"><span>Mostrando <b>{filtered.length}</b> de <b>{students.length}</b> estudiantes</span><span className="api-footnote">Niveles calculados con notas importadas; si no hay notas, se usa el nivel del perfil.</span></div>
     </section>
-    <div className="info-banner"><FileText size={18} /><div><strong>Formato de archivo para importar notas</strong><p>El CSV debe incluir <code>id,studentId,subjectId,grade,period</code>. Los tres IDs deben existir en la base de datos. Usa la plantilla descargable para evitar errores de encabezado.</p></div><button className="text-button" onClick={downloadGradeTemplate}>Descargar plantilla <Download size={14} /></button></div>
+    <div className="info-banner"><FileText size={18} /><div><strong>Plantillas simples para tus archivos CSV</strong><p>Lista: <code>name,email,academicLevel</code> (correo y nivel opcionales). Notas: <code>studentName,studentEmail,subject,grade,period</code>; puedes identificar por nombre o correo y las materias se crean automáticamente. Se aceptan archivos CSV separados por coma o punto y coma (Excel).</p></div><div className="template-actions"><button className="text-button" onClick={downloadRosterTemplate}>Lista <Download size={14} /></button><button className="text-button" onClick={downloadGradeTemplate}>Notas <Download size={14} /></button></div></div>
   </>
 }
 
-function StudentDialog({ student, onClose, onSaved, notify }: { student: Student | null; onClose: () => void; onSaved: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+function StudentDialog({ student, courseId, onClose, onSaved, notify }: { student: Student | null; courseId: number | null; onClose: () => void; onSaved: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
   const [name, setName] = useState(student?.name || '')
   const [email, setEmail] = useState(student?.email || '')
   const [level, setLevel] = useState(levelOf(student?.academicLevel))
@@ -342,7 +448,7 @@ function StudentDialog({ student, onClose, onSaved, notify }: { student: Student
     try {
       await request<Student>(student ? `/api/students/${student.id}` : '/api/students', {
         method: student ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() || null, academicLevel: level }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim() || null, academicLevel: level, courseId }),
       })
       notify(student ? 'Perfil actualizado.' : 'Estudiante agregado.')
       onSaved()
