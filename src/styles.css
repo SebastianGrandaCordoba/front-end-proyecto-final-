@@ -75,3 +75,4 @@ body{background:radial-gradient(ellipse at 88% 0%,#252918 0,transparent 29%),rad
 @media(prefers-reduced-motion:reduce){.welcome-banner:after{animation:none}}
 .teacher-auth-story .auth-side-kicker,.teacher-auth-screen .auth-eyebrow{color:#caff3d}.teacher-auth-story p,.teacher-auth-story .auth-feature-stack>div,.teacher-auth-screen .auth-floating-note{color:#c3cbc4}.teacher-auth-screen .auth-feature-stack>div>span{background:#20261d;color:#caff3d;box-shadow:none}.teacher-auth-form label{color:#e4e8e1}.teacher-auth-form input{background:#0e1213;color:#f4f5ef;border-color:#48504d}.teacher-auth-form input::placeholder{color:#8d9690}.teacher-auth-card .auth-copy{color:#c0c7c0}
 .command-network-canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.8;pointer-events:none}
+.auth-wait-note{padding:10px 12px;border:1px solid #51461d;border-radius:4px;background:#201d13;color:#e6d596;font-size:10px;line-height:1.55}.auth-mode-switch:disabled{opacity:.5;cursor:wait}

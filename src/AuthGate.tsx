@@ -13,6 +13,7 @@ export default function AuthGate() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [working, setWorking] = useState(false)
+  const [waitingForServer, setWaitingForServer] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -24,7 +25,9 @@ export default function AuthGate() {
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setWorking(true)
+    setWaitingForServer(false)
     setMessage('')
+    const slowRequestTimer = window.setTimeout(() => setWaitingForServer(true), 12_000)
     try {
       const result = await request<AuthResponse>(mode === 'login' ? '/api/auth/login' : '/api/auth/register', {
         method: 'POST',
@@ -34,7 +37,11 @@ export default function AuthGate() {
       setUser({ id: result.id, name: result.name, email: result.email, role: result.role })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo completar el acceso. Inténtalo de nuevo.')
-    } finally { setWorking(false) }
+    } finally {
+      window.clearTimeout(slowRequestTimer)
+      setWorking(false)
+      setWaitingForServer(false)
+    }
   }
 
   const logout = () => { clearAccessToken(); setUser(null); setPassword(''); setMode('login') }
@@ -67,13 +74,14 @@ export default function AuthGate() {
         <h1>{mode === 'login' ? 'Qué bueno verte.' : 'Crea tu cuenta docente.'}</h1>
         <p className="auth-copy">{mode === 'login' ? 'Inicia sesión para continuar con el seguimiento de tu curso.' : 'Crea tu espacio docente personal. Tus estudiantes y notas estarán separados de otras cuentas.'}</p>
         <form className="teacher-auth-form" onSubmit={submit}>
-          {mode === 'register' && <label>Nombre completo<input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required minLength={2} maxLength={120} placeholder="Tu nombre" /></label>}
-          <label>Correo electrónico<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required maxLength={180} placeholder="profe@institucion.edu" /></label>
-          <label>Contraseña<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required minLength={mode === 'register' ? 10 : 1} maxLength={72} placeholder={mode === 'register' ? 'Mínimo 10 caracteres' : 'Tu contraseña'} /></label>
+          {mode === 'register' && <label>Nombre completo<input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required disabled={working} minLength={2} maxLength={120} placeholder="Tu nombre" /></label>}
+          <label>Correo electrónico<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required disabled={working} maxLength={180} placeholder="profe@institucion.edu" /></label>
+          <label>Contraseña<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required disabled={working} minLength={mode === 'register' ? 10 : 1} maxLength={72} placeholder={mode === 'register' ? 'Mínimo 10 caracteres' : 'Tu contraseña'} /></label>
           {message && <div className="auth-message" role="alert">{message}</div>}
-          <button className="google-login teacher-auth-submit" type="submit" disabled={working}>{working ? <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />}{working ? 'Conectando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}<ArrowRight size={17} /></button>
+          {working && waitingForServer && <div className="auth-wait-note" role="status">Render puede tardar hasta un minuto en despertar. La solicitud sigue activa; si agota el tiempo, podrás volver a intentarlo.</div>}
+          <button className="google-login teacher-auth-submit" type="submit" disabled={working}>{working ? <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />}{working ? waitingForServer ? 'Despertando servidor…' : 'Conectando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}<ArrowRight size={17} /></button>
         </form>
-        <button className="auth-mode-switch" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setMessage('') }}>{mode === 'login' ? '¿Aún no tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}</button>
+        <button className="auth-mode-switch" disabled={working} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setMessage('') }}>{mode === 'login' ? '¿Aún no tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}</button>
         <div className="auth-secure"><ShieldCheck size={16} /><span>Las contraseñas se protegen en el servidor. La clave de Gemini nunca se guarda en el navegador.</span></div>
         <div className="auth-footnote">API: {API_BASE}</div>
       </section>
