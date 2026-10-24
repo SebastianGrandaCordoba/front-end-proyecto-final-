@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { API_BASE, request, type AcademicLevel, type Course, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
 import type { TeacherProfile } from './api'
+import { createSpreadsheetTemplate, spreadsheetFileAsCsv } from './spreadsheet'
 
 type Page = 'overview' | 'courses' | 'students' | 'alerts' | 'projects' | 'teams' | 'workshops' | 'settings'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
@@ -197,7 +198,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
           {page === 'alerts' && <LearningAlerts students={candidates} onWorkshops={() => setPage('workshops')} onStudents={() => setPage('students')} />}
           {page === 'projects' && <ProjectsPage projects={projects} teams={teams} onRefresh={() => void refresh()} onManageTeams={projectId => { setActiveProjectId(String(projectId)); setPage('teams') }} notify={notify} />}
           {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} initialProjectId={activeProjectId} onRefresh={() => void refresh()} notify={notify} />}
-          {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
+          {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} course={selectedCourse} summary={{ students: students.length, graded: candidates.filter(student => student.gradeCount > 0).length, low: candidates.filter(student => student.gradeCount > 0 && student.level === 'LOW').length, medium: candidates.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length, high: candidates.filter(student => student.gradeCount > 0 && student.level === 'HIGH').length, average: grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null }} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
           {page === 'settings' && <SettingsPage user={user} apiStatus={apiStatus} students={students} grades={grades} projects={projects} teams={teams} workshops={savedWorkshops} onRefresh={() => void refresh()} onClearWorkshops={() => setSavedWorkshops([])} onLogout={onLogout} notify={notify} />}
           <footer className="page-footer"><span>FairTeam · Aprender en equipo</span><span>Diseñado para construir aulas más equilibradas</span></footer>
         </div>
@@ -315,6 +316,14 @@ function downloadRosterTemplate() {
   downloadFile('plantilla-estudiantes-fairteam.csv', '\uFEFFname,email,academicLevel\r\n', 'text/csv;charset=utf-8')
 }
 
+async function downloadXlsxTemplate(filename: string, kind: 'roster' | 'grades') {
+  const bytes = await createSpreadsheetTemplate(kind)
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+  const link = document.createElement('a')
+  link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 function Overview({ course, students, teams, grades, workshops, onNavigate, onCreateStudent, onRefresh, onSelectWorkshop }: { course: Course | null; students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
   const low = students.filter(student => student.gradeCount > 0 && student.level === 'LOW').length
   const medium = students.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length
@@ -393,11 +402,12 @@ function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onE
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!file.name.toLowerCase().endsWith('.csv')) return notify('El archivo debe tener formato CSV.', 'error')
-    setImporting(true)
     if (!courseId) return notify('Selecciona un curso antes de importar notas.', 'error')
-    const form = new FormData(); form.append('file', file)
+    if (!/\.(csv|xlsx|xls)$/i.test(file.name)) return notify('El archivo debe ser CSV o Excel (.xlsx, .xls).', 'error')
+    setImporting(true)
     try {
+      const csvFile = await spreadsheetFileAsCsv(file, 'grades')
+      const form = new FormData(); form.append('file', csvFile)
       const imported = await request<Grade[]>(`/api/grades/import?courseId=${courseId}`, { method: 'POST', body: form })
       notify(`Se importaron ${imported.length} registros de notas.`)
       onRefresh()
@@ -408,11 +418,12 @@ function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onE
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!file.name.toLowerCase().endsWith('.csv')) return notify('La lista debe estar en formato CSV.', 'error')
     if (!courseId) return notify('Selecciona un curso antes de importar estudiantes.', 'error')
+    if (!/\.(csv|xlsx|xls)$/i.test(file.name)) return notify('La lista debe ser CSV o Excel (.xlsx, .xls).', 'error')
     setImportingRoster(true)
-    const form = new FormData(); form.append('file', file)
     try {
+      const csvFile = await spreadsheetFileAsCsv(file, 'roster')
+      const form = new FormData(); form.append('file', csvFile)
       const imported = await request<Student[]>(`/api/students/import?courseId=${courseId}`, { method: 'POST', body: form })
       notify(`Se cargaron ${imported.length} estudiante(s) en este curso.`)
       onRefresh()
@@ -427,14 +438,14 @@ function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onE
     finally { setDeleting(null) }
   }
   return <>
-    <PageHeading eyebrow="TU COMUNIDAD" title="Estudiantes" description="Importa la lista de este curso y luego sus notas para ver niveles y alertas." action={<><label className={`button button-outline upload-button ${importingRoster ? 'is-loading' : ''}`}><input type="file" accept=".csv,text/csv" onChange={importRoster} disabled={importingRoster || !courseId} />{importingRoster ? <LoaderCircle size={16} className="spin" /> : <Users size={16} />}{importingRoster ? 'Importando…' : 'Importar lista'}</label><label className={`button button-outline upload-button ${importing ? 'is-loading' : ''}`}><input type="file" accept=".csv,text/csv" onChange={importFile} disabled={importing || !courseId} />{importing ? <LoaderCircle size={16} className="spin" /> : <Upload size={16} />}{importing ? 'Importando…' : 'Importar notas'}</label><button className="button button-dark" onClick={onCreate} disabled={!courseId}><Plus size={16} /> Agregar estudiante</button></>} />
+    <PageHeading eyebrow="TU COMUNIDAD" title="Estudiantes" description="Importa la lista y el Excel de notas de este curso. FairTeam calcula los niveles y te ayuda a priorizar el refuerzo." action={<><label className={`button button-outline upload-button ${importingRoster ? 'is-loading' : ''}`}><input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={importRoster} disabled={importingRoster || !courseId} />{importingRoster ? <LoaderCircle size={16} className="spin" /> : <Users size={16} />}{importingRoster ? 'Importando…' : 'Importar lista Excel'}</label><label className={`button button-outline upload-button ${importing ? 'is-loading' : ''}`}><input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={importFile} disabled={importing || !courseId} />{importing ? <LoaderCircle size={16} className="spin" /> : <Upload size={16} />}{importing ? 'Importando…' : 'Importar notas Excel'}</label><button className="button button-dark" onClick={onCreate} disabled={!courseId}><Plus size={16} /> Agregar estudiante</button></>} />
     <section className="panel directory-panel"><div className="directory-toolbar"><div className="search-box"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por nombre o correo…" /></div><div className="filter-control"><Filter size={16} /><select value={filter} onChange={event => setFilter(event.target.value as 'ALL' | AcademicLevel)} aria-label="Filtrar por nivel"><option value="ALL">Todos los niveles</option><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select><ChevronDown size={14} /></div><button className="icon-button small-icon" onClick={onRefresh} aria-label="Actualizar lista"><Activity size={16} /></button></div>
       <div className="table-wrap"><table className="student-table"><thead><tr><th>ESTUDIANTE</th><th>NIVEL ACTUAL</th><th>PROMEDIO</th><th>PROGRESO</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{filtered.map(student => <tr key={student.id}><td><div className="student-cell"><Avatar name={student.name} /><span><strong>{student.name}</strong><small>{student.email || `ID ${student.id}`}</small></span></div></td><td><span className={`level-badge level-${student.level.toLowerCase()}`}><i />{formatLevel(student.level)}</span></td><td>{student.gradeCount > 0 ? <><strong className="grade-number">{student.average.toFixed(1)}</strong><span className="grade-total"> / 5.0</span></> : <span className="grade-total">Sin notas</span>}</td><td><div className="progress-cell"><div className="progress-track"><i style={{ width: `${Math.min(100, (student.gradeCount > 0 ? student.average : 0) / 5 * 100)}%` }} /></div><small>{student.gradeCount > 0 ? `${Math.round(student.average / 5 * 100)}%` : "—"}</small></div></td><td><div className="row-actions"><button className="icon-button small-icon" onClick={() => onEdit(student)} aria-label={`Editar ${student.name}`}><MoreHorizontal size={17} /></button><button className="icon-button small-icon danger-hover" onClick={() => void deleteStudent(student)} disabled={deleting === student.id} aria-label={`Eliminar ${student.name}`}>{deleting === student.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></td></tr>)}</tbody></table>
         {busy && <div className="table-loading"><LoaderCircle size={19} className="spin" /> Actualizando estudiantes…</div>}
-        {!busy && filtered.length === 0 && <EmptyState icon={<GraduationCap size={22} />} title={students.length ? 'No encontramos coincidencias' : 'Aún no hay estudiantes'} text={students.length ? 'Prueba con otro nombre o cambia el filtro.' : 'Agrega tu grupo manualmente o importa una lista de notas para comenzar.'} action={!students.length ? <button className="button button-dark" onClick={onCreate}><Plus size={15} /> Agregar primer estudiante</button> : undefined} />}
+        {!busy && filtered.length === 0 && <EmptyState icon={<GraduationCap size={22} />} title={students.length ? 'No encontramos coincidencias' : 'Aún no hay estudiantes'} text={students.length ? 'Prueba con otro nombre o cambia el filtro.' : 'Importa el Excel del grupo o agrega estudiantes manualmente para comenzar.'} action={!students.length ? <button className="button button-dark" onClick={onCreate}><Plus size={15} /> Agregar primer estudiante</button> : undefined} />}
       </div><div className="table-footer"><span>Mostrando <b>{filtered.length}</b> de <b>{students.length}</b> estudiantes</span><span className="api-footnote">Niveles calculados con notas importadas; si no hay notas, se usa el nivel del perfil.</span></div>
     </section>
-    <div className="info-banner"><FileText size={18} /><div><strong>Plantillas simples para tus archivos CSV</strong><p>Lista: <code>name,email,academicLevel</code> (correo y nivel opcionales). Notas: <code>studentName,studentEmail,subject,grade,period</code>; puedes identificar por nombre o correo y las materias se crean automáticamente. Se aceptan archivos CSV separados por coma o punto y coma (Excel).</p></div><div className="template-actions"><button className="text-button" onClick={downloadRosterTemplate}>Lista <Download size={14} /></button><button className="text-button" onClick={downloadGradeTemplate}>Notas <Download size={14} /></button></div></div>
+    <div className="info-banner"><FileText size={18} /><div><strong>Excel y CSV, con los títulos que usa el profesor</strong><p>La lista necesita nombre; el correo y nivel son opcionales. Para notas incluye estudiante, materia, nota y periodo. Se reconocen encabezados como Nombre, Correo, Materia, Nota y Periodo. El Excel se lee en este navegador y solo se envían los registros ya convertidos al backend.</p></div><div className="template-actions"><button className="text-button" onClick={() => downloadXlsxTemplate('plantilla-estudiantes-fairteam.xlsx', 'roster')}>Plantilla de lista (.xlsx) <Download size={14} /></button><button className="text-button" onClick={() => downloadXlsxTemplate('plantilla-notas-fairteam.xlsx', 'grades')}>Plantilla de notas (.xlsx) <Download size={14} /></button><button className="text-button" onClick={downloadRosterTemplate}>CSV <Download size={14} /></button><button className="text-button" onClick={downloadGradeTemplate}>CSV notas <Download size={14} /></button></div></div>
   </>
 }
 
@@ -598,41 +609,110 @@ function TeamsPage({ students, projects, teams, initialProjectId, onRefresh, not
   </>
 }
 
-function WorkshopsPage({ saved, result, onGenerate, onSelect, notify }: { saved: GeneratedWorkshop[]; result: GeneratedWorkshop | null; onGenerate: (workshop: GeneratedWorkshop) => void; onSelect: (workshop: GeneratedWorkshop | null) => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, notify }: {
+  saved: GeneratedWorkshop[]; result: GeneratedWorkshop | null; course: Course | null
+  summary: { students: number; graded: number; low: number; medium: number; high: number; average: number | null }
+  onGenerate: (workshop: GeneratedWorkshop) => void; onSelect: (workshop: GeneratedWorkshop | null) => void
+  notify: (message: string, kind?: Toast['kind']) => void
+}) {
   const [file, setFile] = useState<File | null>(null)
   const [subject, setSubject] = useState('')
+  const [topic, setTopic] = useState('')
   const [level, setLevel] = useState<AcademicLevel>('LOW')
   const [objective, setObjective] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const uploadRef = useRef<HTMLInputElement>(null)
+
   const selectFile = (candidate?: File) => {
     if (!candidate) return
-    if (!/\.(pdf|docx|txt)$/i.test(candidate.name)) return notify('Adjunta un archivo PDF, DOCX o TXT.', 'error')
+    if (!/\.(pdf|docx|txt)$/i.test(candidate.name)) return notify('Adjunta material en PDF, DOCX o TXT.', 'error')
     if (candidate.size > 10 * 1024 * 1024) return notify('El archivo supera el límite de 10 MB.', 'error')
     setFile(candidate)
+    setErrorMessage('')
   }
+
   const generate = async (event: FormEvent) => {
     event.preventDefault()
-    if (!file) return notify('Adjunta el material que servirá de base para el taller.', 'error')
-    if (file.size > 10 * 1024 * 1024) return notify('El archivo supera el límite de 10 MB.', 'error')
+    if (!course) return notify('Primero crea o selecciona un curso.', 'error')
+    if (!file) return notify('Adjunta el material de estudio del tema.', 'error')
+    if (!topic.trim()) return notify('Escribe el tema que están trabajando en clase.', 'error')
     setGenerating(true)
+    setErrorMessage('')
     try {
-      const form = new FormData(); form.append('file', file); form.append('subject', subject.trim()); form.append('targetLevel', level); if (objective.trim()) form.append('learningObjective', objective.trim())
+      const summaryText = summary.average == null
+        ? `Curso: ${course.name}. Todavía no hay notas para analizar; el docente solicita una actividad preventiva.`
+        : `Curso: ${course.name}. ${summary.graded} estudiante(s) con notas, ${summary.low} en refuerzo, ${summary.medium} en proceso y ${summary.high} con progreso adecuado. Promedio general: ${summary.average.toFixed(2)} sobre 5. Tema priorizado por el docente: ${topic.trim()}.`
+      const form = new FormData()
+      form.append('file', file)
+      form.append('subject', subject.trim())
+      form.append('targetLevel', level)
+      form.append('learningObjective', objective.trim() || `Reforzar ${topic.trim()} con actividades prácticas y comprobar la comprensión.`)
+      form.append('learningContext', summaryText)
       const response = await request<GeneratedWorkshop>('/api/ai/workshops/generate', { method: 'POST', body: form })
-      onGenerate(response); notify('¡Taller listo! Revísalo y ajusta lo necesario antes de asignarlo.')
-    } catch (error) { notify(error instanceof Error ? error.message : 'No pudimos generar el taller.', 'error') }
-    finally { setGenerating(false) }
+      onGenerate(response)
+      notify('Taller generado. Revísalo y ajústalo antes de usarlo.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No pudimos generar el taller.'
+      setErrorMessage(message)
+      notify(message, 'error')
+    } finally { setGenerating(false) }
   }
+
   const copy = async () => {
     if (!result) return
     const text = `${result.title}\n${result.summary}\n\nOBJETIVOS\n${result.learningObjectives.map(item => `• ${item}`).join('\n')}\n\nACTIVIDADES\n${result.activities.map((item, index) => `${index + 1}. ${item.title} (${item.estimatedMinutes} min)\n${item.instructions}`).join('\n\n')}\n\nEVALUACIÓN\n${result.assessment.map((item, index) => `${index + 1}. ${item.question}\n${item.options.map(option => `- ${option}`).join('\n')}\nRespuesta: ${item.correctAnswer}\n${item.explanation}`).join('\n\n')}\n\nReferencias: ${result.sourceReferences.join(', ')}`
-    try { await navigator.clipboard.writeText(text); notify('Contenido copiado al portapapeles.') } catch { notify('No se pudo copiar el contenido.', 'error') }
+    try { await navigator.clipboard.writeText(text); notify('Contenido copiado al portapapeles.') }
+    catch { notify('No se pudo copiar el contenido.', 'error') }
   }
+
   return <>
-    <PageHeading eyebrow="APRENDIZAJE PERSONALIZADO" title="Laboratorio de talleres" description="Convierte el material de clase en actividades y preguntas para reforzar el aprendizaje." action={<span className="ai-badge"><Sparkles size={15} /> Gemini integrado</span>} />
-    <div className="workshop-layout"><section className="panel workshop-form-panel"><div className="panel-heading"><div><div className="eyebrow">CREAR CON IA</div><h2>Cuéntanos qué están aprendiendo</h2></div><span className="soft-icon lilac-icon"><BrainCircuit size={19} /></span></div><p className="panel-copy">La IA usará únicamente el archivo y las instrucciones que compartas para proponer un taller de refuerzo.</p><form className="form-stack" onSubmit={generate}><label>Material de estudio</label><button type="button" className={`dropzone ${file ? 'has-file' : ''}`} onClick={() => uploadRef.current?.click()} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); selectFile(event.dataTransfer.files[0]) }}><input ref={uploadRef} type="file" accept=".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={event => selectFile(event.target.files?.[0])} />{file ? <><span className="dropzone-icon file-selected"><CheckCircle2 size={22} /></span><strong>{file.name}</strong><small>{(file.size / 1024).toFixed(0)} KB · Toca para cambiar el archivo</small><span className="remove-file" onClick={event => { event.stopPropagation(); setFile(null) }} aria-label="Quitar archivo"><X size={15} /></span></> : <><span className="dropzone-icon"><Upload size={21} /></span><strong>Arrastra tu material aquí</strong><small>o <u>explora tus archivos</u> · PDF, DOCX o TXT · Hasta 10 MB</small></>}</button><div className="form-row-two"><label>Materia<input required maxLength={120} value={subject} onChange={event => setSubject(event.target.value)} placeholder="Ej. Biología" /></label><label>Nivel de refuerzo<select value={level} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select></label></div><label>Objetivo de aprendizaje <span className="optional-label">Opcional</span><textarea rows={3} maxLength={1000} value={objective} onChange={event => setObjective(event.target.value)} placeholder="Ej. Comprender las etapas de la fotosíntesis…" /></label><div className="ai-privacy-note"><CheckCircle2 size={15} /><span>El material se procesa para generar el taller. No adjuntes listas de estudiantes ni datos personales.</span></div><button className="button button-dark full-button generate-button" disabled={generating}>{generating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}{generating ? 'Generando propuesta… máximo aproximado 25 s' : 'Generar taller de refuerzo'}{!generating && <ArrowRight size={15} />}</button></form><div className="generation-hint"><Clock3 size={14} /> La solicitud tiene un límite de 25 segundos antes de permitir reintentar.</div></section>
-      <section className="panel workshop-output-panel"><div className="panel-heading"><div><div className="eyebrow">TU PROPUESTA</div><h2>{result?.title || 'El taller aparecerá aquí'}</h2></div>{result && <button className="icon-button small-icon" onClick={() => window.print()} aria-label="Imprimir taller"><Download size={16} /></button>}</div>{result ? <div className="workshop-result" id="print-workshop"><div className="workshop-meta"><span className="subject-pill">{result.subject}</span><span className={`level-badge level-${levelOf(result.targetLevel).toLowerCase()}`}>{formatLevel(levelOf(result.targetLevel))}</span><span className="duration-pill"><Clock3 size={13} />{result.activities.reduce((sum, activity) => sum + activity.estimatedMinutes, 0)} min</span></div><p className="workshop-summary">{result.summary}</p><div className="result-section"><h3><Target size={16} /> Objetivos de aprendizaje</h3><ul className="objective-list">{result.learningObjectives.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>)}</ul></div><div className="result-section"><h3><BookOpen size={16} /> Actividades</h3><div className="activity-cards">{result.activities.map((activity, index) => <article className="workshop-activity" key={`${activity.title}-${index}`}><div className="activity-index">{String(index + 1).padStart(2, '0')}</div><div><div className="activity-title-line"><b>{activity.title}</b><span><Clock3 size={12} />{activity.estimatedMinutes} min</span></div><p>{activity.instructions}</p></div></article>)}</div></div><div className="result-section"><h3><CheckCircle2 size={16} /> Comprueba lo aprendido</h3><div className="assessment-list">{result.assessment.map((item, index) => <details className="assessment-item" key={`${item.question}-${index}`}><summary><span>{index + 1}</span>{item.question}<ChevronDown size={15} /></summary><div className="assessment-content"><ul>{item.options.map((option, optionIndex) => <li className={option === item.correctAnswer ? 'correct-answer' : ''} key={optionIndex}>{option === item.correctAnswer && <Check size={13} />}{option}</li>)}</ul><p><b>Respuesta:</b> {item.correctAnswer}. {item.explanation}</p></div></details>)}</div></div><div className="source-note"><FileText size={14} /><span>Referencias del material: {result.sourceReferences.join(' · ') || 'No especificadas'}</span></div><div className="result-actions"><button className="button button-dark" onClick={() => void copy()}><Download size={15} /> Copiar taller</button><button className="button button-outline" onClick={() => window.print()}><FileText size={15} /> Imprimir / PDF</button></div><p className="review-note"><Lightbulb size={14} /> Revisa la propuesta antes de compartirla con el grupo.</p></div> : <EmptyState icon={<WandSparkles size={24} />} title="Una idea para empezar" text="Cuando generes un taller, aquí podrás revisar objetivos, actividades, evaluación y referencias del material." action={<div className="output-preview"><span><Check size={13} /> Objetivos claros</span><span><Check size={13} /> Actividades prácticas</span><span><Check size={13} /> Preguntas para evaluar</span></div>} />}</section></div>
-    <section className="saved-workshops-section"><div className="section-heading"><div><div className="eyebrow">TU BIBLIOTECA</div><h2>Talleres recientes</h2></div><span className="saved-count">{saved.length}</span></div>{saved.length ? <div className="saved-workshop-grid">{saved.map((workshop, index) => <button className={`saved-workshop-card ${result?.title === workshop.title ? 'selected' : ''}`} key={`${workshop.title}-${index}`} onClick={() => onSelect(workshop)}><span className="shortcut-icon lilac-icon"><BookOpen size={17} /></span><span className="saved-workshop-copy"><b>{workshop.title}</b><small>{workshop.subject} · {workshop.activities.length} actividades</small></span><ChevronRight size={16} /></button>)}</div> : <p className="saved-empty">Los talleres que generes se guardan en este navegador para que vuelvas a consultarlos.</p>}</section>
+    <PageHeading eyebrow="OBSERVA · PRIORIZA · ACOMPAÑA" title="Del dato a una clase mejor" description="Cuéntame qué están aprendiendo y te propongo una actividad concreta usando las notas del curso y tu material." action={<span className="ai-badge"><Sparkles size={15} /> Gemini · asistente docente</span>} />
+    <section className="workshop-course-context">
+      <div className="workshop-context-title"><span className="context-mark"><Activity size={18} /></span><div><small>LECTURA DEL CURSO</small><strong>{course?.name || 'Selecciona un curso'}</strong></div></div>
+      <div className="context-stat"><strong>{summary.students}</strong><span>estudiantes</span></div>
+      <div className="context-stat context-low"><strong>{summary.low}</strong><span>necesitan refuerzo</span></div>
+      <div className="context-stat context-medium"><strong>{summary.medium}</strong><span>en proceso</span></div>
+      <div className="context-stat context-high"><strong>{summary.high}</strong><span>van avanzando</span></div>
+      <div className="context-average"><span>Promedio del curso</span><b>{summary.average == null ? 'Pendiente' : `${summary.average.toFixed(1)} / 5`}</b></div>
+      {summary.graded === 0 && <p className="context-no-grades">Carga las notas en Estudiantes para que el asistente pueda priorizar el refuerzo según el desempeño.</p>}
+    </section>
+
+    <div className="workshop-layout workshop-layout-new">
+      <section className="panel workshop-form-panel workshop-form-new">
+        <div className="panel-heading"><div><div className="eyebrow">TU SIGUIENTE PASO</div><h2>Preparemos un refuerzo</h2></div><span className="soft-icon lilac-icon"><BrainCircuit size={19} /></span></div>
+        <p className="panel-copy">El sistema usa solo cantidades y promedios del curso, nunca nombres ni correos. Tú eliges el tema y revisas cada recomendación.</p>
+        <form className="form-stack" onSubmit={generate}>
+          <label>1. ¿Qué tema están viendo?<input required maxLength={120} value={topic} onChange={event => setTopic(event.target.value)} placeholder="Ej. ciclos, funciones, fotosíntesis…" /></label>
+          <label>2. Adjunta el material de clase</label>
+          <button type="button" className={`dropzone ${file ? 'has-file' : ''}`} onClick={() => uploadRef.current?.click()} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); selectFile(event.dataTransfer.files[0]) }}>
+            <input ref={uploadRef} type="file" accept=".pdf,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onChange={event => selectFile(event.target.files?.[0])} />
+            {file ? <><span className="dropzone-icon file-selected"><CheckCircle2 size={22} /></span><strong>{file.name}</strong><small>{(file.size / 1024).toFixed(0)} KB · Selecciona para cambiar</small><span className="remove-file" onClick={event => { event.stopPropagation(); setFile(null) }} aria-label="Quitar archivo"><X size={15} /></span></> : <><span className="dropzone-icon"><Upload size={21} /></span><strong>Arrastra tu material aquí</strong><small>PDF, DOCX o TXT · Máximo 10 MB</small></>}
+          </button>
+          <div className="form-row-two"><label>Materia<input required maxLength={120} value={subject} onChange={event => setSubject(event.target.value)} placeholder="Ej. Programación" /></label><label>Grupo al que va dirigido<select value={level} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">Necesita refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Progreso adecuado</option></select></label></div>
+          <label>¿Qué te gustaría que logren? <span className="optional-label">Opcional</span><textarea rows={2} maxLength={1000} value={objective} onChange={event => setObjective(event.target.value)} placeholder="Ej. Que resuelvan un ciclo y expliquen cuándo termina…" /></label>
+          <div className="ai-privacy-note"><ShieldCheck size={15} /><span>Gemini recibe el material y un resumen sin datos personales. Las notas detalladas se quedan en FairTeam.</span></div>
+          {errorMessage && <div className="workshop-error" role="alert"><b>No se pudo generar el taller.</b><span>{errorMessage}</span><small>Comprueba el material y vuelve a intentar. El error queda visible aquí.</small></div>}
+          <button className="button button-dark full-button generate-button" disabled={generating || !course}>{generating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}{generating ? 'Preparando una propuesta…' : 'Proponer actividad de refuerzo'}{!generating && <ArrowRight size={15} />}</button>
+        </form>
+        <div className="generation-hint"><Clock3 size={14} /> Gemini tiene un límite de 25 segundos; si falla, puedes reintentar.</div>
+      </section>
+
+      <section className="panel workshop-output-panel workshop-output-new">
+        <div className="panel-heading"><div><div className="eyebrow">PROPUESTA PARA REVISAR</div><h2>{result?.title || 'Aquí aparecerá la actividad'}</h2></div>{result && <button className="icon-button small-icon" onClick={() => window.print()} aria-label="Imprimir taller"><Download size={16} /></button>}</div>
+        {result ? <div className="workshop-result" id="print-workshop">
+          <div className="workshop-meta"><span className="subject-pill">{result.subject}</span><span className={`level-badge level-${levelOf(result.targetLevel).toLowerCase()}`}>{formatLevel(levelOf(result.targetLevel))}</span><span className="duration-pill"><Clock3 size={13} />{result.activities.reduce((sum, activity) => sum + activity.estimatedMinutes, 0)} min</span></div>
+          <p className="workshop-summary">{result.summary}</p>
+          <div className="result-section"><h3><Target size={16} /> ¿Qué van a aprender?</h3><ul className="objective-list">{result.learningObjectives.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>)}</ul></div>
+          <div className="result-section"><h3><BookOpen size={16} /> Actividades</h3><div className="activity-cards">{result.activities.map((activity, index) => <article className="workshop-activity" key={`${activity.title}-${index}`}><div className="activity-index">{String(index + 1).padStart(2, '0')}</div><div><div className="activity-title-line"><b>{activity.title}</b><span><Clock3 size={12} />{activity.estimatedMinutes} min</span></div><p>{activity.instructions}</p></div></article>)}</div></div>
+          <div className="result-section"><h3><CheckCircle2 size={16} /> Comprueba si aprendieron</h3><div className="assessment-list">{result.assessment.map((item, index) => <details className="assessment-item" key={`${item.question}-${index}`}><summary><span>{index + 1}</span>{item.question}<ChevronDown size={15} /></summary><div className="assessment-content"><ul>{item.options.map((option, optionIndex) => <li className={option === item.correctAnswer ? 'correct-answer' : ''} key={optionIndex}>{option === item.correctAnswer && <Check size={13} />}{option}</li>)}</ul><p><b>Respuesta sugerida:</b> {item.correctAnswer}. {item.explanation}</p></div></details>)}</div></div>
+          <div className="source-note"><FileText size={14} /><span>Material consultado: {result.sourceReferences.join(' · ') || 'Referencias no especificadas'}</span></div>
+          <div className="result-actions"><button className="button button-dark" onClick={() => void copy()}><Download size={15} /> Copiar</button><button className="button button-outline" onClick={() => window.print()}><FileText size={15} /> Imprimir / PDF</button></div>
+          <p className="review-note"><Lightbulb size={14} /> Es una propuesta para que tú la revises; no cambia las notas ni se asigna automáticamente.</p>
+        </div> : <EmptyState icon={<WandSparkles size={24} />} title="Una buena clase empieza con una pregunta" text="Cuando generes la propuesta, verás los objetivos, actividades, evaluación y referencias del material." action={<div className="output-preview"><span><Check size={13} /> Actividades listas para clase</span><span><Check size={13} /> Evaluación breve</span><span><Check size={13} /> Fuente verificable</span></div>} />}
+      </section>
+    </div>
+    <section className="saved-workshops-section"><div className="section-heading"><div><div className="eyebrow">TU BIBLIOTECA</div><h2>Propuestas recientes</h2></div><span className="saved-count">{saved.length}</span></div>{saved.length ? <div className="saved-workshop-grid">{saved.map((workshop, index) => <button className={`saved-workshop-card ${result?.title === workshop.title ? 'selected' : ''}`} key={`${workshop.title}-${index}`} onClick={() => onSelect(workshop)}><span className="shortcut-icon lilac-icon"><BookOpen size={17} /></span><span className="saved-workshop-copy"><b>{workshop.title}</b><small>{workshop.subject} · {workshop.activities.length} actividades</small></span><ChevronRight size={16} /></button>)}</div> : <p className="saved-empty">Las propuestas que revises se guardan en este navegador, dentro de la cuenta y curso seleccionados.</p>}</section>
   </>
 }
 
