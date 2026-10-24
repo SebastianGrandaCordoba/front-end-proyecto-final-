@@ -846,7 +846,7 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
           {errorMessage && <div className="workshop-error" role="alert"><b>No se pudo generar el taller.</b><span>{errorMessage}</span><small>Comprueba el material y vuelve a intentar. El error queda visible aquí.</small></div>}
           <button className="button button-dark full-button generate-button" disabled={generating || !course}>{generating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}{generating ? 'Preparando una propuesta…' : 'Proponer actividad de refuerzo'}{!generating && <ArrowRight size={15} />}</button>
         </form>
-        <div className="generation-hint"><Clock3 size={14} /> Gemini tiene un límite de 25 segundos; si falla, puedes reintentar.</div>
+        <div className="generation-hint"><Clock3 size={14} /> Generación optimizada con Gemini rápido. En el plan gratuito, el primer uso puede esperar el arranque del servicio.</div>
       </section>
 
       <section className="panel workshop-output-panel workshop-output-new">

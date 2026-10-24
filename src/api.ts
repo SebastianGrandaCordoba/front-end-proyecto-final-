@@ -9,7 +9,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   const token = sessionStorage.getItem(TOKEN_KEY)
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 65_000)
+  const timeout = window.setTimeout(() => controller.abort(), 120_000)
   const forwardAbort = () => controller.abort(options.signal?.reason)
   options.signal?.addEventListener('abort', forwardAbort, { once: true })
   try {
