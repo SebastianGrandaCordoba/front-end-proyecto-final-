@@ -128,6 +128,8 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
   const [studentModal, setStudentModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [workshopResult, setWorkshopResult] = useState<GeneratedWorkshop | null>(null)
+  const [supportTarget, setSupportTarget] = useState<Candidate | null>(null)
+  const [studentToReview, setStudentToReview] = useState<Candidate | null>(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
 
@@ -268,11 +270,11 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
           {page === 'courses' && <CoursesPage courses={courses} selectedCourseId={selectedCourseId} onSelect={id => { setSelectedCourseId(id); setPage('course') }} onCreate={course => { setCourses(current => [course, ...current]); setSelectedCourseId(course.id); setPage('course') }} onDelete={id => { setCourses(current => current.filter(course => course.id !== id)); if (selectedCourseId === id) setSelectedCourseId(courses.find(course => course.id !== id)?.id ?? null) }} notify={notify} />}
           {page === 'course' && selectedCourse && <CourseWorkspace course={selectedCourse} students={candidates} grades={grades} average={grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null} low={candidates.filter(student => student.gradeCount > 0 && student.level === 'LOW').length} workshopCount={savedWorkshops.length} onNavigate={setPage} />}
           {page === 'course' && !selectedCourse && <section className="panel no-course-state"><EmptyState icon={<FolderKanban size={23} />} title="Selecciona un curso" text="Tus estudiantes, materiales y recomendaciones se organizan dentro de cada curso." action={<button className="button button-dark" onClick={() => setPage('courses')}><FolderKanban size={15} /> Abrir mis cursos</button>} /></section>}
-          {page === 'students' && <StudentsPage students={candidates} courseId={selectedCourseId} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} notify={notify} />}
-          {page === 'alerts' && <LearningAlerts students={candidates} onWorkshops={() => setPage('workshops')} onStudents={() => setPage('students')} />}
+          {page === 'students' && <StudentsPage students={candidates} courseId={selectedCourseId} query={query} setQuery={setQuery} busy={loading} onCreate={openCreateStudent} onEdit={openEditStudent} onRefresh={() => void refresh()} onSupport={setStudentToReview} notify={notify} />}
+          {page === 'alerts' && <LearningAlerts students={candidates} onWorkshops={() => setPage('workshops')} onStudents={() => setPage('students')} onSupport={setStudentToReview} />}
           {page === 'projects' && <ProjectsPage projects={projects} teams={teams} onRefresh={() => void refresh()} onManageTeams={projectId => { setActiveProjectId(String(projectId)); setPage('teams') }} notify={notify} />}
           {page === 'teams' && <TeamsPage students={candidates} projects={projects} teams={teams} initialProjectId={activeProjectId} onRefresh={() => void refresh()} notify={notify} />}
-          {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} course={selectedCourse} summary={{ students: students.length, graded: candidates.filter(student => student.gradeCount > 0).length, low: candidates.filter(student => student.gradeCount > 0 && student.level === 'LOW').length, medium: candidates.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length, high: candidates.filter(student => student.gradeCount > 0 && student.level === 'HIGH').length, average: grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null }} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
+          {page === 'workshops' && <WorkshopsPage saved={savedWorkshops} result={workshopResult} course={selectedCourse} supportTarget={supportTarget} onSupportComplete={() => setSupportTarget(null)} summary={{ students: students.length, graded: candidates.filter(student => student.gradeCount > 0).length, low: candidates.filter(student => student.gradeCount > 0 && student.level === 'LOW').length, medium: candidates.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length, high: candidates.filter(student => student.gradeCount > 0 && student.level === 'HIGH').length, average: grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null }} onGenerate={setSaved} onSelect={setWorkshopResult} notify={notify} />}
           {page === 'settings' && <SettingsPage user={user} apiStatus={apiStatus} students={students} grades={grades} projects={projects} teams={teams} workshops={savedWorkshops} onRefresh={() => void refresh()} onClearWorkshops={() => setSavedWorkshops([])} onLogout={onLogout} notify={notify} />}
           <footer className="page-footer"><span>FairTeam · Aprender en equipo</span><span>Diseñado para construir aulas más equilibradas</span></footer>
         </div>
@@ -281,6 +283,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
       {mobileNav && <button className="scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} />}
       {toast && <div className={`toast toast-${toast.kind}`} role="status">{toast.kind === 'success' ? <CheckCircle2 size={18} /> : toast.kind === 'error' ? <CircleHelp size={18} /> : <Lightbulb size={18} />}{toast.message}<button onClick={() => setToast(null)} aria-label="Cerrar aviso"><X size={15} /></button></div>}
       {studentModal && <StudentDialog student={editingStudent} courseId={selectedCourseId} onClose={() => setStudentModal(false)} onSaved={() => { setStudentModal(false); void refresh() }} notify={notify} />}
+      {studentToReview && <StudentSupportDialog student={studentToReview} grades={grades.filter(grade => Number(grade.studentId) === Number(studentToReview.id))} onClose={() => setStudentToReview(null)} onGenerate={() => { setSupportTarget(studentToReview); setStudentToReview(null); setPage('workshops') }} />}
     </div>
   )
 }
@@ -450,7 +453,7 @@ function Overview({ course, courses, teacherName, students, teams, grades, works
   </>
 }
 
-function LearningAlerts({ students, onWorkshops, onStudents }: { students: Candidate[]; onWorkshops: () => void; onStudents: () => void }) {
+function LearningAlerts({ students, onWorkshops, onStudents, onSupport }: { students: Candidate[]; onWorkshops: () => void; onStudents: () => void; onSupport: (student: Candidate) => void }) {
   const sorted = [...students].sort((a, b) => a.average - b.average)
   const support = sorted.filter(student => student.gradeCount > 0 && student.level === 'LOW')
   const insufficient = sorted.filter(student => student.gradeCount === 0)
@@ -463,10 +466,21 @@ function LearningAlerts({ students, onWorkshops, onStudents }: { students: Candi
         const noGrades = student.gradeCount === 0
         const urgency = noGrades ? 'Sin datos suficientes' : student.level === 'LOW' ? 'Atención prioritaria' : student.level === 'MEDIUM' ? 'Dar seguimiento' : 'Buen progreso'
         const reason = noGrades ? 'Aún no hay notas importadas para este estudiante.' : student.level === 'LOW' ? `Promedio ${student.average.toFixed(1)} en ${student.gradeCount} nota(s); conviene revisar los temas con mayor dificultad.` : student.level === 'MEDIUM' ? `Promedio ${student.average.toFixed(1)}; revisar próximas entregas para detectar cambios.` : `Promedio ${student.average.toFixed(1)}; mantener el seguimiento y proponer retos.`
-        return <article className={`learning-alert-row ${noGrades ? 'alert-no-data' : `alert-${student.level.toLowerCase()}`}`} key={student.id}><Avatar name={student.name} /><div className="learning-alert-main"><div><strong>{student.name}</strong><span className={`alert-priority ${noGrades ? 'priority-neutral' : `priority-${student.level.toLowerCase()}`}`}>{urgency}</span></div><p>{reason}</p><small>{student.email || `Estudiante #${student.id}`}</small></div><div className="learning-alert-grade">{noGrades ? '—' : student.average.toFixed(1)}<small>{noGrades ? 'sin notas' : '/ 5.0'}</small></div></article>
+        return <article className={`learning-alert-row ${noGrades ? 'alert-no-data' : `alert-${student.level.toLowerCase()}`}`} key={student.id}><Avatar name={student.name} /><div className="learning-alert-main"><div><strong>{student.name}</strong><span className={`alert-priority ${noGrades ? 'priority-neutral' : `priority-${student.level.toLowerCase()}`}`}>{urgency}</span></div><p>{reason}</p><small>{student.email || `Estudiante #${student.id}`}</small></div><div className="learning-alert-grade">{noGrades ? '—' : student.average.toFixed(1)}<small>{noGrades ? 'sin notas' : '/ 5.0'}</small></div><button className="button button-outline student-support-button" onClick={() => onSupport(student)}>Ver recomendación <ArrowRight size={14}/></button></article>
       })}</div> : <EmptyState icon={<GraduationCap size={22} />} title="Todavía no hay estudiantes" text="Carga una lista de estudiantes y sus notas para empezar el seguimiento." action={<button className="button button-outline" onClick={onStudents}>Abrir estudiantes</button>} />}
     </section>
   </>
+}
+
+function StudentSupportDialog({ student, grades, onClose, onGenerate }: { student: Candidate; grades: Grade[]; onClose: () => void; onGenerate: () => void }) {
+  const advice = student.gradeCount === 0
+    ? 'Aún no hay notas para identificar una dificultad concreta. Puedes preparar una actividad preventiva y cargar una evaluación para hacer seguimiento.'
+    : student.level === 'LOW'
+      ? 'Conviene retomar los conceptos base con ejemplos resueltos, práctica guiada y una comprobación corta al final.'
+      : student.level === 'MEDIUM'
+        ? 'Está avanzando, pero puede consolidar lo aprendido con ejercicios de aplicación y una pregunta de transferencia.'
+        : 'Muestra buen progreso. Puedes proponer un reto de profundización y pedirle que explique su estrategia.'
+  return <Modal onClose={onClose} title="Acompañamiento del estudiante"><div className="student-support-detail"><div className="student-support-person"><Avatar name={student.name}/><div><strong>{student.name}</strong><span>{student.gradeCount ? `${student.average.toFixed(1)} / 5 · ${student.gradeCount} notas` : 'Todavía no hay notas registradas'}</span></div><span className={`level-badge level-${student.level.toLowerCase()}`}>{formatLevel(student.level)}</span></div><div className="student-support-advice"><span className="eyebrow">RECOMENDACIÓN PARA REVISAR</span><p>{advice}</p></div>{grades.length > 0 && <div className="student-support-grades"><strong>Notas del curso</strong>{grades.slice(-5).reverse().map((grade, index) => <div key={`${grade.subjectId}-${grade.period}-${index}`}><span>{grade.period || `Evaluación ${grade.id}`}</span><b>{Number(grade.grade).toFixed(1)}</b></div>)}</div>}<div className="modal-actions"><button className="button button-outline" onClick={onClose}>Cerrar</button><button className="button button-dark" onClick={onGenerate}><Sparkles size={15}/> Generar taller de apoyo</button></div></div></Modal>
 }
 
 function downloadLearningReport(students: Candidate[]) {
@@ -493,7 +507,7 @@ function Avatar({ name, small = false }: { name: string; small?: boolean }) {
   return <span className={`student-avatar ${color} ${small ? 'avatar-small' : ''}`}>{initials(name)}</span>
 }
 
-function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onEdit, onRefresh, notify }: { students: Candidate[]; courseId: number | null; query: string; setQuery: (query: string) => void; busy: boolean; onCreate: () => void; onEdit: (student: Student) => void; onRefresh: () => void; notify: (message: string, kind?: Toast['kind']) => void }) {
+function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onEdit, onRefresh, onSupport, notify }: { students: Candidate[]; courseId: number | null; query: string; setQuery: (query: string) => void; busy: boolean; onCreate: () => void; onEdit: (student: Student) => void; onRefresh: () => void; onSupport: (student: Candidate) => void; notify: (message: string, kind?: Toast['kind']) => void }) {
   const [filter, setFilter] = useState<'ALL' | AcademicLevel>('ALL')
   const [importing, setImporting] = useState(false)
   const [importingRoster, setImportingRoster] = useState(false)
@@ -541,7 +555,7 @@ function StudentsPage({ students, courseId, query, setQuery, busy, onCreate, onE
   return <>
     <PageHeading eyebrow="TU COMUNIDAD" title="Estudiantes" description="Importa la lista y el Excel de notas de este curso. FairTeam calcula los niveles y te ayuda a priorizar el refuerzo." action={<><label className={`button button-outline upload-button ${importingRoster ? 'is-loading' : ''}`}><input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={importRoster} disabled={importingRoster || !courseId} />{importingRoster ? <LoaderCircle size={16} className="spin" /> : <Users size={16} />}{importingRoster ? 'Importando…' : 'Importar lista Excel'}</label><label className={`button button-outline upload-button ${importing ? 'is-loading' : ''}`}><input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={importFile} disabled={importing || !courseId} />{importing ? <LoaderCircle size={16} className="spin" /> : <Upload size={16} />}{importing ? 'Importando…' : 'Importar notas Excel'}</label><button className="button button-dark" onClick={onCreate} disabled={!courseId}><Plus size={16} /> Agregar estudiante</button></>} />
     <section className="panel directory-panel"><div className="directory-toolbar"><div className="search-box"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por nombre o correo…" /></div><div className="filter-control"><Filter size={16} /><select value={filter} onChange={event => setFilter(event.target.value as 'ALL' | AcademicLevel)} aria-label="Filtrar por nivel"><option value="ALL">Todos los niveles</option><option value="LOW">En refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Avanzado</option></select><ChevronDown size={14} /></div><button className="icon-button small-icon" onClick={onRefresh} aria-label="Actualizar lista"><Activity size={16} /></button></div>
-      <div className="table-wrap"><table className="student-table"><thead><tr><th>ESTUDIANTE</th><th>NIVEL ACTUAL</th><th>PROMEDIO</th><th>PROGRESO</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{filtered.map(student => <tr key={student.id}><td><div className="student-cell"><Avatar name={student.name} /><span><strong>{student.name}</strong><small>{student.email || `ID ${student.id}`}</small></span></div></td><td><span className={`level-badge level-${student.level.toLowerCase()}`}><i />{formatLevel(student.level)}</span></td><td>{student.gradeCount > 0 ? <><strong className="grade-number">{student.average.toFixed(1)}</strong><span className="grade-total"> / 5.0</span></> : <span className="grade-total">Sin notas</span>}</td><td><div className="progress-cell"><div className="progress-track"><i style={{ width: `${Math.min(100, (student.gradeCount > 0 ? student.average : 0) / 5 * 100)}%` }} /></div><small>{student.gradeCount > 0 ? `${Math.round(student.average / 5 * 100)}%` : "—"}</small></div></td><td><div className="row-actions"><button className="icon-button small-icon" onClick={() => onEdit(student)} aria-label={`Editar ${student.name}`}><MoreHorizontal size={17} /></button><button className="icon-button small-icon danger-hover" onClick={() => void deleteStudent(student)} disabled={deleting === student.id} aria-label={`Eliminar ${student.name}`}>{deleting === student.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></td></tr>)}</tbody></table>
+      <div className="table-wrap"><table className="student-table"><thead><tr><th>ESTUDIANTE</th><th>NIVEL ACTUAL</th><th>PROMEDIO</th><th>PROGRESO</th><th><span className="sr-only">Acciones</span></th></tr></thead><tbody>{filtered.map(student => <tr key={student.id}><td><div className="student-cell"><Avatar name={student.name} /><span><strong>{student.name}</strong><small>{student.email || `ID ${student.id}`}</small></span></div></td><td><span className={`level-badge level-${student.level.toLowerCase()}`}><i />{formatLevel(student.level)}</span></td><td>{student.gradeCount > 0 ? <><strong className="grade-number">{student.average.toFixed(1)}</strong><span className="grade-total"> / 5.0</span></> : <span className="grade-total">Sin notas</span>}</td><td><div className="progress-cell"><div className="progress-track"><i style={{ width: `${Math.min(100, (student.gradeCount > 0 ? student.average : 0) / 5 * 100)}%` }} /></div><small>{student.gradeCount > 0 ? `${Math.round(student.average / 5 * 100)}%` : "—"}</small></div></td><td><div className="row-actions"><button className="button button-outline student-support-button" onClick={() => onSupport(student)}>Seguimiento</button><button className="icon-button small-icon" onClick={() => onEdit(student)} aria-label={`Editar ${student.name}`}><MoreHorizontal size={17} /></button><button className="icon-button small-icon danger-hover" onClick={() => void deleteStudent(student)} disabled={deleting === student.id} aria-label={`Eliminar ${student.name}`}>{deleting === student.id ? <LoaderCircle size={15} className="spin" /> : <Trash2 size={15} />}</button></div></td></tr>)}</tbody></table>
         {busy && <div className="table-loading"><LoaderCircle size={19} className="spin" /> Actualizando estudiantes…</div>}
         {!busy && filtered.length === 0 && <EmptyState icon={<GraduationCap size={22} />} title={students.length ? 'No encontramos coincidencias' : 'Aún no hay estudiantes'} text={students.length ? 'Prueba con otro nombre o cambia el filtro.' : 'Importa el Excel del grupo o agrega estudiantes manualmente para comenzar.'} action={!students.length ? <button className="button button-dark" onClick={onCreate}><Plus size={15} /> Agregar primer estudiante</button> : undefined} />}
       </div><div className="table-footer"><span>Mostrando <b>{filtered.length}</b> de <b>{students.length}</b> estudiantes</span><span className="api-footnote">Niveles calculados con notas importadas; si no hay notas, se usa el nivel del perfil.</span></div>
@@ -710,8 +724,9 @@ function TeamsPage({ students, projects, teams, initialProjectId, onRefresh, not
   </>
 }
 
-function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, notify }: {
+function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete, summary, onGenerate, onSelect, notify }: {
   saved: GeneratedWorkshop[]; result: GeneratedWorkshop | null; course: Course | null
+  supportTarget: Candidate | null; onSupportComplete: () => void
   summary: { students: number; graded: number; low: number; medium: number; high: number; average: number | null }
   onGenerate: (workshop: GeneratedWorkshop) => void; onSelect: (workshop: GeneratedWorkshop | null) => void
   notify: (message: string, kind?: Toast['kind']) => void
@@ -728,6 +743,7 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
   const [generating, setGenerating] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const uploadRef = useRef<HTMLInputElement>(null)
+  const autoStarted = useRef<string | null>(null)
 
   useEffect(() => {
     if (!course) { setMaterials([]); setMaterialsLoading(false); return }
@@ -738,6 +754,27 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
     }).catch(() => { if (active) setMaterials([]) }).finally(() => { if (active) setMaterialsLoading(false) })
     return () => { active = false }
   }, [course?.id])
+
+  useEffect(() => {
+    if (!supportTarget || materialsLoading || !course || generating) return
+    const matchingSaved = saved.find(item => item.targetStudentId === supportTarget.id)
+    if (matchingSaved) { onSelect(matchingSaved); onSupportComplete(); return }
+    if (!materials.length) return
+    const latest = [...materials].sort((a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''))[0]
+    const key = `${course.id}:${supportTarget.id}:${latest.id}`
+    if (autoStarted.current === key) return
+    autoStarted.current = key
+    setSelectedMaterialId(latest.id)
+    setSubject(course.name)
+    const topicText = 'Refuerzo de conceptos clave del material de clase'
+    const goal = supportTarget.level === 'LOW'
+      ? 'Comprender los conceptos fundamentales mediante ejemplos guiados y demostrar lo aprendido con una comprobación breve.'
+      : supportTarget.level === 'MEDIUM'
+        ? 'Consolidar los conceptos del material y aplicarlos en ejercicios de dificultad gradual.'
+        : 'Profundizar en los conceptos del material y resolver un reto de aplicación.'
+    setTopic(topicText); setLevel(supportTarget.level); setObjective(goal)
+    void generateWorkshop({ materialId: latest.id, topic: topicText, objective: goal, subject: course.name, target: supportTarget })
+  }, [supportTarget, materialsLoading, materials, course?.id, generating, saved])
 
   const selectFile = (candidate?: File) => {
     if (!candidate) return
@@ -775,18 +812,20 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar el material.', 'error') }
   }
 
-  const generate = async (event: FormEvent) => {
-    event.preventDefault()
+  const generateWorkshop = async (options: { materialId?: number | null; topic?: string; objective?: string; subject?: string; target?: Candidate } = {}) => {
     if (!course) return notify('Primero crea o selecciona un curso.', 'error')
-    if (!file && !selectedMaterialId) return notify('Selecciona un material de este curso o adjunta uno nuevo.', 'error')
-    if (!topic.trim()) return notify('Escribe el tema que están trabajando en clase.', 'error')
+    const topicText = (options.topic ?? topic).trim()
+    if (!file && !(options.materialId ?? selectedMaterialId)) return notify('Selecciona un material de este curso o adjunta uno nuevo.', 'error')
+    if (!topicText) return notify('Escribe el tema que están trabajando en clase.', 'error')
     setGenerating(true)
     setErrorMessage('')
     try {
       const summaryText = summary.average == null
         ? `Curso: ${course.name}. Todavía no hay notas para analizar; el docente solicita una actividad preventiva.`
-        : `Curso: ${course.name}. ${summary.graded} estudiante(s) con notas, ${summary.low} en refuerzo, ${summary.medium} en proceso y ${summary.high} con progreso adecuado. Promedio general: ${summary.average.toFixed(2)} sobre 5. Tema priorizado por el docente: ${topic.trim()}.`
-      let materialId = selectedMaterialId
+        : options.target
+          ? `Curso: ${course.name}. Propuesta individual para un estudiante clasificado como ${formatLevel(options.target.level)} por su promedio local. Adapta la práctica a este nivel. No se proporcionan identidad ni notas individuales. Tema: ${topicText}.`
+          : `Curso: ${course.name}. ${summary.graded} estudiante(s) con notas, ${summary.low} en refuerzo, ${summary.medium} en proceso y ${summary.high} con progreso adecuado. Promedio general: ${summary.average.toFixed(2)} sobre 5. Tema priorizado por el docente: ${topicText}.`
+      let materialId = options.materialId ?? selectedMaterialId
       if (file) {
         const uploaded = await uploadMaterial()
         if (!uploaded) throw new Error('No pudimos guardar el material para este curso.')
@@ -794,19 +833,22 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
       }
       if (!materialId) throw new Error('Selecciona o guarda un material para continuar.')
       const form = new FormData()
-      form.append('subject', subject.trim())
+      form.append('subject', (options.subject ?? subject).trim())
       form.append('targetLevel', level)
-      form.append('learningObjective', objective.trim() || `Reforzar ${topic.trim()} con actividades prácticas y comprobar la comprensión.`)
+      form.append('learningObjective', (options.objective ?? objective).trim() || `Reforzar ${topicText} con actividades prácticas y comprobar la comprensión.`)
       form.append('learningContext', summaryText)
       const response = await request<GeneratedWorkshop>(`/api/courses/${course.id}/materials/${materialId}/generate-workshop`, { method: 'POST', body: form })
-      onGenerate(response)
-      notify('Taller generado. Revísalo y ajústalo antes de usarlo.')
+      onGenerate(options.target ? { ...response, targetStudentId: options.target.id } : response)
+      if (options.target) onSupportComplete()
+      notify(options.target ? 'Taller de apoyo generado y guardado para este seguimiento.' : 'Taller generado. Revísalo y ajústalo antes de usarlo.')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No pudimos generar el taller.'
       setErrorMessage(message)
       notify(message, 'error')
     } finally { setGenerating(false) }
   }
+
+  const generate = (event: FormEvent) => { event.preventDefault(); void generateWorkshop() }
 
   const copy = async () => {
     if (!result) return
@@ -817,6 +859,7 @@ function WorkshopsPage({ saved, result, course, summary, onGenerate, onSelect, n
 
   return <>
     <PageHeading eyebrow="ASISTENTE DEL CURSO" title={`Acompañamiento · ${course?.name || 'selecciona un curso'}`} description="La IA consulta el material que guardas en este curso y una lectura agregada de sus notas para proponer actividades que tú revisas." action={<span className="ai-badge"><Sparkles size={15} /> Gemini</span>} />
+    {supportTarget && <div className="student-support-banner"><span className="soft-icon lilac-icon"><Sparkles size={18}/></span><div><strong>{materialsLoading ? 'Buscando material del curso…' : generating ? `Preparando refuerzo · ${formatLevel(supportTarget.level)}` : materials.length ? `Refuerzo personalizado · ${formatLevel(supportTarget.level)}` : 'Falta material para preparar el taller'}</strong><p>{materialsLoading ? 'En cuanto cargue la biblioteca, usaremos el material más reciente.' : materials.length ? 'Se está usando el material más reciente. No se enviaron el nombre ni las notas individuales a Gemini.' : 'Sube y guarda un PDF, DOCX o TXT en la biblioteca; después el taller se generará automáticamente.'}</p>{errorMessage && <button className="text-button" onClick={() => void generateWorkshop({ materialId: selectedMaterialId ?? materials[0]?.id, topic, objective, subject, target: supportTarget })} disabled={generating}>Reintentar taller <RotateCw size={13}/></button>}</div><button className="icon-button" onClick={onSupportComplete} aria-label="Cerrar seguimiento"><X size={16}/></button></div>}
     <section className="workshop-course-context">
       <div className="workshop-context-title"><span className="context-mark"><Activity size={18} /></span><div><small>LECTURA DEL CURSO</small><strong>{course?.name || 'Selecciona un curso'}</strong></div></div>
       <div className="context-stat"><strong>{summary.students}</strong><span>estudiantes</span></div>
