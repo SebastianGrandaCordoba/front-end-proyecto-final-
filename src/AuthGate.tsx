@@ -41,7 +41,17 @@ export default function AuthGate() {
   if (user) return <App user={user} onLogout={logout} />
   if (checking) return <main className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={25} /> Verificando tu sesión…</div></main>
 
-  return <main className="auth-screen teacher-auth-screen">
+  return <main className="auth-screen teacher-auth-screen" onPointerMove={event => {
+    if (event.pointerType === 'touch') return
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5
+    event.currentTarget.style.setProperty('--parallax-x', `${x * 28}px`)
+    event.currentTarget.style.setProperty('--parallax-y', `${y * 22}px`)
+  }} onPointerLeave={event => {
+    event.currentTarget.style.setProperty('--parallax-x', '0px')
+    event.currentTarget.style.setProperty('--parallax-y', '0px')
+  }}>
     <div className="auth-backdrop auth-backdrop-one" /><div className="auth-backdrop auth-backdrop-two" />
     <div className="auth-frame">
       <section className="auth-side-copy teacher-auth-story">
