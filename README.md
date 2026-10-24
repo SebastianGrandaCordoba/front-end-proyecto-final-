@@ -8,6 +8,10 @@ Aplicación docente para revisar notas y progreso, identificar estudiantes que p
 - API REST Spring Boot como punto de entrada a los datos.
 - Servicio Gemini separado para generar talleres bajo solicitud.
 
+## Organización y patrones
+
+`src/api.ts` concentra la comunicación HTTP, manejo del token, serialización y traducción de errores: funciona como adaptador/gateway del frontend para que las vistas no dependan de los detalles de `fetch`. `AuthGate` controla el flujo de sesión y delega la experiencia autenticada a `App`. Los tipos compartidos mantienen el contrato de datos explícito. React ya administra componentes y su ciclo de vida; no se añaden clases Singleton, Factory o Builder artificiales a la interfaz.
+
 ## Desarrollo local
 
 Requiere Node.js 20.19 o posterior y pnpm.
