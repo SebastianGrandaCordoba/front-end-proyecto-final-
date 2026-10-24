@@ -65,6 +65,14 @@ export interface Course {
   description?: string | null
   createdAt?: string
 }
+export interface CourseMaterial {
+  id: number
+  courseId: number
+  fileName: string
+  contentType: string
+  fileSize: number
+  createdAt: string
+}
 export interface Grade {
   id: number
   studentId?: number
