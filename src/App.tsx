@@ -4,7 +4,7 @@ import {
   Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Copy,
   Download, FileText, Filter, FolderKanban, GraduationCap, Grid2X2, Lightbulb,
   LoaderCircle, LogOut, Menu, MoreHorizontal, Plus, Search, Settings2, ShieldCheck, Sparkles, Target,
-  Trash2, Trophy, Upload, Users, WandSparkles, X, BellRing, Database, RotateCw, AlertTriangle,
+  Trash2, Trophy, Upload, Users, WandSparkles, X, BellRing, Database, RotateCw, AlertTriangle, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { API_BASE, request, type AcademicLevel, type Course, type GeneratedWorkshop, type Grade, type Project, type Student, type Team } from './api'
 import type { CourseMaterial } from './api'
@@ -21,7 +21,9 @@ type TeamDraft = { name: string; members: Candidate[]; score?: number; explanati
 const navItems: { id: Page; label: string; icon: typeof Grid2X2 }[] = [
   { id: 'overview', label: 'Resumen', icon: Grid2X2 },
   { id: 'courses', label: 'Mis cursos', icon: FolderKanban },
-  { id: 'alerts', label: 'Alertas de aprendizaje', icon: AlertTriangle },
+  { id: 'alerts', label: 'Alertas', icon: AlertTriangle },
+  { id: 'students', label: 'Estudiantes y notas', icon: GraduationCap },
+  { id: 'projects', label: 'Proyectos', icon: FolderKanban },
 ]
 
 const levelLabels: Record<AcademicLevel, string> = { LOW: 'En refuerzo', MEDIUM: 'En proceso', HIGH: 'Avanzado' }
@@ -37,63 +39,6 @@ function levelOf(value?: string | null): AcademicLevel {
 function formatLevel(level: AcademicLevel) { return levelLabels[level] }
 function initials(name: string) { return name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() }
 function displayDate() { return new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()) }
-function NetworkField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const context = canvas?.getContext('2d')
-    if (!canvas || !context) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let frame = 0
-    let width = 0
-    let height = 0
-    const particles = Array.from({ length: 27 }, (_, index) => ({
-      x: Math.random(), y: Math.random(),
-      vx: (Math.random() - .5) * .00028, vy: (Math.random() - .5) * .00028,
-      phase: index * .7, size: index % 8 === 0 ? 1.8 : 1,
-    }))
-    const resize = () => {
-      const bounds = canvas.getBoundingClientRect()
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.5)
-      width = bounds.width; height = bounds.height
-      canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio)
-      context.setTransform(ratio, 0, 0, ratio, 0, 0)
-    }
-    let lastFrame = 0
-    const draw = (time: number) => {
-      if (!reduced && time - lastFrame < 40) { frame = window.requestAnimationFrame(draw); return }
-      lastFrame = time
-      context.clearRect(0, 0, width, height)
-      const points = particles.map(particle => {
-        if (!reduced) {
-          particle.x += particle.vx; particle.y += particle.vy
-          if (particle.x < 0 || particle.x > 1) particle.vx *= -1
-          if (particle.y < 0 || particle.y > 1) particle.vy *= -1
-        }
-        return { x: particle.x * width, y: particle.y * height, size: particle.size, phase: particle.phase }
-      })
-      for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) {
-        const a = points[i], b = points[j], distance = Math.hypot(a.x - b.x, a.y - b.y)
-        if (distance < 112) {
-          context.beginPath(); context.moveTo(a.x, a.y); context.lineTo(b.x, b.y)
-          context.strokeStyle = `rgba(157,183,159,${(1 - distance / 112) * .12})`; context.lineWidth = .7; context.stroke()
-        }
-      }
-      for (const point of points) {
-        const pulse = reduced ? 1 : .65 + Math.sin(time / 900 + point.phase) * .25
-        context.beginPath(); context.arc(point.x, point.y, point.size * pulse, 0, Math.PI * 2)
-        context.fillStyle = `rgba(157,183,159,${.24 + pulse * .28})`; context.shadowColor = '#9db79f'; context.shadowBlur = 5; context.fill()
-      }
-      context.shadowBlur = 0
-      if (!reduced) frame = window.requestAnimationFrame(draw)
-    }
-    resize(); draw(0)
-    window.addEventListener('resize', resize)
-    if (!reduced) frame = window.requestAnimationFrame(draw)
-    return () => { window.cancelAnimationFrame(frame); window.removeEventListener('resize', resize) }
-  }, [])
-  return <canvas ref={canvasRef} className="command-network-canvas" aria-hidden="true" />
-}
 function estimateBalance(members: Candidate[]) {
   if (!members.length) return 0
   const uniqueLevels = new Set(members.map(member => member.level)).size
@@ -107,6 +52,7 @@ function estimateBalance(members: Candidate[]) {
 function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => void }) {
   const [page, setPage] = useState<Page>('overview')
   const [mobileNav, setMobileNav] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('fairteam.sidebarCollapsed') === 'true')
   const [students, setStudents] = useState<Student[]>([])
   const [grades, setGrades] = useState<Grade[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -231,11 +177,12 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
   const selectedCourse = courses.find(course => course.id === selectedCourseId) ?? null
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
         <div className="brand-lockup">
           <div className="brand-mark"><Users size={21} strokeWidth={2.4} /></div>
           <span>fair<span className="brand-green">team</span><sup>✳</sup></span>
+          <button className="icon-button sidebar-collapse-toggle" onClick={() => setSidebarCollapsed(value => { localStorage.setItem('fairteam.sidebarCollapsed', String(!value)); return !value })} aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'} title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>
           <button className="icon-button mobile-close" onClick={() => setMobileNav(false)} aria-label="Cerrar menú"><X size={18} /></button>
         </div>
         <button className="workspace-switch workspace-switch-action" onClick={() => setPage(selectedCourse ? 'course' : 'courses')} title={selectedCourse ? 'Abrir espacio del curso' : 'Organizar tus cursos'}><div className="workspace-icon"><FolderKanban size={16} /></div><div><strong>{selectedCourse?.name || 'Organiza tus cursos'}</strong><span>{selectedCourse?.period || 'Asistente docente'}</span></div><ChevronDown size={15} /></button>
@@ -243,18 +190,16 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
         <nav className="main-nav" aria-label="Navegación principal">
           {navItems.map(item => {
             const Icon = item.icon
-            return <button key={item.id} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setMobileNav(false) }}><Icon size={18} /><span>{item.label}</span></button>
+            return <button key={item.id} title={item.label} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setMobileNav(false) }}><Icon size={18} /><span>{item.label}</span></button>
           })}
         </nav>
         <div className="side-divider" />
         <div className="nav-caption">{selectedCourse ? 'DENTRO DEL CURSO' : 'CURSO ACTIVO'}</div>
-        <button className={`nav-link ${page === 'course' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('course'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><FolderKanban size={18} /><span>Espacio del curso</span></button>
-        <button className={`nav-link ${page === 'students' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('students'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><GraduationCap size={18} /><span>Estudiantes y notas</span></button>
-        <button className={`nav-link ${page === 'workshops' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('workshops'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><BrainCircuit size={18} /><span>Talleres y asistente</span></button>
+        <button title="Espacio del curso" className={`nav-link ${page === 'course' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('course'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><FolderKanban size={18} /><span>Espacio del curso</span></button>
+        <button title="Talleres y asistente" className={`nav-link ${page === 'workshops' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('workshops'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><BrainCircuit size={18} /><span>Talleres y asistente</span></button>
         <div className="side-divider" />
         <div className="nav-caption">HERRAMIENTAS</div>
-        <button className={`nav-link ${page === 'projects' ? 'active' : ''}`} onClick={() => { setPage('projects'); setMobileNav(false) }}><FolderKanban size={18} /><span>Proyectos</span></button>
-        <button className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
+        <button title="Configuración" className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><Lightbulb size={17} /></div><strong>Decisiones con contexto</strong><p>Revisa las señales y decide cómo acompañar a tu grupo.</p><button onClick={() => setPage('alerts')}>Ver seguimiento <ArrowRight size={14} /></button></div>
           <button className="profile-row profile-action" onClick={onLogout} title="Cerrar sesión"><div className="profile-avatar">{(user?.name || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</div><div className="profile-meta"><strong>{user?.name || 'Docente'}</strong><span>{user?.email || 'Sesión local'}</span></div><LogOut size={17} /></button>
@@ -268,7 +213,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
         </header>
 
         <div className="page-content page-enter" key={page}>
-          {page === 'overview' && <Overview course={selectedCourse} courses={courses} teacherName={user?.name || 'Profesor'} students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} onNavigate={setPage} onSelectCourse={id => { setSelectedCourseId(id); setPage('course') }} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
+          {page === 'overview' && <Overview course={selectedCourse} courses={courses} teacherName={user?.name || 'Profesor'} students={candidates} teams={teams} grades={grades} workshops={savedWorkshops} busy={loading} onNavigate={setPage} onSelectCourse={id => { setSelectedCourseId(id); setPage('course') }} onCreateStudent={openCreateStudent} onRefresh={() => void refresh()} onSelectWorkshop={workshop => { setWorkshopResult(workshop); setPage('workshops') }} />}
           {page === 'courses' && <CoursesPage courses={courses} selectedCourseId={selectedCourseId} onSelect={id => { setSelectedCourseId(id); setPage('course') }} onCreate={course => { setCourses(current => [course, ...current]); setSelectedCourseId(course.id); setPage('course') }} onDelete={id => { setCourses(current => current.filter(course => course.id !== id)); if (selectedCourseId === id) setSelectedCourseId(courses.find(course => course.id !== id)?.id ?? null) }} notify={notify} />}
           {page === 'course' && selectedCourse && <CourseWorkspace course={selectedCourse} students={candidates} grades={grades} average={grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade || 0), 0) / grades.length : null} low={candidates.filter(student => student.gradeCount > 0 && student.level === 'LOW').length} workshopCount={savedWorkshops.length} onNavigate={setPage} />}
           {page === 'course' && !selectedCourse && <section className="panel no-course-state"><EmptyState icon={<FolderKanban size={23} />} title="Selecciona un curso" text="Tus estudiantes, materiales y recomendaciones se organizan dentro de cada curso." action={<button className="button button-dark" onClick={() => setPage('courses')}><FolderKanban size={15} /> Abrir mis cursos</button>} /></section>}
@@ -419,7 +364,7 @@ function downloadWorkshopDocument(workshop: GeneratedWorkshop, includeAnswerKey 
   const questions = workshop.assessment.map((item, index) => `<article class="question"><h3>${index + 1}. ${escape(item.question)}</h3><ul>${item.options.map(option => `<li>${escape(option)}</li>`).join('')}</ul>${includeAnswerKey ? `<div class="answer-key"><b>Clave docente:</b> ${escape(item.correctAnswer)}. ${escape(item.explanation)}</div>` : ''}</article>`).join('')
   const sources = workshop.sourceReferences.map(escape).join(' · ') || 'No especificadas'
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(workshop.title)}</title><style>
-    :root{font-family:Inter,Arial,sans-serif;color:#252a27;background:#f4f2ed}body{margin:0;padding:40px 18px}.sheet{max-width:820px;margin:auto;padding:48px;background:#fffefa;border:1px solid #e5e2db;border-radius:14px;box-shadow:0 18px 50px #27262112}.brand{color:#873f2d;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:32px;line-height:1.15;margin:18px 0 10px;letter-spacing:-.04em}.meta{color:#69716b;font-size:13px}.summary{padding:16px 18px;background:#f4e9e4;border-left:3px solid #a9553d;border-radius:8px;line-height:1.65;margin:24px 0}section{margin:28px 0}h2{font-size:17px;margin-bottom:13px}li,p{line-height:1.65}article{padding:14px 16px;margin:10px 0;border:1px solid #e5e2db;border-radius:10px;break-inside:avoid}article h3{font-size:14px;margin:0 0 6px}article p{margin:6px 0;white-space:pre-line}small{color:#69716b;font-weight:500}.answer-key{margin-top:12px;padding:10px;border-radius:7px;background:#f4f2ed;color:#414943}footer{margin-top:30px;padding-top:15px;border-top:1px solid #e5e2db;color:#69716b;font-size:11px}@media print{body{padding:0;background:#fff}.sheet{max-width:none;border:0;box-shadow:none;padding:20mm}}
+    :root{font-family:Inter,Arial,sans-serif;color:#20253a;background:#f7f8fc}body{margin:0;padding:40px 18px}.sheet{max-width:820px;margin:auto;padding:48px;background:#fff;border:1px solid #e8eaf2;border-radius:14px;box-shadow:0 18px 50px #29315b12}.brand{color:#5148b6;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}h1{font-size:32px;line-height:1.15;margin:18px 0 10px;letter-spacing:-.04em}.meta{color:#737b91;font-size:13px}.summary{padding:16px 18px;background:#efedff;border-left:3px solid #6258c9;border-radius:8px;line-height:1.65;margin:24px 0}section{margin:28px 0}h2{font-size:17px;margin-bottom:13px}li,p{line-height:1.65}article{padding:14px 16px;margin:10px 0;border:1px solid #e8eaf2;border-radius:10px;break-inside:avoid}article h3{font-size:14px;margin:0 0 6px}article p{margin:6px 0;white-space:pre-line}small{color:#737b91;font-weight:500}.answer-key{margin-top:12px;padding:10px;border-radius:7px;background:#f7f8fc;color:#424963}footer{margin-top:30px;padding-top:15px;border-top:1px solid #e8eaf2;color:#737b91;font-size:11px}@media print{body{padding:0;background:#fff}.sheet{max-width:none;border:0;box-shadow:none;padding:20mm}}
     </style><body><main class="sheet"><div class="brand">FairTeam · material para clase</div><h1>${escape(workshop.title)}</h1><div class="meta">${escape(workshop.subject)} · Nivel: ${escape(formatLevel(levelOf(workshop.targetLevel)))}</div><p class="summary">${escape(workshop.summary)}</p><section><h2>Objetivos de aprendizaje</h2><ul>${objectives}</ul></section>${activities ? `<section><h2>Actividades</h2>${activities}</section>` : ''}<section><h2>Comprobación del aprendizaje</h2>${questions}</section><footer>Material consultado: ${sources}<br>Propuesta generada con FairTeam. El docente debe revisarla antes de compartirla.</footer></main></body></html>`
   const safeName = workshop.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'actividad-fairteam'
   downloadFile(`${safeName}${includeAnswerKey ? '-clave-docente' : ''}.html`, html, 'text/html;charset=utf-8')
@@ -441,7 +386,7 @@ async function downloadXlsxTemplate(filename: string, kind: 'roster' | 'grades')
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function Overview({ course, courses, teacherName, students, teams, grades, workshops, onNavigate, onSelectCourse, onCreateStudent, onRefresh, onSelectWorkshop }: { course: Course | null; courses: Course[]; teacherName: string; students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; onNavigate: (page: Page) => void; onSelectCourse: (id: number) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
+function Overview({ course, courses, teacherName, students, teams, grades, workshops, busy, onNavigate, onSelectCourse, onCreateStudent, onRefresh, onSelectWorkshop }: { course: Course | null; courses: Course[]; teacherName: string; students: Candidate[]; teams: Team[]; grades: Grade[]; workshops: GeneratedWorkshop[]; busy: boolean; onNavigate: (page: Page) => void; onSelectCourse: (id: number) => void; onCreateStudent: () => void; onRefresh: () => void; onSelectWorkshop: (workshop: GeneratedWorkshop) => void }) {
   const low = students.filter(student => student.gradeCount > 0 && student.level === 'LOW').length
   const medium = students.filter(student => student.gradeCount > 0 && student.level === 'MEDIUM').length
   const high = students.filter(student => student.gradeCount > 0 && student.level === 'HIGH').length
@@ -449,13 +394,13 @@ function Overview({ course, courses, teacherName, students, teams, grades, works
   const focusStudents = students.filter(student => student.gradeCount > 0 && student.level === 'LOW').slice(0, 4)
   if (!course) return <div className="command-empty"><div className="command-kicker"><span className="command-live-dot" /> TU ESPACIO DOCENTE</div><h1>Hola, {teacherName.split(/\s+/)[0]}.<br /><span>Empecemos por tus cursos.</span></h1><p>Crea un curso para organizar estudiantes, seguir su progreso y preparar refuerzos con contexto.</p><button className="button button-dark" onClick={() => onNavigate('courses')}><Plus size={16} /> Crear mi primer curso <ArrowRight size={15} /></button></div>
   return <>
-    <div className="command-hero"><div className="command-hero-copy"><div className="command-kicker"><span className="command-live-dot" /> CENTRO DE COMANDO <span className="command-date">{displayDate()}</span></div><h1>Hola, {teacherName.split(/\s+/)[0]}.<br /><span>Aquí está el pulso</span><br />de tus cursos.</h1><p>Una lectura rápida para saber dónde enfocar tu atención hoy. Tú decides el siguiente paso.</p><div className="command-actions"><button className="button button-dark" onClick={() => onNavigate('alerts')}><Activity size={16} /> Ver señales de aprendizaje <ArrowRight size={15} /></button><button className="button button-ghost" onClick={onCreateStudent}><Plus size={16} /> Añadir estudiante</button></div></div><div className="command-visual"><NetworkField/><div className="command-visual-grid"/><div className="command-orbit command-orbit-one"/><div className="command-orbit command-orbit-two"/><div className="command-core"><BrainCircuit size={35}/><span>FAIRTEAM AI</span></div><i className="command-node node-one"/><i className="command-node node-two"/><i className="command-node node-three"/><div className="command-float command-float-top"><span className="command-float-mark"><Activity size={14}/></span><span><b>{low ? `${low} señales de refuerzo` : 'Curso en seguimiento'}</b><small>{course.name}{course.period ? ` · ${course.period}` : ''}</small></span></div><div className="command-float command-float-bottom"><Sparkles size={14}/><span>{avg === null ? 'Carga notas para activar la lectura' : `Promedio actual ${avg.toFixed(1)} / 5`}</span></div><span className="command-visual-caption">OBSERVAR · COMPRENDER · ACOMPAÑAR</span></div></div>
+    <div className="command-hero"><div className="command-hero-copy"><div className="command-kicker"><span className="command-live-dot" /> FAIRTEAM · RESUMEN DOCENTE <span className="command-date">{displayDate()}</span></div><h1>Hola, {teacherName.split(/\s+/)[0]}. Aquí está el pulso de tus cursos.</h1><p>Consulta el avance, detecta a quién acompañar y decide el siguiente paso para tu clase.</p><div className="command-actions"><button className="button button-dark" onClick={() => onNavigate('alerts')}><Activity size={16} /> Ver señales de aprendizaje <ArrowRight size={15} /></button><button className="button button-ghost" onClick={onCreateStudent}><Plus size={16} /> Añadir estudiante</button></div></div><aside className="dashboard-ai-summary"><div className="dashboard-ai-heading"><span className="dashboard-ai-icon"><BrainCircuit size={18}/></span><div><b>FairTeam AI</b><small>Contexto de {course.name}</small></div><span className="ai-status-dot" title="Asistente listo"/></div><div className="dashboard-ai-metrics"><div><b>{students.length}</b><span>estudiantes</span></div><div><b>{avg === null ? '—' : avg.toFixed(1)}</b><span>promedio / 5</span></div><div><b>{low}</b><span>por acompañar</span></div></div><p>{low ? `${low} estudiante${low === 1 ? '' : 's'} podría${low === 1 ? '' : 'n'} beneficiarse de una actividad de refuerzo.` : avg === null ? 'Carga las notas para ver señales útiles para tu curso.' : 'Por ahora no hay señales de refuerzo según las notas cargadas.'}</p></aside></div>
     <div className="command-section-head"><div><div className="eyebrow">LECTURA DEL CURSO ACTIVO</div><h2>Así va {course.name}</h2></div><button className="text-button" onClick={() => onNavigate('workshops')}><Sparkles size={15}/> Preparar refuerzo <ArrowRight size={14}/></button></div>
-    <div className="metric-grid">
+    {busy ? <div className="metric-grid metric-skeleton-grid" aria-label="Cargando datos del curso"><div className="metric-skeleton"><i/><i/><i/></div><div className="metric-skeleton"><i/><i/><i/></div><div className="metric-skeleton"><i/><i/><i/></div></div> : <div className="metric-grid">
       <MetricCard icon={<GraduationCap size={19} />} label="Estudiantes" value={students.length} note={`en ${course.name}`} tone="mint" onClick={() => onNavigate('students')} />
       <MetricCard icon={<AlertTriangle size={19} />} label="Necesitan atención" value={low} note={students.length ? `${Math.round(low / students.length * 100)}% del grupo` : 'según notas disponibles'} tone="peach" onClick={() => onNavigate('alerts')} />
       <MetricCard icon={<Activity size={19} />} label="Promedio general" value={avg === null ? '—' : `${avg.toFixed(1)}`} note={avg === null ? 'importa notas para calcularlo' : 'sobre 5.0'} tone="blue" onClick={() => onNavigate('students')} />
-    </div>
+    </div>}
     <section className="command-courses"><div className="command-section-head"><div><div className="eyebrow">TUS ESPACIOS</div><h2>Cursos en seguimiento <span>{courses.length.toString().padStart(2,'0')}</span></h2></div><button className="text-button" onClick={() => onNavigate('courses')}>Administrar cursos <ArrowRight size={14}/></button></div><div className="command-course-grid">{courses.map((item,index)=><button key={item.id} className={`command-course-card command-course-tone-${index%4} ${item.id===course.id?'is-current':''}`} onClick={()=>onSelectCourse(item.id)}><span className="command-course-index">0{index+1}</span><span className="command-course-icon"><FolderKanban size={18}/></span><span className="command-course-copy"><b>{item.name}</b><small>{item.period || 'Espacio de aprendizaje'}</small></span><span className="command-course-open">{item.id===course.id?'EN FOCO':'ABRIR'} <ArrowUpRight size={14}/></span></button>)}<button className="command-course-add" onClick={()=>onNavigate('courses')}><Plus size={21}/><span><b>Añadir un curso</b><small>Organiza otro grupo</small></span></button></div></section>
     <div className="dashboard-grid">
       <section className="panel level-panel"><div className="panel-heading"><div><div className="eyebrow">PANORAMA DEL AULA</div><h2>Niveles de aprendizaje</h2></div><button className="text-button" onClick={() => onNavigate('students')}>Ver estudiantes <ArrowRight size={14} /></button></div><p className="panel-copy">Una mirada rápida a cómo va avanzando tu grupo.</p>{students.length ? <div className="levels-content"><div className="level-chart"><div className="chart-y-labels"><span>{students.length}</span><span>{Math.ceil(students.length * .66)}</span><span>{Math.ceil(students.length * .33)}</span><span>0</span></div><div className="bar-chart"><div className="chart-grid-lines"><i /><i /><i /><i /></div>{[{ label: 'En refuerzo', value: low, color: 'var(--coral)' }, { label: 'En proceso', value: medium, color: 'var(--yellow)' }, { label: 'Avanzado', value: high, color: 'var(--green)' }].map(item => <div className="bar-group" key={item.label}><div className="bar-track"><div className="bar-fill" style={{ height: `${Math.max(item.value ? 9 : 0, students.length ? item.value / students.length * 100 : 0)}%`, background: item.color }}><span>{item.value}</span></div></div><span className="bar-label">{item.label}</span></div>)}</div></div><div className="level-legend"><span><i className="legend-dot coral" />En refuerzo <b>{low}</b></span><span><i className="legend-dot yellow" />En proceso <b>{medium}</b></span><span><i className="legend-dot green" />Avanzado <b>{high}</b></span></div></div> : <EmptyState icon={<Users size={21} />} title="Tu aula empieza aquí" text="Agrega estudiantes o importa sus notas para ver el panorama del grupo." action={<button className="button button-outline" onClick={onNavigate.bind(null, 'students')}><Plus size={15} /> Ir a estudiantes</button>} />}</section>
