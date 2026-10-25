@@ -81,3 +81,30 @@ body{background:radial-gradient(ellipse at 88% 0%,#252918 0,transparent 29%),rad
 .button{min-height:42px;padding:0 16px;font-size:12px;gap:9px}.empty-state .button,.result-actions .button{min-height:40px;font-size:11px}.icon-button{width:38px;height:38px}.welcome-actions,.heading-action,.result-actions,.modal-actions{gap:11px}.row-actions{gap:7px}.student-support-button{min-height:38px;padding:0 12px;font-size:11px}.table-wrap{overflow-x:auto}.student-table{min-width:720px}@media(max-width:700px){.welcome-actions,.heading-action,.result-actions{flex-wrap:wrap}.row-actions{gap:5px}}
 .student-support-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}.student-support-actions .button{min-height:44px;padding:0 17px}@media(max-width:520px){.student-support-actions{display:grid;grid-template-columns:1fr}.student-support-actions .button{width:100%}}
 .student-support-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}.student-support-actions .button{min-height:44px;padding:0 17px}.quiz-question{padding:14px 15px;margin:9px 0;border:1px solid #303738;border-radius:10px;background:#171c1d;color:#edf0eb}.quiz-question>strong{display:block;font-size:12px;line-height:1.6}.quiz-question>ul{display:grid;gap:7px;padding-left:22px;margin:10px 0 0;color:#c5cbc5;font-size:11px}.quiz-answer-key{margin-top:12px;padding-top:9px;border-top:1px solid #303738}.quiz-answer-key summary{cursor:pointer;color:var(--green);font-size:10px;font-weight:700}.quiz-answer-key p{font-size:10px;line-height:1.55;color:#c2c9c2}@media print{#print-workshop .quiz-answer-key{display:none!important}}
+
+/* Accessible, restrained palette for the student follow-up dialog. */
+.student-support-modal-backdrop{background:rgba(17,25,22,.52);backdrop-filter:blur(3px)}
+.student-support-modal{background:#fbfcfa!important;color:#26332d!important;border:1px solid #dce5de!important;box-shadow:0 28px 80px rgba(4,12,8,.32)}
+.student-support-modal .modal-heading h2{color:#202c26!important}
+.student-support-modal .modal-heading .eyebrow{color:#63776a!important}
+.student-support-modal .modal-heading .icon-button{color:#52645a!important}
+.student-support-modal .student-support-person{background:#fff;border-color:#dce5de}
+.student-support-modal .student-support-person>div strong{color:#25332b}
+.student-support-modal .student-support-person>div span{color:#65736a}
+.student-support-modal .student-support-advice{background:#edf4ef;border-color:#d5e3d9}
+.student-support-modal .student-support-advice .eyebrow{color:#4e6a57}
+.student-support-modal .student-support-advice p{color:#34443a}
+.student-support-modal .student-support-grades>strong{color:#39483f}
+.student-support-modal .student-support-grades>div{background:#f0f3ef;color:#526057}
+.student-support-modal .student-support-grades b{color:#25332b}
+.student-support-modal .level-badge{border:1px solid transparent;font-weight:700}
+.student-support-modal .level-low{background:#f8e9e5!important;color:#873f32!important;border-color:#efd0c8!important}
+.student-support-modal .level-medium{background:#f7f0dc!important;color:#745a1c!important;border-color:#eadcaf!important}
+.student-support-modal .level-high{background:#e8f1e9!important;color:#3f6749!important;border-color:#d0e2d3!important}
+.student-support-modal .student-support-actions .button{min-height:48px;border-radius:9px;font-weight:700;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.student-support-modal .student-support-actions .button-outline{background:#fff!important;color:#293931!important;border:1px solid #cbd8cf!important}
+.student-support-modal .student-support-actions .button-dark{background:#315e4a!important;color:#fff!important;border:1px solid #315e4a!important}
+.student-support-modal .student-support-actions .button:hover{transform:translateY(-1px)}
+.student-support-modal .student-support-actions .button-outline:hover{background:#f0f5f1!important;border-color:#aebfb2!important}
+.student-support-modal .student-support-actions .button-dark:hover{background:#264c3b!important;border-color:#264c3b!important}
+.student-support-modal :focus-visible{outline:3px solid #6d9b7a;outline-offset:3px}
