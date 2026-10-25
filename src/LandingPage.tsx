@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { ArrowDown, ArrowRight, BarChart3, BookOpenCheck, Check, ChevronRight, CircleHelp, FileSpreadsheet, FolderOpen, LockKeyhole, MessageCircle, Sparkles, Target, WandSparkles } from 'lucide-react'
 import FairTeamMark from './FairTeamMark'
 import FairTeamOwl from './FairTeamOwl'
@@ -5,6 +6,29 @@ import FairTeamOwl from './FairTeamOwl'
 type LandingPageProps = { onLogin: () => void; onRegister: () => void }
 
 export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
+  useEffect(() => {
+    const revealTargets = document.querySelectorAll<HTMLElement>(
+      '.landing-section-heading, .landing-feature-card, .landing-assistant-copy, .landing-chat-card, .landing-steps article, .landing-final-cta, .landing-footer',
+    )
+    if (!('IntersectionObserver' in window)) {
+      revealTargets.forEach(target => target.classList.add('is-visible'))
+      return
+    }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        observer.unobserve(entry.target)
+      })
+    }, { threshold: 0.14, rootMargin: '0px 0px -36px 0px' })
+    revealTargets.forEach((target, index) => {
+      target.classList.add('scroll-reveal')
+      target.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 85}ms`)
+      observer.observe(target)
+    })
+    return () => observer.disconnect()
+  }, [])
+
   return <main className="landing-page">
     <header className="landing-nav">
       <a className="landing-brand" href="#inicio" aria-label="FairTeam, inicio"><FairTeamMark size={42}/><span>fair<span>team</span><sup>✳</sup></span></a>

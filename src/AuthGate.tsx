@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, LoaderCircle, LockKeyhole, Sparkles } from 'lucide-react'
+import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, CheckCircle2, LoaderCircle, LockKeyhole, Sparkles } from 'lucide-react'
 import App from './App'
 import LandingPage from './LandingPage'
 import { clearAccessToken, request, saveAccessToken, type AuthResponse, type TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
+import ExperiencePreloader, { useExperiencePreloader } from './ExperiencePreloader'
 
 type Mode = 'home' | 'login' | 'register'
 
@@ -17,6 +18,8 @@ export default function AuthGate() {
   const [working, setWorking] = useState(false)
   const [waitingForServer, setWaitingForServer] = useState(false)
   const [message, setMessage] = useState('')
+  const [authSuccess, setAuthSuccess] = useState(false)
+  const { visible: preloaderVisible, progress: preloaderProgress, exiting: preloaderExiting } = useExperiencePreloader()
 
   useEffect(() => {
     const token = sessionStorage.getItem('fairteam.accessToken')
@@ -36,6 +39,8 @@ export default function AuthGate() {
         body: JSON.stringify(mode === 'login' ? { email, password } : { name, email, password }),
       })
       saveAccessToken(result.accessToken)
+      setAuthSuccess(true)
+      await new Promise(resolve => window.setTimeout(resolve, 320))
       setUser({ id: result.id, name: result.name, email: result.email, role: result.role })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo completar el acceso. Inténtalo de nuevo.')
@@ -46,12 +51,13 @@ export default function AuthGate() {
     }
   }
 
-  const logout = () => { clearAccessToken(); setUser(null); setPassword(''); setMode('login') }
-  if (user) return <App user={user} onLogout={logout} />
-  if (checking) return <main className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={25} /> Verificando tu sesión…</div></main>
-  if (mode === 'home') return <LandingPage onLogin={() => setMode('login')} onRegister={() => setMode('register')} />
+  const logout = () => { clearAccessToken(); setUser(null); setPassword(''); setMode('login'); setAuthSuccess(false) }
+  const preloader = preloaderVisible ? <ExperiencePreloader progress={preloaderProgress} exiting={preloaderExiting}/> : null
+  if (user) return <><div className="app-route-enter"><App user={user} onLogout={logout} /></div>{preloader}</>
+  if (checking) return <><main className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={25} /> Verificando tu sesión…</div></main>{preloader}</>
+  if (mode === 'home') return <><LandingPage onLogin={() => setMode('login')} onRegister={() => setMode('register')} />{preloader}</>
 
-  return <main className="auth-screen teacher-auth-screen" onPointerMove={event => {
+  return <><main className={`auth-screen teacher-auth-screen${authSuccess ? ' auth-success-exit' : ''}`} onPointerMove={event => {
     if (event.pointerType === 'touch') return
     const bounds = event.currentTarget.getBoundingClientRect()
     const x = (event.clientX - bounds.left) / bounds.width - 0.5
@@ -77,17 +83,17 @@ export default function AuthGate() {
         <h1>{mode === 'login' ? 'Qué bueno verte.' : 'Crea tu cuenta docente.'}</h1>
         <p className="auth-copy">{mode === 'login' ? 'Inicia sesión para continuar con el seguimiento de tu curso.' : 'Crea tu espacio docente personal. Tus estudiantes y notas estarán separados de otras cuentas.'}</p>
         <form className="teacher-auth-form" onSubmit={submit}>
-          {mode === 'register' && <label>Nombre completo<input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required disabled={working} minLength={2} maxLength={120} placeholder="Tu nombre" /></label>}
-          <label>Correo electrónico<input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required disabled={working} maxLength={180} placeholder="profe@institucion.edu" /></label>
-          <label>Contraseña<input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required disabled={working} minLength={mode === 'register' ? 10 : 1} maxLength={72} placeholder={mode === 'register' ? 'Mínimo 10 caracteres' : 'Tu contraseña'} /></label>
+          {mode === 'register' && <label className="auth-field"><input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required disabled={working} minLength={2} maxLength={120} placeholder=" " /><span>Nombre completo</span></label>}
+          <label className="auth-field"><input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required disabled={working} maxLength={180} placeholder=" " /><span>Correo electrónico</span></label>
+          <label className="auth-field"><input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required disabled={working} minLength={mode === 'register' ? 10 : 1} maxLength={72} placeholder=" " /><span>Contraseña</span></label>
           {message && <div className="auth-message" role="alert">{message}</div>}
           {working && waitingForServer && <div className="auth-wait-note" role="status">Render puede tardar hasta un minuto en despertar. La solicitud sigue activa; si agota el tiempo, podrás volver a intentarlo.</div>}
-          <button className="google-login teacher-auth-submit" type="submit" disabled={working}>{working ? <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />}{working ? waitingForServer ? 'Despertando servidor…' : 'Conectando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}<ArrowRight size={17} /></button>
+          <button className={`google-login teacher-auth-submit${working ? ' is-loading' : ''}`} type="submit" disabled={working}>{working ? authSuccess ? <CheckCircle2 size={18}/> : <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />}{working ? authSuccess ? 'Abriendo tu espacio…' : waitingForServer ? 'Despertando servidor…' : 'Conectando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}<ArrowRight size={17} /></button>
         </form>
         <button className="auth-mode-switch" disabled={working} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setMessage('') }}>{mode === 'login' ? '¿Aún no tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}</button>
         <button className="auth-home-switch" disabled={working} onClick={() => { setMode('home'); setMessage('') }}>← Volver a conocer FairTeam</button>
       </section>
     </div>
     <div className="auth-copyright">FAIRTEAM <span>·</span> SEGUIMIENTO Y REFUERZO DEL APRENDIZAJE</div>
-  </main>
+  </main>{preloader}</>
 }

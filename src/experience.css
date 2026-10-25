@@ -1,0 +1,95 @@
+/* Cinematic but lightweight interactions for FairTeam. */
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body { scroll-behavior: smooth; }
+
+/* One short, first-visit intro. The live app renders underneath immediately. */
+.experience-preloader {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #12313e;
+  color: #f3f8f7;
+  animation: preloader-in .35s ease both;
+}
+.experience-preloader::before, .experience-preloader::after {
+  content: "";
+  position: absolute;
+  width: min(70vw, 680px);
+  aspect-ratio: 1;
+  border: 1px solid #91ccd128;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.experience-preloader::before { transform: translate(-28%, -32%) scale(.82); }
+.experience-preloader::after { transform: translate(31%, 37%) scale(1.14); }
+.preloader-content { position: relative; z-index: 1; display: grid; justify-items: center; width: min(330px, calc(100vw - 48px)); }
+.preloader-mark { display: grid; place-items: center; margin-bottom: 14px; animation: preloader-mark-in .8s cubic-bezier(.2,.75,.25,1) both; }
+.preloader-mark svg { filter: drop-shadow(0 9px 22px #0003); clip-path: inset(100% 0 0); animation: mark-reveal 1.05s .08s cubic-bezier(.2,.75,.25,1) forwards; }
+.preloader-wordmark { color: #f5faf9; font: 800 25px/1 Manrope, sans-serif; letter-spacing: -.07em; }
+.preloader-wordmark span { color: #83c6c6; }
+.preloader-progress-track { width: 100%; height: 2px; margin-top: 38px; overflow: hidden; background: #ffffff27; }
+.preloader-progress-track span { display: block; height: 100%; background: linear-gradient(90deg,#5db6bc,#e1bd77); transition: width .1s linear; }
+.preloader-meta { display: flex; justify-content: space-between; width: 100%; margin-top: 12px; color: #c0d3d5; font-size: 10px; font-weight: 750; letter-spacing: .105em; }
+.preloader-meta b { color: #eff7f5; font-size: 11px; font-variant-numeric: tabular-nums; }
+.experience-preloader.is-exiting { animation: preloader-out .72s cubic-bezier(.65,0,.35,1) forwards; pointer-events: none; }
+
+/* Landing intro cascade and scroll reveal. */
+.landing-hero-copy > * { opacity: 0; animation: hero-cascade .72s cubic-bezier(.2,.75,.25,1) forwards; }
+.landing-hero-copy > :nth-child(1) { animation-delay: .08s; }
+.landing-hero-copy > :nth-child(2) { animation-delay: .18s; }
+.landing-hero-copy > :nth-child(3) { animation-delay: .29s; }
+.landing-hero-copy > :nth-child(4) { animation-delay: .4s; }
+.landing-hero-copy > :nth-child(5) { animation-delay: .49s; }
+.landing-hero-visual { animation-delay: .24s !important; }
+.scroll-reveal { opacity: 0; transform: translateY(22px); transition: opacity .72s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms), transform .72s cubic-bezier(.2,.75,.25,1) var(--reveal-delay,0ms); }
+.scroll-reveal.is-visible { opacity: 1; transform: translateY(0); }
+.landing-feature-card, .landing-steps article { transition: transform .38s cubic-bezier(.2,.75,.25,1), box-shadow .38s, border-color .25s !important; }
+.landing-feature-card:hover, .landing-steps article:hover { transform: translateY(-5px); box-shadow: 0 18px 36px rgb(22 58 72 / 10%); }
+.landing-hero-bottom { animation: hero-cascade .7s .58s both; }
+
+/* Floating labels and a softly emphasized active field. */
+.teacher-auth-form { gap: 17px !important; }
+.teacher-auth-form .auth-field { position: relative; display: block !important; padding-top: 0; color: #31515d !important; font-size: 13px !important; font-weight: 750 !important; }
+.teacher-auth-form .auth-field input { display: block; width: 100%; height: 58px !important; padding: 21px 14px 8px !important; border: 1px solid #cfdee2 !important; border-radius: 13px !important; background: #fbfdfd !important; color: #193c4b !important; font-size: 14px !important; font-weight: 600 !important; transition: border-color .24s, box-shadow .24s, background .24s !important; }
+.teacher-auth-form .auth-field > span { position: absolute; top: 20px; left: 15px; z-index: 1; color: #58717a; font-size: 14px; font-weight: 600; pointer-events: none; transform-origin: left center; transition: top .22s cubic-bezier(.2,.75,.25,1), color .22s, font-size .22s, font-weight .22s; }
+.teacher-auth-form .auth-field:focus-within > span, .teacher-auth-form .auth-field input:not(:placeholder-shown) + span { top: 8px; color: #176b80; font-size: 10px; font-weight: 800; letter-spacing: .025em; }
+.teacher-auth-form .auth-field:focus-within input { border-color: #298b9a !important; background: #fff !important; box-shadow: 0 0 0 4px #298b9a18, 0 7px 22px #1537460a !important; }
+.teacher-auth-form .auth-field input::placeholder { color: transparent !important; }
+.teacher-auth-form .auth-field input:disabled { opacity: .72; }
+.teacher-auth-submit { position: relative; overflow: hidden; isolation: isolate; min-height: 54px !important; border-radius: 13px !important; transition: transform .28s cubic-bezier(.2,.75,.25,1), box-shadow .28s, background-position .45s !important; background-size: 160% 100% !important; background-position: 0 0 !important; }
+.teacher-auth-submit:not(:disabled):hover { background-position: 100% 0 !important; transform: translateY(-2px); box-shadow: 0 13px 28px #176b913d !important; }
+.teacher-auth-submit.is-loading { cursor: progress; }
+.auth-mode-switch, .auth-home-switch { min-height: 36px; padding: 4px 8px; border-radius: 8px; transition: color .22s, background .22s, transform .22s !important; }
+.auth-mode-switch:hover:not(:disabled), .auth-home-switch:hover:not(:disabled) { color: #105574 !important; background: #e8f3f4 !important; transform: translateY(-1px); }
+.auth-success-exit .auth-frame { animation: auth-success-exit .32s cubic-bezier(.55,0,.8,.45) both !important; }
+.auth-success-exit .teacher-auth-submit { background: linear-gradient(110deg,#176b91,#168b83) !important; }
+.app-route-enter { min-height: 100vh; animation: workspace-enter .58s cubic-bezier(.2,.75,.25,1) both; }
+
+/* A clear surface-to-surface fill on primary actions, without pointer tracking. */
+.landing-primary, .landing-nav-cta, .button-dark, .button-green, .button-primary, .generate-button { background-size: 180% 100% !important; background-position: 0 0 !important; transition: background-position .4s ease, transform .25s ease, box-shadow .25s ease !important; }
+.landing-primary:hover, .landing-nav-cta:hover, .button-dark:hover:not(:disabled), .button-green:hover:not(:disabled), .button-primary:hover:not(:disabled), .generate-button:hover:not(:disabled) { background-position: 100% 0 !important; }
+
+@keyframes preloader-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes preloader-out { to { opacity: 0; transform: translateY(-2.5%); visibility: hidden; } }
+@keyframes preloader-mark-in { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes mark-reveal { to { clip-path: inset(0); } }
+@keyframes hero-cascade { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes auth-success-exit { to { opacity: 0; transform: translateY(-10px) scale(.99); } }
+@keyframes workspace-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 700px) {
+  .preloader-progress-track { margin-top: 28px; }
+  .landing-hero-copy > * { animation-duration: .52s; }
+  .scroll-reveal { transform: translateY(14px); }
+  .teacher-auth-form .auth-field input { height: 56px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html, body { scroll-behavior: auto; }
+  .landing-hero-copy > *, .landing-hero-bottom, .landing-hero-visual, .app-route-enter, .auth-frame, .auth-side-copy { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .scroll-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .experience-preloader, .experience-preloader.is-exiting { animation-duration: .01ms !important; }
+  .preloader-mark svg { animation-duration: .01ms !important; clip-path: none; }
+}
