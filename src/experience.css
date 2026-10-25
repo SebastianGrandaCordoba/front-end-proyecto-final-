@@ -50,6 +50,50 @@ body { scroll-behavior: smooth; }
 .landing-feature-card:hover, .landing-steps article:hover { transform: translateY(-5px); box-shadow: 0 18px 36px rgb(22 58 72 / 10%); }
 .landing-hero-bottom { animation: hero-cascade .7s .58s both; }
 
+/* Course library multi-select guidance and selected-file affordance. */
+.course-material-help { margin: 6px 0 10px; color: #596b79; font-size: 12px; line-height: 1.5; }
+.course-material-select { width: 100%; text-align: left; }
+.course-material-row { transition: background-color .2s ease, border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.course-material-row:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgb(28 45 62 / 7%); }
+.course-material-row.selected .course-material-check { color: #fff !important; background: #5952c9 !important; border-color: #5952c9 !important; }
+.course-material-selection { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #4540a8; font-size: 12px; font-weight: 750; }
+
+/* Animated labels make icon-only sidebar navigation discoverable. */
+@media (min-width: 821px) {
+  .sidebar-collapsed .sidebar [data-tooltip] { position: relative; }
+  .sidebar-collapsed .sidebar [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    z-index: 120;
+    top: 50%;
+    left: calc(100% + 12px);
+    max-width: 240px;
+    padding: 9px 12px;
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 9px;
+    background: #202438;
+    box-shadow: 0 9px 25px rgb(17 24 39 / 18%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: .01em;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(-5px, -50%) scale(.97);
+    transform-origin: left center;
+    transition: opacity .16s ease, transform .2s cubic-bezier(.2,.75,.25,1), visibility .16s;
+  }
+  .sidebar-collapsed .sidebar [data-tooltip]:hover::after,
+  .sidebar-collapsed .sidebar [data-tooltip]:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%) scale(1);
+  }
+}
+
 /* Floating labels and a softly emphasized active field. */
 .teacher-auth-form { gap: 17px !important; }
 .teacher-auth-form .auth-field { position: relative; display: block !important; padding-top: 0; color: #31515d !important; font-size: 13px !important; font-weight: 750 !important; }

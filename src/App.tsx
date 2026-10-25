@@ -183,27 +183,27 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
         <div className="brand-lockup">
           <div className="brand-mark"><FairTeamMark size={40} /></div>
           <span>fair<span className="brand-green">team</span><sup>✳</sup></span>
-          <button className="icon-button sidebar-collapse-toggle" onClick={() => setSidebarCollapsed(value => { localStorage.setItem('fairteam.sidebarCollapsed', String(!value)); return !value })} aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'} title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>
+          <button className="icon-button sidebar-collapse-toggle" onClick={() => setSidebarCollapsed(value => { localStorage.setItem('fairteam.sidebarCollapsed', String(!value)); return !value })} aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'} data-tooltip={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</button>
           <button className="icon-button mobile-close" onClick={() => setMobileNav(false)} aria-label="Cerrar menú"><X size={18} /></button>
         </div>
-        <button className="workspace-switch workspace-switch-action" onClick={() => setPage(selectedCourse ? 'course' : 'courses')} title={selectedCourse ? 'Abrir espacio del curso' : 'Organizar tus cursos'}><div className="workspace-icon"><FolderKanban size={16} /></div><div><strong>{selectedCourse?.name || 'Organiza tus cursos'}</strong><span>{selectedCourse?.period || 'Asistente docente'}</span></div><ChevronDown size={15} /></button>
+        <button className="workspace-switch workspace-switch-action" onClick={() => setPage(selectedCourse ? 'course' : 'courses')} aria-label={selectedCourse ? 'Abrir espacio del curso' : 'Organizar tus cursos'} data-tooltip={selectedCourse ? 'Abrir espacio del curso' : 'Organizar tus cursos'}><div className="workspace-icon"><FolderKanban size={16} /></div><div><strong>{selectedCourse?.name || 'Organiza tus cursos'}</strong><span>{selectedCourse?.period || 'Asistente docente'}</span></div><ChevronDown size={15} /></button>
         <div className="nav-caption">INICIO</div>
         <nav className="main-nav" aria-label="Navegación principal">
           {navItems.map(item => {
             const Icon = item.icon
-            return <button key={item.id} title={item.label} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setMobileNav(false) }}><Icon size={18} /><span>{item.label}</span></button>
+            return <button key={item.id} aria-label={item.label} data-tooltip={item.label} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setMobileNav(false) }}><Icon size={18} /><span>{item.label}</span></button>
           })}
         </nav>
         <div className="side-divider" />
         <div className="nav-caption">{selectedCourse ? 'DENTRO DEL CURSO' : 'CURSO ACTIVO'}</div>
-        <button title="Espacio del curso" className={`nav-link ${page === 'course' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('course'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><FolderKanban size={18} /><span>Espacio del curso</span></button>
-        <button title="Talleres y asistente" className={`nav-link ${page === 'workshops' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('workshops'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><BrainCircuit size={18} /><span>Talleres y asistente</span></button>
+        <button aria-label="Espacio del curso" data-tooltip="Espacio del curso" className={`nav-link ${page === 'course' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('course'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><FolderKanban size={18} /><span>Espacio del curso</span></button>
+        <button aria-label="Talleres y asistente" data-tooltip="Talleres y asistente" className={`nav-link ${page === 'workshops' ? 'active' : ''}`} onClick={() => { if (selectedCourse) setPage('workshops'); else setPage('courses'); setMobileNav(false) }} disabled={!selectedCourse}><BrainCircuit size={18} /><span>Talleres y asistente</span></button>
         <div className="side-divider" />
         <div className="nav-caption">HERRAMIENTAS</div>
-        <button title="Configuración" className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
+        <button aria-label="Configuración" data-tooltip="Configuración" className={`nav-link ${page === 'settings' ? 'active' : ''}`} onClick={() => { setPage('settings'); setMobileNav(false) }}><Settings2 size={18} /><span>Configuración</span></button>
         <div className="sidebar-bottom">
           <div className="help-card"><div className="help-icon"><Lightbulb size={17} /></div><strong>Decisiones con contexto</strong><p>Revisa las señales y decide cómo acompañar a tu grupo.</p><button onClick={() => setPage('alerts')}>Ver seguimiento <ArrowRight size={14} /></button></div>
-          <button className="profile-row profile-action" onClick={onLogout} title="Cerrar sesión"><div className="profile-avatar">{(user?.name || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</div><div className="profile-meta"><strong>{user?.name || 'Docente'}</strong><span>{user?.email || 'Sesión local'}</span></div><LogOut size={17} /></button>
+          <button className="profile-row profile-action" onClick={onLogout} aria-label="Cerrar sesión" data-tooltip="Cerrar sesión"><div className="profile-avatar">{(user?.name || 'PG').split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</div><div className="profile-meta"><strong>{user?.name || 'Docente'}</strong><span>{user?.email || 'Sesión local'}</span></div><LogOut size={17} /></button>
         </div>
       </aside>
 
@@ -694,7 +694,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
 }) {
   const [file, setFile] = useState<File | null>(null)
   const [materials, setMaterials] = useState<CourseMaterial[]>([])
-  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null)
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([])
   const [materialsLoading, setMaterialsLoading] = useState(true)
   const [uploadingMaterial, setUploadingMaterial] = useState(false)
   const [subject, setSubject] = useState('')
@@ -708,6 +708,8 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
 
   useEffect(() => {
     if (!course) { setMaterials([]); setMaterialsLoading(false); return }
+    setSelectedMaterialIds([])
+    setFile(null)
     setSubject(course.name)
     let active = true
     setMaterialsLoading(true)
@@ -727,7 +729,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
     const key = `${course.id}:${student.id}:${latest.id}:${mode}`
     if (autoStarted.current === key) return
     autoStarted.current = key
-    setSelectedMaterialId(latest.id)
+    setSelectedMaterialIds([latest.id])
     setSubject(course.name)
     const topicText = mode === 'quiz' ? 'Quiz breve sobre conceptos clave del material' : 'Refuerzo de conceptos clave del material de clase'
     const goal = mode === 'quiz'
@@ -746,7 +748,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
     if (!/\.(pdf|docx|txt)$/i.test(candidate.name)) return notify('Adjunta material en PDF, DOCX o TXT.', 'error')
     if (candidate.size > 10 * 1024 * 1024) return notify('El archivo supera el límite de 10 MB.', 'error')
     setFile(candidate)
-    setSelectedMaterialId(null)
+    setSelectedMaterialIds([])
     setErrorMessage('')
   }
 
@@ -757,7 +759,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
       const form = new FormData(); form.append('file', file)
       const material = await request<CourseMaterial>(`/api/courses/${course.id}/materials`, { method: 'POST', body: form })
       setMaterials(current => [material, ...current.filter(item => item.id !== material.id)])
-      setSelectedMaterialId(material.id)
+      setSelectedMaterialIds([material.id])
       setFile(null)
       notify('Material guardado en este curso.')
       return material
@@ -772,15 +774,21 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
     try {
       await request<void>(`/api/courses/${course.id}/materials/${material.id}`, { method: 'DELETE' })
       setMaterials(items => items.filter(item => item.id !== material.id))
-      if (selectedMaterialId === material.id) setSelectedMaterialId(null)
+      setSelectedMaterialIds(current => current.filter(id => id !== material.id))
       notify('Material eliminado de este curso.')
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar el material.', 'error') }
   }
 
-  const generateWorkshop = async (options: { materialId?: number | null; topic?: string; objective?: string; subject?: string; target?: Candidate; mode?: SupportMode } = {}) => {
+  const toggleMaterial = (materialId: number) => {
+    setFile(null)
+    setSelectedMaterialIds(current => current.includes(materialId) ? current.filter(id => id !== materialId) : [...current, materialId])
+  }
+
+  const generateWorkshop = async (options: { materialId?: number | null; materialIds?: number[]; topic?: string; objective?: string; subject?: string; target?: Candidate; mode?: SupportMode } = {}) => {
     if (!course) return notify('Primero crea o selecciona un curso.', 'error')
     const topicText = (options.topic ?? topic).trim()
-    if (!file && !(options.materialId ?? selectedMaterialId)) return notify('Selecciona un material de este curso o adjunta uno nuevo.', 'error')
+    const requestedMaterialIds = options.materialIds ?? (options.materialId ? [options.materialId] : selectedMaterialIds)
+    if (!file && !requestedMaterialIds.length) return notify('Selecciona uno o varios materiales de este curso o adjunta uno nuevo.', 'error')
     if (!topicText) return notify('Escribe el tema que están trabajando en clase.', 'error')
     setGenerating(true)
     setErrorMessage('')
@@ -790,20 +798,24 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
         : options.target
           ? `Curso: ${course.name}. Propuesta individual para un estudiante clasificado como ${formatLevel(options.target.level)} por su promedio local. Adapta la práctica a este nivel. No se proporcionan identidad ni notas individuales. Tema: ${topicText}.`
           : `Curso: ${course.name}. ${summary.graded} estudiante(s) con notas, ${summary.low} en refuerzo, ${summary.medium} en proceso y ${summary.high} con progreso adecuado. Promedio general: ${summary.average.toFixed(2)} sobre 5. Tema priorizado por el docente: ${topicText}.`
-      let materialId = options.materialId ?? selectedMaterialId
+      let materialIds = requestedMaterialIds
       if (file) {
         const uploaded = await uploadMaterial()
         if (!uploaded) throw new Error('No pudimos guardar el material para este curso.')
-        materialId = uploaded.id
+        materialIds = [uploaded.id]
       }
-      if (!materialId) throw new Error('Selecciona o guarda un material para continuar.')
+      if (!materialIds.length) throw new Error('Selecciona o guarda al menos un material para continuar.')
       const form = new FormData()
       form.append('subject', (options.subject ?? subject).trim())
       form.append('targetLevel', level)
       form.append('learningObjective', (options.objective ?? objective).trim() || `Reforzar ${topicText} con actividades prácticas y comprobar la comprensión.`)
       form.append('learningContext', summaryText)
       form.append('generationType', options.mode ?? 'WORKSHOP')
-      const response = await request<GeneratedWorkshop>(`/api/courses/${course.id}/materials/${materialId}/generate-workshop`, { method: 'POST', body: form })
+      const generationPath = materialIds.length === 1
+        ? `/api/courses/${course.id}/materials/${materialIds[0]}/generate-workshop`
+        : `/api/courses/${course.id}/materials/generate-workshop`
+      if (materialIds.length > 1) materialIds.forEach(id => form.append('materialIds', String(id)))
+      const response = await request<GeneratedWorkshop>(generationPath, { method: 'POST', body: form })
       onGenerate(options.target ? {
         ...response,
         ...(options.mode === 'quiz' ? {
@@ -834,7 +846,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
   return <>
     <section className="assistant-workshop-hero"><div className="assistant-workshop-copy"><div className="eyebrow">FAIRTEAM <span>·</span> ASISTENTE DEL CURSO</div><h1>De tu material,<br/><span>a una clase que enseña.</span></h1><p>Prepara una actividad basada en lo que enseñas en <b>{course?.name || 'tu curso'}</b>. FairTeam propone; tú revisas y eliges cómo compartirla.</p><div className="workshop-hero-note"><ShieldCheck size={16}/><span>El material y las notas se mantienen en el espacio de este curso.</span></div></div><div className="assistant-workshop-art" aria-hidden="true"><div className="assistant-art-ring ring-a"/><div className="assistant-art-ring ring-b"/><div className="assistant-art-paper"><div className="paper-topline"><i/><i/><i/></div><BookOpen size={34}/><span/><span/><span/></div><div className="assistant-art-spark"><Sparkles size={18}/></div><div className="assistant-art-check"><Check size={15}/></div><small>OBSERVA · REFUERZA · COMPRUEBA</small></div></section>
     <nav className="workshop-steps" aria-label="Pasos para preparar una actividad"><span className="workshop-step-done"><i>1</i><b>Elige el material</b></span><span className="workshop-step-line"/><span><i>2</i><b>Define el refuerzo</b></span><span className="workshop-step-line"/><span><i>3</i><b>Revisa y descarga</b></span></nav>
-    {supportTarget && <div className="student-support-banner"><span className="soft-icon lilac-icon"><Sparkles size={18}/></span><div><strong>{materialsLoading ? 'Buscando material del curso…' : generating ? `Preparando ${supportTarget.mode === 'quiz' ? 'quiz' : 'taller'} · ${formatLevel(supportTarget.student.level)}` : materials.length ? `${supportTarget.mode === 'quiz' ? 'Quiz' : 'Refuerzo'} personalizado · ${formatLevel(supportTarget.student.level)}` : 'Falta material para preparar la propuesta'}</strong><p>{materialsLoading ? 'En cuanto cargue la biblioteca, usaremos el material más reciente.' : materials.length ? 'Se está usando el material más reciente. No se enviaron el nombre ni las notas individuales a Gemini.' : 'Sube y guarda un PDF, DOCX o TXT en la biblioteca; después la propuesta se generará automáticamente.'}</p>{errorMessage && <button className="text-button" onClick={() => void generateWorkshop({ materialId: selectedMaterialId ?? materials[0]?.id, topic, objective, subject, target: supportTarget.student, mode: supportTarget.mode })} disabled={generating}>Reintentar <RotateCw size={13}/></button>}</div><button className="icon-button" onClick={onSupportComplete} aria-label="Cerrar seguimiento"><X size={16}/></button></div>}
+    {supportTarget && <div className="student-support-banner"><span className="soft-icon lilac-icon"><Sparkles size={18}/></span><div><strong>{materialsLoading ? 'Buscando material del curso…' : generating ? `Preparando ${supportTarget.mode === 'quiz' ? 'quiz' : 'taller'} · ${formatLevel(supportTarget.student.level)}` : materials.length ? `${supportTarget.mode === 'quiz' ? 'Quiz' : 'Refuerzo'} personalizado · ${formatLevel(supportTarget.student.level)}` : 'Falta material para preparar la propuesta'}</strong><p>{materialsLoading ? 'En cuanto cargue la biblioteca, usaremos el material más reciente.' : materials.length ? 'Se está usando el material más reciente. No se enviaron el nombre ni las notas individuales a Gemini.' : 'Sube y guarda un PDF, DOCX o TXT en la biblioteca; después la propuesta se generará automáticamente.'}</p>{errorMessage && <button className="text-button" onClick={() => void generateWorkshop({ materialId: materials[0]?.id, topic, objective, subject, target: supportTarget.student, mode: supportTarget.mode })} disabled={generating}>Reintentar <RotateCw size={13}/></button>}</div><button className="icon-button" onClick={onSupportComplete} aria-label="Cerrar seguimiento"><X size={16}/></button></div>}
     <section className="workshop-course-context">
       <div className="workshop-context-title"><span className="context-mark"><Activity size={18} /></span><div><small>LECTURA DEL CURSO</small><strong>{course?.name || 'Selecciona un curso'}</strong></div></div>
       <div className="context-stat"><strong>{summary.students}</strong><span>estudiantes</span></div>
@@ -857,12 +869,12 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
             {file ? <><span className="dropzone-icon file-selected"><CheckCircle2 size={22} /></span><strong>{file.name}</strong><small>{(file.size / 1024).toFixed(0)} KB · Pendiente de guardar en este curso</small></> : <><span className="dropzone-icon"><Upload size={21} /></span><strong>Arrastra material nuevo aquí</strong><small>PDF, DOCX o TXT · Máximo 10 MB</small></>}
           </button>
           {file && <button type="button" className="button button-outline full-button" onClick={() => void uploadMaterial()} disabled={uploadingMaterial}>{uploadingMaterial ? <LoaderCircle size={15} className="spin"/> : <Upload size={15}/>} {uploadingMaterial ? 'Guardando material…' : 'Guardar en la biblioteca del curso'}</button>}
-          <div className="course-material-library"><div className="course-material-heading"><span><FileText size={15}/> BIBLIOTECA DE ESTE CURSO</span><small>{materialsLoading ? 'Cargando…' : `${materials.length} archivos`}</small></div>{materials.length ? <div className="course-material-list">{materials.map(material=><div key={material.id} className={`course-material-row ${selectedMaterialId===material.id?'selected':''}`}><button type="button" className="course-material-select" onClick={()=>{setSelectedMaterialId(material.id);setFile(null)}}><span className="course-material-check">{selectedMaterialId===material.id?<Check size={13}/>:<FileText size={14}/>}</span><span><b>{material.fileName}</b><small>{(material.fileSize/1024).toFixed(0)} KB · guardado en {course?.name}</small></span></button><button type="button" className="course-material-delete" onClick={()=>void removeMaterial(material)} aria-label={`Eliminar ${material.fileName}`}><Trash2 size={14}/></button></div>)}</div> : <p className="course-material-empty">Los archivos que guardes aquí estarán disponibles para crear otros talleres en {course?.name}.</p>}</div>
+          <div className="course-material-library"><div className="course-material-heading"><span><FileText size={15}/> BIBLIOTECA DE ESTE CURSO</span><small>{materialsLoading ? 'Cargando…' : `${materials.length} archivos`}</small></div>{materials.length ? <><p className="course-material-help">Selecciona uno o varios materiales como contexto para la actividad.</p><div className="course-material-list">{materials.map(material=><div key={material.id} className={`course-material-row ${selectedMaterialIds.includes(material.id)?'selected':''}`}><button type="button" className="course-material-select" aria-pressed={selectedMaterialIds.includes(material.id)} onClick={()=>toggleMaterial(material.id)}><span className="course-material-check">{selectedMaterialIds.includes(material.id)?<Check size={13}/>:<FileText size={14}/>}</span><span><b>{material.fileName}</b><small>{(material.fileSize/1024).toFixed(0)} KB · guardado en {course?.name}</small></span></button><button type="button" className="course-material-delete" onClick={()=>void removeMaterial(material)} aria-label={`Eliminar ${material.fileName}`}><Trash2 size={14}/></button></div>)}</div></> : <p className="course-material-empty">Los archivos que guardes aquí estarán disponibles para crear otros talleres en {course?.name}.</p>}{selectedMaterialIds.length > 0 && <div className="course-material-selection"><CheckCircle2 size={15}/>{selectedMaterialIds.length} {selectedMaterialIds.length === 1 ? 'material seleccionado' : 'materiales seleccionados'}</div>}</div>
           <div className="form-row-two"><label>Materia<input required maxLength={120} value={subject} onChange={event => setSubject(event.target.value)} placeholder="Ej. Programación" /></label><label>Grupo al que va dirigido<select value={level} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">Necesita refuerzo</option><option value="MEDIUM">En proceso</option><option value="HIGH">Progreso adecuado</option></select></label></div>
           <label>¿Qué te gustaría que logren? <span className="optional-label">Opcional</span><textarea rows={2} maxLength={1000} value={objective} onChange={event => setObjective(event.target.value)} placeholder="Ej. Que resuelvan un ciclo y expliquen cuándo termina…" /></label>
           <div className="ai-privacy-note"><ShieldCheck size={15} /><span>Gemini recibe el material y un resumen sin datos personales. Las notas detalladas se quedan en FairTeam.</span></div>
           {errorMessage && <div className="workshop-error" role="alert"><b>No se pudo generar el taller.</b><span>{errorMessage}</span><small>Comprueba el material y vuelve a intentar. El error queda visible aquí.</small></div>}
-          <button className="button button-dark full-button generate-button" disabled={generating || !course}>{generating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}{generating ? 'Preparando una propuesta…' : 'Generar taller de refuerzo'}{!generating && <ArrowRight size={15} />}</button>
+          <button className="button button-dark full-button generate-button" disabled={generating || !course}>{generating ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}{generating ? 'Preparando una propuesta…' : `Generar taller${selectedMaterialIds.length > 1 ? ` · ${selectedMaterialIds.length} materiales` : ''}`}{!generating && <ArrowRight size={15} />}</button>
         </form>
         <div className="generation-hint"><Clock3 size={14} /> Generación optimizada con Gemini rápido. En el plan gratuito, el primer uso puede esperar el arranque del servicio.</div>
       </section>
