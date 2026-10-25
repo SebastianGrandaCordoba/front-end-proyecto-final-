@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, LoaderCircle, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
+import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, LoaderCircle, LockKeyhole, Sparkles } from 'lucide-react'
 import App from './App'
 import LandingPage from './LandingPage'
-import { API_BASE, clearAccessToken, request, saveAccessToken, type AuthResponse, type TeacherProfile } from './api'
+import { clearAccessToken, request, saveAccessToken, type AuthResponse, type TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
 
 type Mode = 'home' | 'login' | 'register'
@@ -86,8 +86,6 @@ export default function AuthGate() {
         </form>
         <button className="auth-mode-switch" disabled={working} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setMessage('') }}>{mode === 'login' ? '¿Aún no tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}</button>
         <button className="auth-home-switch" disabled={working} onClick={() => { setMode('home'); setMessage('') }}>← Volver a conocer FairTeam</button>
-        <div className="auth-secure"><ShieldCheck size={16} /><span>Las contraseñas se protegen en el servidor. La clave de Gemini nunca se guarda en el navegador.</span></div>
-        <div className="auth-footnote">API: {API_BASE}</div>
       </section>
     </div>
     <div className="auth-copyright">FAIRTEAM <span>·</span> SEGUIMIENTO Y REFUERZO DEL APRENDIZAJE</div>
