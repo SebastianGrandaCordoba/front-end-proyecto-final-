@@ -1,0 +1,122 @@
+/* FairTeam brand refresh: crisp ocean blue, teal and warm paper. */
+:root {
+  --ink: #163342;
+  --ink-soft: #304f5b;
+  --muted: #4d6671;
+  --paper: #f3f7f8;
+  --surface: #ffffff;
+  --surface-soft: #f8fbfb;
+  --line: #d9e5e8;
+  --accent: #176b91;
+  --accent-dark: #105574;
+  --accent-soft: #e7f3f5;
+  --green: #28735f;
+  --green-dark: #205a4b;
+  --green-soft: #e9f4ef;
+  --coral: #ad5849;
+  --coral-soft: #faeee9;
+  --yellow: #8e641d;
+  --yellow-soft: #f7f0df;
+  --lilac: #416a7c;
+  --lilac-soft: #eaf2f4;
+  --blue: #246a87;
+  --blue-soft: #e8f2f5;
+  --panel: #ffffff;
+  --shadow: 0 14px 38px rgb(22 58 72 / 8%);
+}
+
+html, body { background: var(--paper) !important; color: var(--ink) !important; }
+body, button, input, select, textarea { font-family: Manrope, Inter, "Segoe UI", sans-serif; }
+body { font-size: 15px; font-weight: 500; -webkit-font-smoothing: antialiased; }
+::selection { background: #bfe2e6; color: #123443; }
+
+/* Product shell, sidebar and brand */
+.app-shell, .main-content, .main-panel { background: var(--paper) !important; color: var(--ink) !important; }
+.sidebar { background: #fff !important; border-right-color: #dce7e9 !important; }
+.brand-lockup { border-bottom-color: #dce7e9 !important; }
+.brand-mark, .teacher-auth-screen .auth-brand-mark { background: linear-gradient(145deg,#187f94,#155b78) !important; border-radius: 14px !important; box-shadow: 0 7px 18px #176b912b !important; }
+.brand-lockup > span, .brand-lockup strong { color: #163342 !important; font-weight: 850 !important; }
+.brand-green, .brand-lockup sup { color: #167d83 !important; font-weight: 800 !important; }
+.workspace-switch { border-color: #d9e5e8 !important; background: #f7fbfb !important; }
+.nav-caption, .sidebar-caption, .sidebar-section-title { color: #58717a !important; font-size: 11px !important; font-weight: 850 !important; letter-spacing: .1em !important; }
+.nav-link { color: #365460 !important; font-size: 14px !important; font-weight: 700 !important; border-radius: 12px !important; transition: background .2s ease, color .2s ease, transform .2s ease !important; }
+.nav-link:hover { color: #125d7c !important; background: #eef6f7 !important; transform: translateX(2px); }
+.nav-link.active { color: #105b79 !important; background: #e4f2f4 !important; box-shadow: inset 3px 0 #16839a !important; }
+.nav-link.active svg { color: #14788d !important; }
+.help-icon, .workspace-icon, .shortcut-icon, .activity-icon { background: #e7f3f4 !important; color: #176b80 !important; }
+.brand-lockup, .workspace-switch, .nav-link, .button, .course-card, .dashboard-ai-summary, .panel, .student-card, .empty-state { transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease !important; }
+
+/* Headings and body copy: legible at a glance */
+h1, h2, h3, h4, .page-title, .command-hero h1, .command-empty h1, .landing-hero h1, .landing-section h2, .teacher-auth-screen h1 { color: #153746 !important; font-weight: 850 !important; letter-spacing: -.035em !important; }
+.page-title, .command-hero h1, .command-empty h1 { font-size: clamp(34px,4vw,48px) !important; line-height: 1.08 !important; }
+.page-subtitle, .page-description, .command-hero-copy > p, .panel-description { color: #4c6671 !important; font-size: 15px !important; font-weight: 550 !important; line-height: 1.7 !important; }
+.panel-title, .section-title, .dashboard-ai-heading b { color: #173b4a !important; font-size: 19px !important; font-weight: 800 !important; }
+.muted, .text-muted, small { color: #58717a !important; }
+
+/* Buttons, links and focus treatment */
+.button-dark, .button-green, .teacher-auth-screen .teacher-auth-submit, .landing-primary, .landing-nav-cta, .generate-button, .button-primary {
+  background: linear-gradient(115deg,#176b91,#147b83) !important;
+  border-color: #176b91 !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 7px 18px #176b9126 !important;
+}
+.button-dark:hover, .button-green:hover, .teacher-auth-screen .teacher-auth-submit:hover, .landing-primary:hover, .landing-nav-cta:hover, .generate-button:hover, .button-primary:hover { background: linear-gradient(115deg,#105574,#0e676f) !important; transform: translateY(-2px); box-shadow: 0 11px 23px #176b9136 !important; }
+.button-ghost, .button-soft, .button-secondary, .landing-secondary { color: #155f7c !important; font-weight: 750 !important; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #1996a35c !important; outline-offset: 3px !important; }
+
+/* Course and student cards */
+.course-card, .student-card, .panel, .dashboard-ai-summary { background: #fff !important; border-color: #dce7e9 !important; box-shadow: 0 8px 24px rgb(21 57 70 / 5%) !important; }
+.course-card:hover, .student-card:hover { transform: translateY(-3px) !important; border-color: #99c9cf !important; box-shadow: 0 15px 32px rgb(21 84 101 / 11%) !important; }
+.course-card h2, .course-card h3, .student-card h3 { color: #173b4a !important; font-size: 21px !important; font-weight: 800 !important; }
+.course-card p, .student-card p { color: #4d6671 !important; font-size: 14px !important; line-height: 1.65 !important; }
+.course-card small, .student-card small { color: #58717a !important; font-size: 12px !important; font-weight: 650 !important; }
+.command-kicker, .command-empty .command-kicker, .landing-kicker, .landing-overline { color: #137786 !important; font-weight: 850 !important; }
+.command-hero h1 span, .command-empty h1 span { color: #176b91 !important; }
+.command-live-dot, .ai-status-dot { background: #168b83 !important; box-shadow: 0 0 0 4px #168b831c !important; }
+.dashboard-ai-icon { width: 44px !important; height: 44px !important; background: transparent !important; border-radius: 0 !important; color: #176b91 !important; }
+.dashboard-ai-heading small { color: #58717a !important; font-size: 12px !important; font-weight: 650 !important; }
+.dashboard-ai-metrics > div { background: #f4f9f9 !important; border-color: #e0ebed !important; }
+.dashboard-ai-metrics b { color: #155d76 !important; font-size: 22px !important; font-weight: 850 !important; }
+.dashboard-ai-metrics span, .dashboard-ai-summary > p { color: #4d6671 !important; font-size: 13px !important; font-weight: 600 !important; }
+
+/* Tables, labels and form controls */
+table th, .table-head, .data-table th { color: #49636e !important; font-size: 11px !important; font-weight: 850 !important; letter-spacing: .06em !important; }
+table td, .data-table td, .student-row { color: #294b59 !important; font-size: 14px !important; font-weight: 600 !important; }
+input, select, textarea { color: #193c4b !important; font-size: 14px !important; font-weight: 550 !important; border-color: #cfdee2 !important; background: #fff !important; }
+input::placeholder, textarea::placeholder { color: #6b828b !important; opacity: 1 !important; }
+label, .field-label { color: #31515d !important; font-size: 13px !important; font-weight: 750 !important; }
+.teacher-auth-screen { background: #f1f7f8 !important; color: #163342 !important; }
+.teacher-auth-screen .auth-card { background: #fff !important; border-color: #dce7e9 !important; box-shadow: 0 20px 55px rgb(22 58 72 / 9%) !important; }
+.teacher-auth-screen h1 { font-size: 32px !important; }
+.teacher-auth-screen p { color: #4d6671 !important; font-size: 15px !important; font-weight: 550 !important; line-height: 1.65 !important; }
+
+/* Landing: same clear typography, cohesive teal illustrations, more readable labels */
+.landing-page { --lp-ink:#163342; --lp-muted:#4d6671; --lp-line:#dce7e9; --lp-primary:#176b91; --lp-violet:#147b83; --lp-soft:#e9f4f5; background:#f5f9fa !important; color:#163342 !important; }
+.landing-brand { color:#163342 !important; font-weight:850 !important; }
+.landing-brand > span > span, .landing-brand sup, .landing-kicker, .landing-overline, .landing-secondary:hover > span { color:#147b83 !important; }
+.landing-nav { border-bottom-color:#dce7e9 !important; }
+.landing-nav nav a, .landing-login { color:#365460 !important; font-size:14px !important; font-weight:700 !important; }
+.landing-nav nav a:hover, .landing-login:hover { color:#176b91 !important; }
+.landing-hero h1 { color:#153746 !important; font-weight:850 !important; letter-spacing:-.055em !important; }
+.landing-hero h1 span { color:#176b91 !important; }
+.landing-hero-text { color:#405f6c !important; font-size:17px !important; font-weight:550 !important; line-height:1.75 !important; }
+.landing-trust-line, .landing-hero-bottom, .landing-visual-caption { color:#536d77 !important; font-size:12px !important; font-weight:650 !important; }
+.landing-hero-visual { background:linear-gradient(145deg,#e8f4f5,#f8fbfb 55%,#eaf3f4) !important; border-color:#d8e6e8 !important; box-shadow:0 25px 65px #16465a15 !important; }
+.landing-visual-glow { background:#b8e0e2 !important; opacity:.62 !important; }
+.landing-visual-topline { color:#46636d !important; font-size:11px !important; }
+.landing-visual-topline i, .landing-chat-online i { background:#168b83 !important; box-shadow:0 0 0 4px #168b831c !important; }
+.landing-demo-badge, .landing-course-peek, .landing-insight-card { border-color:#dce7e9 !important; }
+.landing-course-peek b, .landing-insight-card b { color:#173b4a !important; font-size:13px !important; font-weight:800 !important; }
+.landing-course-peek small, .landing-insight-card small, .landing-insight-card div > span { color:#526d77 !important; font-size:11px !important; font-weight:600 !important; }
+.landing-peek-icon, .landing-insight-icon { background:#e5f2f3 !important; color:#176b80 !important; }
+.landing-section, .landing-assistant-band, .landing-steps, .landing-final-cta, .landing-footer { color:#163342 !important; }
+.landing-workflow, .landing-section { border-color:#dce7e9 !important; }
+.landing-section h2, .landing-assistant-band h2, .landing-steps h2, .landing-final-cta h2 { color:#153746 !important; font-weight:850 !important; }
+.landing-section p, .landing-assistant-band p, .landing-steps p, .landing-final-cta p { color:#4d6671 !important; font-size:15px !important; font-weight:550 !important; line-height:1.7 !important; }
+.landing-page [class*="card"], .landing-page [class*="step"] { border-color:#dce7e9 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}

@@ -5,6 +5,7 @@ import './styles.css'
 import './refined-theme.css'
 import './redesign.css'
 import './landing.css'
+import './brand-refresh.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
