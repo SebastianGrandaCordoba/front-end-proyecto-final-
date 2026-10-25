@@ -14,6 +14,8 @@ import { createSpreadsheetTemplate, spreadsheetFileAsCsv } from './spreadsheet'
 type Page = 'overview' | 'courses' | 'course' | 'students' | 'alerts' | 'projects' | 'teams' | 'workshops' | 'settings'
 type Toast = { kind: 'success' | 'error' | 'info'; message: string }
 type Candidate = Student & { level: AcademicLevel; average: number; gradeCount: number }
+type SupportMode = 'workshop' | 'quiz'
+type SupportTarget = { student: Candidate; mode: SupportMode }
 type TeamDraft = { name: string; members: Candidate[]; score?: number; explanation?: string }
 
 const navItems: { id: Page; label: string; icon: typeof Grid2X2 }[] = [
@@ -128,7 +130,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
   const [studentModal, setStudentModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [workshopResult, setWorkshopResult] = useState<GeneratedWorkshop | null>(null)
-  const [supportTarget, setSupportTarget] = useState<Candidate | null>(null)
+  const [supportTarget, setSupportTarget] = useState<SupportTarget | null>(null)
   const [studentToReview, setStudentToReview] = useState<Candidate | null>(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
@@ -283,7 +285,7 @@ function App({ user, onLogout }: { user: TeacherProfile | null; onLogout: () => 
       {mobileNav && <button className="scrim" aria-label="Cerrar menú" onClick={() => setMobileNav(false)} />}
       {toast && <div className={`toast toast-${toast.kind}`} role="status">{toast.kind === 'success' ? <CheckCircle2 size={18} /> : toast.kind === 'error' ? <CircleHelp size={18} /> : <Lightbulb size={18} />}{toast.message}<button onClick={() => setToast(null)} aria-label="Cerrar aviso"><X size={15} /></button></div>}
       {studentModal && <StudentDialog student={editingStudent} courseId={selectedCourseId} onClose={() => setStudentModal(false)} onSaved={() => { setStudentModal(false); void refresh() }} notify={notify} />}
-      {studentToReview && <StudentSupportDialog student={studentToReview} grades={grades.filter(grade => Number(grade.studentId) === Number(studentToReview.id))} onClose={() => setStudentToReview(null)} onGenerate={() => { setSupportTarget(studentToReview); setStudentToReview(null); setPage('workshops') }} />}
+      {studentToReview && <StudentSupportDialog student={studentToReview} grades={grades.filter(grade => Number(grade.studentId) === Number(studentToReview.id))} onClose={() => setStudentToReview(null)} onGenerate={mode => { setSupportTarget({ student: studentToReview, mode }); setStudentToReview(null); setPage('workshops') }} />}
     </div>
   )
 }
@@ -472,7 +474,7 @@ function LearningAlerts({ students, onWorkshops, onStudents, onSupport }: { stud
   </>
 }
 
-function StudentSupportDialog({ student, grades, onClose, onGenerate }: { student: Candidate; grades: Grade[]; onClose: () => void; onGenerate: () => void }) {
+function StudentSupportDialog({ student, grades, onClose, onGenerate }: { student: Candidate; grades: Grade[]; onClose: () => void; onGenerate: (mode: SupportMode) => void }) {
   const advice = student.gradeCount === 0
     ? 'Aún no hay notas para identificar una dificultad concreta. Puedes preparar una actividad preventiva y cargar una evaluación para hacer seguimiento.'
     : student.level === 'LOW'
@@ -480,7 +482,7 @@ function StudentSupportDialog({ student, grades, onClose, onGenerate }: { studen
       : student.level === 'MEDIUM'
         ? 'Está avanzando, pero puede consolidar lo aprendido con ejercicios de aplicación y una pregunta de transferencia.'
         : 'Muestra buen progreso. Puedes proponer un reto de profundización y pedirle que explique su estrategia.'
-  return <Modal onClose={onClose} title="Acompañamiento del estudiante"><div className="student-support-detail"><div className="student-support-person"><Avatar name={student.name}/><div><strong>{student.name}</strong><span>{student.gradeCount ? `${student.average.toFixed(1)} / 5 · ${student.gradeCount} notas` : 'Todavía no hay notas registradas'}</span></div><span className={`level-badge level-${student.level.toLowerCase()}`}>{formatLevel(student.level)}</span></div><div className="student-support-advice"><span className="eyebrow">RECOMENDACIÓN PARA REVISAR</span><p>{advice}</p></div>{grades.length > 0 && <div className="student-support-grades"><strong>Notas del curso</strong>{grades.slice(-5).reverse().map((grade, index) => <div key={`${grade.subjectId}-${grade.period}-${index}`}><span>{grade.period || `Evaluación ${grade.id}`}</span><b>{Number(grade.grade).toFixed(1)}</b></div>)}</div>}<div className="modal-actions"><button className="button button-outline" onClick={onClose}>Cerrar</button><button className="button button-dark" onClick={onGenerate}><Sparkles size={15}/> Generar taller de apoyo</button></div></div></Modal>
+  return <Modal onClose={onClose} title="Acompañamiento del estudiante"><div className="student-support-detail"><div className="student-support-person"><Avatar name={student.name}/><div><strong>{student.name}</strong><span>{student.gradeCount ? `${student.average.toFixed(1)} / 5 · ${student.gradeCount} notas` : 'Todavía no hay notas registradas'}</span></div><span className={`level-badge level-${student.level.toLowerCase()}`}>{formatLevel(student.level)}</span></div><div className="student-support-advice"><span className="eyebrow">RECOMENDACIÓN PARA REVISAR</span><p>{advice}</p></div>{grades.length > 0 && <div className="student-support-grades"><strong>Notas del curso</strong>{grades.slice(-5).reverse().map((grade, index) => <div key={`${grade.subjectId}-${grade.period}-${index}`}><span>{grade.period || `Evaluación ${grade.id}`}</span><b>{Number(grade.grade).toFixed(1)}</b></div>)}</div>}<div className="student-support-actions"><button className="button button-outline" onClick={() => onGenerate('quiz')}><CheckCircle2 size={16}/> Preparar quiz</button><button className="button button-dark" onClick={() => onGenerate('workshop')}><Sparkles size={15}/> Generar taller de apoyo</button></div></div></Modal>
 }
 
 function downloadLearningReport(students: Candidate[]) {
@@ -726,7 +728,7 @@ function TeamsPage({ students, projects, teams, initialProjectId, onRefresh, not
 
 function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete, summary, onGenerate, onSelect, notify }: {
   saved: GeneratedWorkshop[]; result: GeneratedWorkshop | null; course: Course | null
-  supportTarget: Candidate | null; onSupportComplete: () => void
+  supportTarget: SupportTarget | null; onSupportComplete: () => void
   summary: { students: number; graded: number; low: number; medium: number; high: number; average: number | null }
   onGenerate: (workshop: GeneratedWorkshop) => void; onSelect: (workshop: GeneratedWorkshop | null) => void
   notify: (message: string, kind?: Toast['kind']) => void
@@ -757,23 +759,26 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
 
   useEffect(() => {
     if (!supportTarget || materialsLoading || !course || generating) return
-    const matchingSaved = saved.find(item => item.targetStudentId === supportTarget.id)
+    const { student, mode } = supportTarget
+    const matchingSaved = saved.find(item => item.targetStudentId === student.id && item.supportType === mode)
     if (matchingSaved) { onSelect(matchingSaved); onSupportComplete(); return }
     if (!materials.length) return
     const latest = [...materials].sort((a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''))[0]
-    const key = `${course.id}:${supportTarget.id}:${latest.id}`
+    const key = `${course.id}:${student.id}:${latest.id}:${mode}`
     if (autoStarted.current === key) return
     autoStarted.current = key
     setSelectedMaterialId(latest.id)
     setSubject(course.name)
-    const topicText = 'Refuerzo de conceptos clave del material de clase'
-    const goal = supportTarget.level === 'LOW'
+    const topicText = mode === 'quiz' ? 'Quiz breve sobre conceptos clave del material' : 'Refuerzo de conceptos clave del material de clase'
+    const goal = mode === 'quiz'
+      ? `Crea un quiz corto de comprobación sobre el material: exactamente 3 preguntas claras, adecuadas para nivel ${formatLevel(student.level)}, con opciones, respuesta correcta y explicación breve. Evalúa comprensión y aplicación, no memoria aislada.`
+      : student.level === 'LOW'
       ? 'Comprender los conceptos fundamentales mediante ejemplos guiados y demostrar lo aprendido con una comprobación breve.'
-      : supportTarget.level === 'MEDIUM'
+      : student.level === 'MEDIUM'
         ? 'Consolidar los conceptos del material y aplicarlos en ejercicios de dificultad gradual.'
         : 'Profundizar en los conceptos del material y resolver un reto de aplicación.'
-    setTopic(topicText); setLevel(supportTarget.level); setObjective(goal)
-    void generateWorkshop({ materialId: latest.id, topic: topicText, objective: goal, subject: course.name, target: supportTarget })
+    setTopic(topicText); setLevel(student.level); setObjective(goal)
+    void generateWorkshop({ materialId: latest.id, topic: topicText, objective: goal, subject: course.name, target: student, mode })
   }, [supportTarget, materialsLoading, materials, course?.id, generating, saved])
 
   const selectFile = (candidate?: File) => {
@@ -812,7 +817,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar el material.', 'error') }
   }
 
-  const generateWorkshop = async (options: { materialId?: number | null; topic?: string; objective?: string; subject?: string; target?: Candidate } = {}) => {
+  const generateWorkshop = async (options: { materialId?: number | null; topic?: string; objective?: string; subject?: string; target?: Candidate; mode?: SupportMode } = {}) => {
     if (!course) return notify('Primero crea o selecciona un curso.', 'error')
     const topicText = (options.topic ?? topic).trim()
     if (!file && !(options.materialId ?? selectedMaterialId)) return notify('Selecciona un material de este curso o adjunta uno nuevo.', 'error')
@@ -837,8 +842,9 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
       form.append('targetLevel', level)
       form.append('learningObjective', (options.objective ?? objective).trim() || `Reforzar ${topicText} con actividades prácticas y comprobar la comprensión.`)
       form.append('learningContext', summaryText)
+      form.append('generationType', options.mode ?? 'WORKSHOP')
       const response = await request<GeneratedWorkshop>(`/api/courses/${course.id}/materials/${materialId}/generate-workshop`, { method: 'POST', body: form })
-      onGenerate(options.target ? { ...response, targetStudentId: options.target.id } : response)
+      onGenerate(options.target ? { ...response, targetStudentId: options.target.id, supportType: options.mode ?? 'workshop' } : response)
       if (options.target) onSupportComplete()
       notify(options.target ? 'Taller de apoyo generado y guardado para este seguimiento.' : 'Taller generado. Revísalo y ajústalo antes de usarlo.')
     } catch (error) {
@@ -859,7 +865,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
 
   return <>
     <PageHeading eyebrow="ASISTENTE DEL CURSO" title={`Acompañamiento · ${course?.name || 'selecciona un curso'}`} description="La IA consulta el material que guardas en este curso y una lectura agregada de sus notas para proponer actividades que tú revisas." action={<span className="ai-badge"><Sparkles size={15} /> Gemini</span>} />
-    {supportTarget && <div className="student-support-banner"><span className="soft-icon lilac-icon"><Sparkles size={18}/></span><div><strong>{materialsLoading ? 'Buscando material del curso…' : generating ? `Preparando refuerzo · ${formatLevel(supportTarget.level)}` : materials.length ? `Refuerzo personalizado · ${formatLevel(supportTarget.level)}` : 'Falta material para preparar el taller'}</strong><p>{materialsLoading ? 'En cuanto cargue la biblioteca, usaremos el material más reciente.' : materials.length ? 'Se está usando el material más reciente. No se enviaron el nombre ni las notas individuales a Gemini.' : 'Sube y guarda un PDF, DOCX o TXT en la biblioteca; después el taller se generará automáticamente.'}</p>{errorMessage && <button className="text-button" onClick={() => void generateWorkshop({ materialId: selectedMaterialId ?? materials[0]?.id, topic, objective, subject, target: supportTarget })} disabled={generating}>Reintentar taller <RotateCw size={13}/></button>}</div><button className="icon-button" onClick={onSupportComplete} aria-label="Cerrar seguimiento"><X size={16}/></button></div>}
+    {supportTarget && <div className="student-support-banner"><span className="soft-icon lilac-icon"><Sparkles size={18}/></span><div><strong>{materialsLoading ? 'Buscando material del curso…' : generating ? `Preparando ${supportTarget.mode === 'quiz' ? 'quiz' : 'taller'} · ${formatLevel(supportTarget.student.level)}` : materials.length ? `${supportTarget.mode === 'quiz' ? 'Quiz' : 'Refuerzo'} personalizado · ${formatLevel(supportTarget.student.level)}` : 'Falta material para preparar la propuesta'}</strong><p>{materialsLoading ? 'En cuanto cargue la biblioteca, usaremos el material más reciente.' : materials.length ? 'Se está usando el material más reciente. No se enviaron el nombre ni las notas individuales a Gemini.' : 'Sube y guarda un PDF, DOCX o TXT en la biblioteca; después la propuesta se generará automáticamente.'}</p>{errorMessage && <button className="text-button" onClick={() => void generateWorkshop({ materialId: selectedMaterialId ?? materials[0]?.id, topic, objective, subject, target: supportTarget.student, mode: supportTarget.mode })} disabled={generating}>Reintentar <RotateCw size={13}/></button>}</div><button className="icon-button" onClick={onSupportComplete} aria-label="Cerrar seguimiento"><X size={16}/></button></div>}
     <section className="workshop-course-context">
       <div className="workshop-context-title"><span className="context-mark"><Activity size={18} /></span><div><small>LECTURA DEL CURSO</small><strong>{course?.name || 'Selecciona un curso'}</strong></div></div>
       <div className="context-stat"><strong>{summary.students}</strong><span>estudiantes</span></div>
@@ -894,19 +900,19 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
 
       <section className="panel workshop-output-panel workshop-output-new">
         <div className="panel-heading"><div><div className="eyebrow">PROPUESTA PARA REVISAR</div><h2>{result?.title || 'Aquí aparecerá la actividad'}</h2></div>{result && <button className="icon-button small-icon" onClick={() => window.print()} aria-label="Imprimir taller"><Download size={16} /></button>}</div>
-        {result ? <div className="workshop-result" id="print-workshop">
+        {result ? <div className={`workshop-result ${result.supportType === 'quiz' ? 'quiz-result' : ''}`} id="print-workshop">
           <div className="workshop-meta"><span className="subject-pill">{result.subject}</span><span className={`level-badge level-${levelOf(result.targetLevel).toLowerCase()}`}>{formatLevel(levelOf(result.targetLevel))}</span><span className="duration-pill"><Clock3 size={13} />{result.activities.reduce((sum, activity) => sum + activity.estimatedMinutes, 0)} min</span></div>
           <p className="workshop-summary">{result.summary}</p>
           <div className="result-section"><h3><Target size={16} /> ¿Qué van a aprender?</h3><ul className="objective-list">{result.learningObjectives.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>)}</ul></div>
-          <div className="result-section"><h3><BookOpen size={16} /> Actividades</h3><div className="activity-cards">{result.activities.map((activity, index) => <article className="workshop-activity" key={`${activity.title}-${index}`}><div className="activity-index">{String(index + 1).padStart(2, '0')}</div><div><div className="activity-title-line"><b>{activity.title}</b><span><Clock3 size={12} />{activity.estimatedMinutes} min</span></div><p>{activity.instructions}</p></div></article>)}</div></div>
-          <div className="result-section"><h3><CheckCircle2 size={16} /> Comprueba si aprendieron</h3><div className="assessment-list">{result.assessment.map((item, index) => <details className="assessment-item" key={`${item.question}-${index}`}><summary><span>{index + 1}</span>{item.question}<ChevronDown size={15} /></summary><div className="assessment-content"><ul>{item.options.map((option, optionIndex) => <li className={option === item.correctAnswer ? 'correct-answer' : ''} key={optionIndex}>{option === item.correctAnswer && <Check size={13} />}{option}</li>)}</ul><p><b>Respuesta sugerida:</b> {item.correctAnswer}. {item.explanation}</p></div></details>)}</div></div>
+          {result.supportType !== 'quiz' && <div className="result-section"><h3><BookOpen size={16} /> Actividades</h3><div className="activity-cards">{result.activities.map((activity, index) => <article className="workshop-activity" key={`${activity.title}-${index}`}><div className="activity-index">{String(index + 1).padStart(2, '0')}</div><div><div className="activity-title-line"><b>{activity.title}</b><span><Clock3 size={12} />{activity.estimatedMinutes} min</span></div><p>{activity.instructions}</p></div></article>)}</div></div>}
+          <div className="result-section"><h3><CheckCircle2 size={16} /> {result.supportType === 'quiz' ? 'Quiz · comprueba lo aprendido' : 'Comprueba si aprendieron'}</h3><div className="assessment-list">{result.assessment.map((item, index) => result.supportType === 'quiz' ? <article className="quiz-question" key={`${item.question}-${index}`}><strong>{index + 1}. {item.question}</strong><ul>{item.options.map((option, optionIndex) => <li key={optionIndex}>{option}</li>)}</ul><details className="quiz-answer-key"><summary>Ver clave docente</summary><p><b>Respuesta:</b> {item.correctAnswer}. {item.explanation}</p></details></article> : <details className="assessment-item" key={`${item.question}-${index}`}><summary><span>{index + 1}</span>{item.question}<ChevronDown size={15} /></summary><div className="assessment-content"><ul>{item.options.map((option, optionIndex) => <li className={option === item.correctAnswer ? 'correct-answer' : ''} key={optionIndex}>{option === item.correctAnswer && <Check size={13} />}{option}</li>)}</ul><p><b>Respuesta sugerida:</b> {item.correctAnswer}. {item.explanation}</p></div></details>)}</div></div>
           <div className="source-note"><FileText size={14} /><span>Material consultado: {result.sourceReferences.join(' · ') || 'Referencias no especificadas'}</span></div>
           <div className="result-actions"><button className="button button-dark" onClick={() => void copy()}><Download size={15} /> Copiar</button><button className="button button-outline" onClick={() => window.print()}><FileText size={15} /> Imprimir / PDF</button></div>
           <p className="review-note"><Lightbulb size={14} /> Es una propuesta para que tú la revises; no cambia las notas ni se asigna automáticamente.</p>
         </div> : <EmptyState icon={<WandSparkles size={24} />} title="Una buena clase empieza con una pregunta" text="Cuando generes la propuesta, verás los objetivos, actividades, evaluación y referencias del material." action={<div className="output-preview"><span><Check size={13} /> Actividades listas para clase</span><span><Check size={13} /> Evaluación breve</span><span><Check size={13} /> Fuente verificable</span></div>} />}
       </section>
     </div>
-    <section className="saved-workshops-section"><div className="section-heading"><div><div className="eyebrow">TU BIBLIOTECA</div><h2>Propuestas recientes</h2></div><span className="saved-count">{saved.length}</span></div>{saved.length ? <div className="saved-workshop-grid">{saved.map((workshop, index) => <button className={`saved-workshop-card ${result?.title === workshop.title ? 'selected' : ''}`} key={`${workshop.title}-${index}`} onClick={() => onSelect(workshop)}><span className="shortcut-icon lilac-icon"><BookOpen size={17} /></span><span className="saved-workshop-copy"><b>{workshop.title}</b><small>{workshop.subject} · {workshop.activities.length} actividades</small></span><ChevronRight size={16} /></button>)}</div> : <p className="saved-empty">Las propuestas que revises se guardan en este navegador, dentro de la cuenta y curso seleccionados.</p>}</section>
+    <section className="saved-workshops-section"><div className="section-heading"><div><div className="eyebrow">TU BIBLIOTECA</div><h2>Propuestas recientes</h2></div><span className="saved-count">{saved.length}</span></div>{saved.length ? <div className="saved-workshop-grid">{saved.map((workshop, index) => <button className={`saved-workshop-card ${result?.title === workshop.title ? 'selected' : ''}`} key={`${workshop.title}-${index}`} onClick={() => onSelect(workshop)}><span className="shortcut-icon lilac-icon"><BookOpen size={17} /></span><span className="saved-workshop-copy"><b>{workshop.title}</b><small>{workshop.supportType === 'quiz' ? 'Quiz' : 'Taller'} · {workshop.subject} · {workshop.activities.length} actividades</small></span><ChevronRight size={16} /></button>)}</div> : <p className="saved-empty">Las propuestas que revises se guardan en este navegador, dentro de la cuenta y curso seleccionados.</p>}</section>
   </>
 }
 

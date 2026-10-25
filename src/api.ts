@@ -109,4 +109,5 @@ export interface GeneratedWorkshop {
   savedAt?: string
   /** Local account/course metadata; never included in the Gemini request. */
   targetStudentId?: number
+  supportType?: 'workshop' | 'quiz'
 }
