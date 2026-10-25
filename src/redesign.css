@@ -433,7 +433,7 @@ select option { background: white !important; color: var(--ink) !important; }
 /* Optional compact sidebar; text labels remain available as hover titles. */
 .sidebar-collapsed .sidebar { width: 76px !important; padding-right: 11px !important; padding-left: 11px !important; }
 .sidebar-collapsed .main-area { margin-left: 76px !important; }
-.sidebar-collapsed .brand-lockup { justify-content: center; padding: 0 !important; }
+.sidebar-collapsed .brand-lockup { position: relative; justify-content: center; padding: 0 !important; }
 .sidebar-collapsed .brand-lockup > span, .sidebar-collapsed .workspace-switch > div:nth-child(2), .sidebar-collapsed .workspace-switch > svg:last-child,
 .sidebar-collapsed .nav-caption, .sidebar-collapsed .nav-link > span, .sidebar-collapsed .help-card, .sidebar-collapsed .profile-meta, .sidebar-collapsed .profile-action > svg { display: none !important; }
 .sidebar-collapsed .brand-lockup .sidebar-collapse-toggle { position: absolute; top: 49px; left: 22px; background: #f3f3fa; }
