@@ -844,7 +844,15 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
       form.append('learningContext', summaryText)
       form.append('generationType', options.mode ?? 'WORKSHOP')
       const response = await request<GeneratedWorkshop>(`/api/courses/${course.id}/materials/${materialId}/generate-workshop`, { method: 'POST', body: form })
-      onGenerate(options.target ? { ...response, targetStudentId: options.target.id, supportType: options.mode ?? 'workshop' } : response)
+      onGenerate(options.target ? {
+        ...response,
+        ...(options.mode === 'quiz' ? {
+          title: `Quiz breve · ${response.subject}`,
+          summary: `Quiz de comprobación basado en el material de ${response.subject}. Responde las preguntas y revisa la clave docente después del intento.`,
+        } : {}),
+        targetStudentId: options.target.id,
+        supportType: options.mode ?? 'workshop',
+      } : response)
       if (options.target) onSupportComplete()
       notify(options.target ? 'Taller de apoyo generado y guardado para este seguimiento.' : 'Taller generado. Revísalo y ajústalo antes de usarlo.')
     } catch (error) {
@@ -901,7 +909,7 @@ function WorkshopsPage({ saved, result, course, supportTarget, onSupportComplete
       <section className="panel workshop-output-panel workshop-output-new">
         <div className="panel-heading"><div><div className="eyebrow">PROPUESTA PARA REVISAR</div><h2>{result?.title || 'Aquí aparecerá la actividad'}</h2></div>{result && <button className="icon-button small-icon" onClick={() => window.print()} aria-label="Imprimir taller"><Download size={16} /></button>}</div>
         {result ? <div className={`workshop-result ${result.supportType === 'quiz' ? 'quiz-result' : ''}`} id="print-workshop">
-          <div className="workshop-meta"><span className="subject-pill">{result.subject}</span><span className={`level-badge level-${levelOf(result.targetLevel).toLowerCase()}`}>{formatLevel(levelOf(result.targetLevel))}</span><span className="duration-pill"><Clock3 size={13} />{result.activities.reduce((sum, activity) => sum + activity.estimatedMinutes, 0)} min</span></div>
+          <div className="workshop-meta"><span className="subject-pill">{result.subject}</span><span className={`level-badge level-${levelOf(result.targetLevel).toLowerCase()}`}>{formatLevel(levelOf(result.targetLevel))}</span><span className="duration-pill">{result.supportType === 'quiz' ? <><CheckCircle2 size={13} />{result.assessment.length} preguntas</> : <><Clock3 size={13} />{result.activities.reduce((sum, activity) => sum + activity.estimatedMinutes, 0)} min</>}</span></div>
           <p className="workshop-summary">{result.summary}</p>
           <div className="result-section"><h3><Target size={16} /> ¿Qué van a aprender?</h3><ul className="objective-list">{result.learningObjectives.map((item, index) => <li key={index}><span>{String(index + 1).padStart(2, '0')}</span>{item}</li>)}</ul></div>
           {result.supportType !== 'quiz' && <div className="result-section"><h3><BookOpen size={16} /> Actividades</h3><div className="activity-cards">{result.activities.map((activity, index) => <article className="workshop-activity" key={`${activity.title}-${index}`}><div className="activity-index">{String(index + 1).padStart(2, '0')}</div><div><div className="activity-title-line"><b>{activity.title}</b><span><Clock3 size={12} />{activity.estimatedMinutes} min</span></div><p>{activity.instructions}</p></div></article>)}</div></div>}
