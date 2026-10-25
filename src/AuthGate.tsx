@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, GraduationCap, LoaderCircle, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
+import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, LoaderCircle, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react'
 import App from './App'
 import { API_BASE, clearAccessToken, request, saveAccessToken, type AuthResponse, type TeacherProfile } from './api'
+import FairTeamMark from './FairTeamMark'
 
 type Mode = 'login' | 'register'
 
@@ -69,7 +70,7 @@ export default function AuthGate() {
         <div className="auth-floating-note"><Sparkles size={15} /> Primero los datos, luego la recomendación.</div>
       </section>
       <section className="auth-card teacher-auth-card">
-        <div className="auth-brand"><span className="auth-brand-mark"><GraduationCap size={21} /></span><span>fair<span>team</span><sup>✳</sup></span></div>
+        <div className="auth-brand"><span className="auth-brand-mark"><FairTeamMark size={42} /></span><span>fair<span>team</span><sup>✳</sup></span></div>
         <div className="auth-eyebrow"><LockKeyhole size={14} /> ESPACIO DOCENTE</div>
         <h1>{mode === 'login' ? 'Qué bueno verte.' : 'Crea tu cuenta docente.'}</h1>
         <p className="auth-copy">{mode === 'login' ? 'Inicia sesión para continuar con el seguimiento de tu curso.' : 'Crea tu espacio docente personal. Tus estudiantes y notas estarán separados de otras cuentas.'}</p>

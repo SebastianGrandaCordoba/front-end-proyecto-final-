@@ -465,3 +465,105 @@ select option { background: white !important; color: var(--ink) !important; }
   .command-empty h1 { font-size: 38px !important; }
   .command-actions .button { width: 100%; justify-content: center; }
 }
+
+/* Final contrast and identity pass. */
+:root { --muted: #58627b; --ink-soft: #39425d; --line: #e1e4ef; }
+body { color: #20253a !important; }
+p, small, label, .panel-copy, .page-heading p { color: #515b75; }
+.brand-mark { display: grid !important; place-items: center; width: 42px !important; height: 42px !important; padding: 0 !important; overflow: visible !important; border-radius: 13px !important; background: transparent !important; transform: none !important; }
+.brand-mark svg { display: block; flex: none; filter: drop-shadow(0 4px 8px rgb(70 72 154 / 18%)); }
+.brand-lockup { gap: 9px !important; }
+.brand-lockup > span, .auth-brand > span:last-child { color: #252a40 !important; font-weight: 800 !important; }
+.brand-green, .auth-brand > span:last-child > span { color: #5851ba !important; }
+.brand-lockup sup, .auth-brand sup { color: #7868c7 !important; }
+.auth-brand-mark { display: grid !important; place-items: center; width: 46px !important; height: 46px !important; padding: 0 !important; border-radius: 14px !important; background: transparent !important; color: white !important; }
+.auth-brand-mark svg { display: block; filter: drop-shadow(0 5px 12px rgb(70 72 154 / 20%)); }
+
+/* Explicit contrast overrides for older selectors that washed out text. */
+.course-intro { background: #fff !important; border-color: #e1e4ef !important; }
+.course-intro strong { color: #242a42 !important; font-size: 14px !important; }
+.course-intro p { color: #4e5872 !important; font-size: 13px !important; line-height: 1.55 !important; }
+.course-count { background: #f0efff !important; color: #4f48ad !important; font-size: 11px !important; }
+.course-folder-card.selected { border-color: #675ecb !important; box-shadow: 0 0 0 3px #675ecb22, 0 12px 28px rgb(41 49 91 / 7%) !important; }
+.course-folder-card:hover { border-color: #8b84d8 !important; }
+.course-folder-card:before { background: linear-gradient(90deg,#5e69cd,#8870d0) !important; }
+.course-folder-card:after { background: #eff0ff !important; opacity: .8 !important; }
+.course-folder-icon, .course-intro-icon { background: #efedff !important; color: #554db7 !important; }
+.course-folder-period { color: #4e5872 !important; font-size: 12px !important; font-weight: 650; }
+.course-folder-card h2 { color: #252a40 !important; font-size: 21px !important; }
+.course-folder-card > p { color: #4e5872 !important; font-size: 13px !important; line-height: 1.6 !important; }
+.course-folder-footer { border-color: #e5e7f0 !important; }
+.course-folder-footer > span { color: #4e5872 !important; font-size: 12px !important; }
+.course-folder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 18px !important; }
+.course-folder-card { min-height: 245px !important; padding: 23px !important; }
+.course-folder-card .button { min-height: 42px !important; }
+.nav-caption, .eyebrow { color: #626b83 !important; }
+.profile-meta span, .course-switcher-wrap select, .breadcrumb { color: #4e5872 !important; }
+.connection-pill { color: #46516c !important; background: #f6f7fb !important; }
+.page-footer { color: #626b83 !important; }
+.teacher-auth-story { max-width: 530px !important; padding: 24px 0 !important; border-radius: 22px; }
+.teacher-auth-story h2 { max-width: 510px !important; font-size: clamp(38px, 4.1vw, 55px) !important; line-height: 1.06 !important; letter-spacing: -.052em !important; color: #20253a !important; }
+.teacher-auth-story p { max-width: 460px !important; color: #46516c !important; font-size: 15px !important; line-height: 1.75 !important; }
+.teacher-auth-screen .auth-side-kicker, .teacher-auth-screen .auth-eyebrow { color: #5149af !important; }
+.teacher-auth-screen .auth-feature-stack > div { color: #39435d !important; font-size: 13px !important; }
+.teacher-auth-screen .auth-feature-stack > div > span { background: #eeedff !important; color: #554db7 !important; box-shadow: none !important; }
+.teacher-auth-screen .auth-feature-stack > div:nth-child(2) > span, .teacher-auth-screen .auth-feature-stack > div:nth-child(3) > span { background: #eeedff !important; color: #554db7 !important; }
+.teacher-auth-screen .auth-floating-note { color: #424c68 !important; background: #fff !important; border: 1px solid #e4e5f1; font-size: 12px !important; }
+.teacher-auth-screen .auth-feature-stack { gap: 14px !important; margin-top: 27px !important; }
+.teacher-auth-screen .teacher-auth-card { border-color: #e0e3ef !important; }
+.teacher-auth-screen .teacher-auth-card label { color: #343d57 !important; font-size: 12px !important; }
+.teacher-auth-screen .teacher-auth-card .auth-copy { color: #535d76 !important; }
+.teacher-auth-screen .auth-secure { color: #39435d !important; background: #f1f2fa !important; border-color: #e5e6f1 !important; }
+.teacher-auth-screen .auth-secure span { color: #4d5770 !important; }
+.teacher-auth-screen .auth-footnote, .teacher-auth-screen .auth-copyright { color: #626b83 !important; }
+.teacher-auth-screen .teacher-auth-submit { background: linear-gradient(105deg,#5b65c8,#7564c9) !important; box-shadow: 0 8px 22px #6258c928 !important; }
+.teacher-auth-screen .teacher-auth-submit:hover { background: linear-gradient(105deg,#4d57b7,#6553b9) !important; }
+.auth-backdrop-one { background: radial-gradient(circle,#e0e4ff 0,transparent 70%) !important; }
+.auth-backdrop-two { background: radial-gradient(circle,#e9e2ff 0,transparent 70%) !important; }
+
+/* The AI output is presented as a classroom-ready learning sequence. */
+.result-section-intro { color: #4b5671 !important; font-size: 13px !important; line-height: 1.65 !important; margin: -6px 0 14px !important; }
+.workshop-activity { grid-template-columns: 42px minmax(0,1fr) !important; gap: 14px !important; padding: 19px !important; background: #fff !important; border-color: #dfe2ed !important; }
+.activity-index { width: 38px; height: 38px; display: grid; place-items: center; background: #efedff !important; color: #5149af !important; font-size: 12px !important; font-weight: 800; }
+.activity-phase { display: inline-flex; margin: 0 0 7px; color: #5149af !important; font-size: 10px !important; font-weight: 800; letter-spacing: .1em; }
+.activity-title-line b { color: #252a40 !important; font-size: 15px !important; }
+.activity-title-line span { color: #515b75 !important; }
+.workshop-activity p { color: #39435d !important; font-size: 14px !important; line-height: 1.75 !important; }
+.objective-list li { color: #39435d !important; font-size: 14px !important; }
+.assessment-item summary, .quiz-question > strong { color: #252a40 !important; }
+.assessment-content, .assessment-content p, .quiz-question ul, .quiz-answer-key p { color: #39435d !important; }
+.source-note, .download-help, .review-note { color: #4e5872 !important; }
+
+@media (max-width: 1100px) { .course-folder-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; } }
+@media (max-width: 780px) { .course-folder-grid { grid-template-columns: 1fr !important; } }
+
+/* Cohesive auth canvas and a useful single-course state. */
+.teacher-auth-screen { background: #f4f5fb !important; }
+.teacher-auth-story { background: linear-gradient(145deg,#e9ebff 0%,#f0efff 52%,#f4f5fb 100%) !important; border: 1px solid #e1e3f2 !important; padding: clamp(28px,4vw,48px) !important; box-shadow: inset 0 1px 0 rgb(255 255 255 / 75%); }
+.teacher-auth-screen .teacher-auth-card { background: #fff !important; box-shadow: 0 22px 70px rgb(48 53 91 / 10%) !important; }
+.teacher-auth-screen .auth-secure { color: #303953 !important; }
+.teacher-auth-screen .auth-secure span, .teacher-auth-screen .auth-feature-stack > div { color: #38425c !important; }
+.teacher-auth-screen .auth-footnote, .teacher-auth-screen .auth-copyright { color: #58627b !important; }
+.teacher-auth-screen :is(button,a,input,select,textarea):focus-visible { outline: 3px solid #655bc95e !important; outline-offset: 3px !important; }
+
+@supports selector(.course-folder-grid:has(.course-folder-card:only-child)) {
+  .course-folder-grid:has(.course-folder-card:only-child) { grid-template-columns: 1fr !important; }
+  .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card {
+    display: grid !important; grid-template-columns: minmax(0,1.5fr) minmax(260px,.65fr);
+    grid-template-rows: auto auto 1fr; align-items: center; gap: 0 34px; min-height: 245px !important;
+  }
+  .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card > :first-child { grid-column: 1 / -1; }
+  .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card h2,
+  .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card > p { grid-column: 1; }
+  .course-folder-grid:has(.course-folder-card:only-child) .course-folder-footer { grid-column: 2; grid-row: 2 / 4; align-self: stretch; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 18px; margin: 0 !important; padding: 22px !important; border: 1px solid #e2e3f2 !important; border-radius: 14px; background: #f7f7ff; }
+}
+@media (max-width: 780px) {
+  .teacher-auth-story { padding: 26px !important; }
+  @supports selector(.course-folder-grid:has(.course-folder-card:only-child)) {
+    .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card { grid-template-columns: 1fr; }
+    .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card > :first-child,
+    .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card h2,
+    .course-folder-grid:has(.course-folder-card:only-child) .course-folder-card > p,
+    .course-folder-grid:has(.course-folder-card:only-child) .course-folder-footer { grid-column: 1; grid-row: auto; }
+  }
+}
