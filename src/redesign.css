@@ -348,6 +348,12 @@ select option { background: white !important; color: var(--ink) !important; }
 .command-hero h1 { max-width: 760px !important; margin: 18px 0 12px !important; color: #242940 !important; font-size: clamp(30px, 3.4vw, 45px) !important; line-height: 1.13 !important; letter-spacing: -.052em !important; }
 .command-hero h1 span { color: #6258c9 !important; }
 .command-hero-copy > p { max-width: 620px !important; color: #727991 !important; font-size: 14px !important; line-height: 1.7 !important; }
+.command-empty { min-height: 410px !important; padding: clamp(28px, 5vw, 58px) !important; border: 1px solid #e8eaf2 !important; border-radius: 16px !important; background: linear-gradient(130deg,#fff 0%,#fbfbff 70%,#f3f3ff 100%) !important; box-shadow: 0 10px 30px rgb(41 49 91 / 4%) !important; }
+.command-empty h1 { max-width: 760px !important; color: #242940 !important; font-size: clamp(36px, 5vw, 60px) !important; line-height: 1.08 !important; letter-spacing: -.055em !important; }
+.command-empty h1 span { color: #6258c9 !important; }
+.command-empty > p { max-width: 570px !important; color: #727991 !important; font-size: 14px !important; line-height: 1.7 !important; }
+.command-empty .command-kicker { color: #6258c9 !important; }
+.command-empty .command-live-dot { background: #6d66d3 !important; box-shadow: 0 0 0 4px #efedff !important; }
 .command-actions { gap: 10px !important; margin-top: 19px !important; }
 .command-actions .button { min-height: 46px !important; padding: 0 17px !important; font-size: 13px !important; }
 .command-actions .button-ghost { background: white !important; color: #4c536a !important; border-color: #e1e3ed !important; }
@@ -456,5 +462,6 @@ select option { background: white !important; color: var(--ink) !important; }
   .metric-skeleton-grid .metric-skeleton:last-child { grid-column: 1 / -1; }
   .command-hero { padding: 22px !important; }
   .command-hero h1 { font-size: 32px !important; }
+  .command-empty h1 { font-size: 38px !important; }
   .command-actions .button { width: 100%; justify-content: center; }
 }
