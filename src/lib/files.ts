@@ -27,16 +27,24 @@ export async function downloadTemplate(kind: 'roster' | 'grades', format: 'xlsx'
   downloadBlob(`${base}.xlsx`, new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
 }
 
-export function downloadLearningReport(students: Candidate[], courseName: string) {
+export function learningReportCsv(students: Candidate[]) {
   const columns = ['Estudiante', 'Correo', 'Promedio', 'Cantidad de notas', 'Estado', 'Observación']
   const rows = students.map(student => {
     const status = !student.hasGrades ? 'Sin notas' : levelLabel[student.level]
     const reason = !student.hasGrades ? 'No tiene notas cargadas' : student.level === 'LOW' ? `Promedio menor a 3,0 en ${student.gradeCount} nota(s)` : student.level === 'MEDIUM' ? `Promedio entre 3,0 y menos de 4,0 en ${student.gradeCount} nota(s)` : `Promedio de 4,0 o más en ${student.gradeCount} nota(s)`
     return [student.name, student.email || '', student.hasGrades ? formatGrade(student.average) : '', String(student.gradeCount), status, reason]
   })
-  const csv = [columns, ...rows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\r\n')
+  return toCsv([columns, ...rows])
+}
+
+/** Semicolon-separated, quoted, with a BOM so Excel in Spanish opens accents and columns correctly. */
+export function toCsv(rows: string[][]) {
+  return '\uFEFF' + rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\r\n')
+}
+
+export function downloadLearningReport(students: Candidate[], courseName: string) {
   const slug = slugify(courseName) || 'curso'
-  downloadText(`seguimiento-${slug}-${new Date().toISOString().slice(0, 10)}.csv`, `﻿${csv}`, 'text/csv;charset=utf-8')
+  downloadText(`seguimiento-${slug}-${new Date().toISOString().slice(0, 10)}.csv`, learningReportCsv(students), 'text/csv;charset=utf-8')
 }
 
 export function slugify(value: string) {
@@ -107,8 +115,10 @@ ${workshop.supportType === 'quiz' ? '' : `<h2>Actividades</h2>${workshop.activit
 }
 
 /** The course roster with each student's current average, ready for Excel. */
+export function rosterCsv(students: Candidate[]) {
+  return toCsv([['Nombre', 'Correo', 'Promedio', 'Notas', 'Estado'], ...students.map(s => [s.name, s.email || '', s.hasGrades ? formatGrade(s.average) : '', String(s.gradeCount), s.hasGrades ? levelLabel[s.level] : 'Sin notas'])])
+}
+
 export function downloadRoster(students: Candidate[], courseName: string) {
-  const rows = [['Nombre', 'Correo', 'Promedio', 'Notas', 'Estado'], ...students.map(s => [s.name, s.email || '', s.hasGrades ? formatGrade(s.average) : '', String(s.gradeCount), s.hasGrades ? levelLabel[s.level] : 'Sin notas'])]
-  const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\r\n')
-  downloadText(`lista-${slugify(courseName) || 'curso'}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8')
+  downloadText(`lista-${slugify(courseName) || 'curso'}.csv`, rosterCsv(students), 'text/csv;charset=utf-8')
 }
