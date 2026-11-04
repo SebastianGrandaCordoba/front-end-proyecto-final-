@@ -750,3 +750,37 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .course-stats dd { margin: 0; font-size: 20px; font-variant-numeric: tabular-nums; }
 .course-stats .is-alert dd { color: var(--low); }
 .course-weakest { grid-column: 1 / -1; margin-top: 8px; color: var(--ink-2); font-size: 13px; }
+
+/* ---------- Dark theme: elevation by lightness, colour only on data ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0f1416;
+  --sheet: #151c1f;
+  --panel: #1b2427;
+  --panel-2: #222d31;
+  --line: #2a3539;
+  --rule: #222c30;
+  --control: #3a474c;
+  --ink: #e8eef0;
+  --ink-2: #b4c0c4;
+  --ink-3: #93a1a6;
+  --accent: #4fb3c8;
+  --accent-ink: #7fd0e0;
+  --accent-soft: #17323a;
+  --accent-ring: rgb(79 179 200 / 32%);
+  --low: #f19a86; --low-bg: #3a1f1a; --low-dot: #e07a62;
+  --medium: #e8c06a; --medium-bg: #352a14; --medium-dot: #d8a237;
+  --high: #7fd1a4; --high-bg: #16301f; --high-dot: #4cae7c;
+  --none: #93a1a6; --none-bg: #222b2e; --none-dot: #5c686c;
+  --danger: #e07a62;
+  --on-accent: #0b1a1e;
+  --glass: rgb(255 255 255 / 6%);
+  --nav-blur: rgb(21 28 31 / 92%);
+  --inverse: #e8eef0;
+  --on-inverse: #11181a;
+  --shadow-float: 0 16px 40px rgb(0 0 0 / 45%), 0 2px 6px rgb(0 0 0 / 30%);
+}
+:root[data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23b4c0c4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); }
+:root[data-theme="dark"] .buho-brief:hover, :root[data-theme="dark"] .buho-mic:hover, :root[data-theme="dark"] .buho-nav:hover { background: #1d3d46; }
+:root[data-theme="dark"] .table tbody tr:hover { background: #1a2326; }
+:root[data-theme="dark"] .owl ellipse { opacity: .3; }
