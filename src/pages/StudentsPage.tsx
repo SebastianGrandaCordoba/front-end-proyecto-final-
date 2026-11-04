@@ -84,7 +84,7 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
           <tbody>{visible.map(student => <tr key={student.id}>
             <td><button className="person-cell" onClick={() => review(student)}><Avatar name={student.name} /><span><b>{student.name}</b><small>{student.email || 'Sin correo'}</small></span></button></td>
             <td><LevelPill level={student.level} hasGrades={student.hasGrades} /></td>
-            <td className="num">{student.hasGrades ? <b className={student.average < 3 ? 'is-low' : ''}>{formatGrade(student.average)}</b> : <span className="muted">—</span>}</td>
+            <td className="num">{student.hasGrades ? <b className={student.level === 'LOW' ? 'is-low' : ''}>{formatGrade(student.average)}</b> : <span className="muted">—</span>}</td>
             <td className="num">{student.gradeCount}</td>
             <td><div className="row-actions">
               <button className="btn btn-ghost btn-small" onClick={() => review(student)}>Ver</button>

@@ -19,8 +19,11 @@ export function levelOf(value?: string | null): AcademicLevel {
   return 'MEDIUM'
 }
 
+/** Classify on the value the teacher sees (one decimal), so a 2,97 shown as "3,0" is not called "refuerzo". */
+export const round1 = (value: number) => Math.round(value * 10) / 10
 export function levelFromAverage(average: number): AcademicLevel {
-  return average < 3 ? 'LOW' : average < 4 ? 'MEDIUM' : 'HIGH'
+  const shown = round1(average)
+  return shown < 3 ? 'LOW' : shown < 4 ? 'MEDIUM' : 'HIGH'
 }
 
 const number1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -132,7 +135,7 @@ export function subjectInsights(grades: Grade[], subjects: Subject[]): SubjectIn
       name: names.get(id) ?? `Materia ${id}`,
       average: group.marks.reduce((s, m) => s + m, 0) / group.marks.length,
       count: group.marks.length,
-      lowCount: perStudent.filter(avg => avg < 3).length,
+      lowCount: perStudent.filter(avg => round1(avg) < 3).length,
     }
   }).sort((a, b) => a.average - b.average)
 }

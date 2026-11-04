@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Course, type CourseMaterial, type GeneratedWorkshop, type Grade, type Project, type Student, type Team, type TeacherProfile } from '../api'
 import { buildCandidates, subjectInsights, summarize, type Subject } from '../lib/domain'
+import { defaultWeights, orderedPeriods, project, studentTrends } from '../lib/insights'
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -120,10 +121,26 @@ export function useWorkspace(user: TeacherProfile) {
   const insights = useMemo(() => subjectInsights(grades, subjects), [grades, subjects])
   const course = courses.find(item => item.id === courseId) ?? null
 
+  // Grade simulator: how many periods the course has and how much each weighs (30/30/40 by default).
+  const simKey = `fairteam.sim.${user.id}.${courseId ?? 'none'}`
+  const observed = useMemo(() => orderedPeriods(grades), [grades])
+  const [simConfig, setSimConfigState] = useState<{ total: number; weights: number[] } | null>(() => readJson(simKey, null))
+  useEffect(() => { setSimConfigState(readJson(simKey, null)) }, [simKey])
+  const sim = useMemo(() => {
+    const total = Math.max(simConfig?.total ?? 3, observed.length, 1)
+    const weights = simConfig?.weights?.length === total ? simConfig.weights : defaultWeights(total)
+    const periods = [...observed, ...Array.from({ length: Math.max(0, total - observed.length) }, (_, i) => `Corte ${observed.length + i + 1}`)]
+    return { total, weights, periods, observed }
+  }, [simConfig, observed])
+  const setSimConfig = useCallback((next: { total: number; weights: number[] }) => { setSimConfigState(next); writeJson(simKey, next) }, [simKey])
+  const trends = useMemo(() => studentTrends(candidates, grades, subjects), [candidates, grades, subjects])
+  const projections = useMemo(() => new Map(trends.map(t => [t.student.id, project(t, sim.periods, sim.weights)])), [trends, sim])
+
   return {
     courses, setCourses, coursesState, loadCourses,
     course, courseId, setCourseId, courseState,
     students, grades, candidates, summary, insights, subjects,
+    trends, projections, sim, setSimConfig,
     materials, updateMaterials,
     projects, teams,
     workshops, saveWorkshop, removeWorkshop, clearWorkshops,

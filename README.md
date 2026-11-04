@@ -17,6 +17,13 @@ Aplicación docente para revisar notas y progreso, identificar estudiantes que p
 - `src/components/ui.tsx`: modal accesible, confirmaciones, avisos y controles compartidos.
 - `src/styles.css`: una sola hoja de estilos con tokens de color, tipografía Instrument Sans/Serif y diseño responsivo.
 
+## El asistente Búho
+
+- **Pregúntale por voz o por texto** (botón Búho o `Ctrl + K`): "¿quién viene bajando?", "¿qué nota necesita Valentina para pasar?", "crea un quiz de ciclos para refuerzo", "escríbele un mensaje a Santiago". `src/lib/buho.ts` interpreta la frase sobre los datos del curso, al instante y sin enviar nada a la IA; `src/lib/speech.ts` usa la Web Speech API del navegador para escuchar y responder en voz alta.
+- **Resumen del día hablado**: cómo va el curso y qué hacer primero.
+- **Tendencia y riesgo** entre cortes, y **simulador de notas** con pesos configurables (30/30/40 por defecto) que calcula qué nota necesita cada estudiante para aprobar (`src/lib/insights.ts`).
+- **Mensajes de retroalimentación** redactados con las notas de cada estudiante y **informe del curso en PDF** (`src/lib/report.ts`).
+
 ## Desarrollo local
 
 Requiere Node.js 20.19 o posterior y pnpm.

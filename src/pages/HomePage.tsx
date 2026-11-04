@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Check, FileText } from 'lucide-react'
+import { ArrowRight, BookOpen, Check, FileText, MessageCircle, Play } from 'lucide-react'
 import type { TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import FairTeamMark from '../FairTeamMark'
@@ -7,7 +7,7 @@ import { headline, recommendations, setupSteps, type Recommendation } from '../l
 import { firstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
 import { Avatar, EmptyState } from '../components/ui'
 
-export default function HomePage({ workspace, navigate, startWorkshop, review, user }: PageProps & { user: TeacherProfile }) {
+export default function HomePage({ workspace, navigate, startWorkshop, review, assistant, user }: PageProps & { user: TeacherProfile }) {
   const { course, courses, candidates, summary, insights, materials, workshops, courseState, coursesState } = workspace
   const weakest = insights[0] ?? null
   const input = { course, courses, candidates, summary, materials, workshops, weakest }
@@ -43,6 +43,11 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, u
     <header className="greeting">
       <h1>{greetingFor()}, {firstName(user.name)}.</h1>
       <p>{loading ? 'Revisando tu curso…' : headline(input)} <span className="greeting-date">· {todayLabel()}</span></p>
+      <div className="greeting-actions">
+        <button className="btn btn-primary" onClick={assistant.brief} disabled={loading}><Play size={16} aria-hidden />Escuchar el resumen</button>
+        <button className="btn btn-secondary" onClick={assistant.open}><MessageCircle size={16} aria-hidden />Preguntarle al Búho</button>
+        {summary.gradeCount > 0 && <button className="btn btn-ghost" onClick={assistant.report}><FileText size={16} aria-hidden />Informe del curso</button>}
+      </div>
     </header>
 
     <section className={`assistant${course && stepsDone < steps.length ? ' has-setup' : ''}`} aria-labelledby="assistant-title">
