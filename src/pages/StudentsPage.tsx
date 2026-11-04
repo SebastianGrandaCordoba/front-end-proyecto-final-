@@ -34,6 +34,8 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
       .sort((a, b) => sort === 'promedio' ? (a.hasGrades ? a.average : 99) - (b.hasGrades ? b.average : 99) : a.name.localeCompare(b.name, 'es'))
   }, [candidates, filter, query, sort])
 
+  const trendOf = useMemo(() => new Map(workspace.trends.map(t => [t.student.id, t.direction])), [workspace.trends])
+
   const remove = async (student: Student) => {
     const ok = await confirm({ title: `¿Eliminar a ${student.name}?`, body: 'Esta acción no se puede deshacer.', confirm: 'Eliminar estudiante', danger: true })
     if (!ok) return
@@ -80,12 +82,13 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
     <div className="table-card">
       {courseState === 'loading' ? <div className="table-skeleton" aria-label="Cargando estudiantes">{Array.from({ length: 6 }, (_, i) => <i key={i} />)}</div>
         : visible.length ? <table className="table">
-          <thead><tr><th scope="col">Estudiante</th><th scope="col">Estado</th><th scope="col" className="num">Promedio</th><th scope="col" className="num">Notas</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
+          <thead><tr><th scope="col">Estudiante</th><th scope="col">Estado</th><th scope="col" className="num">Promedio</th><th scope="col" className="num">Notas</th><th scope="col">Tendencia</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
           <tbody>{visible.map(student => <tr key={student.id}>
             <td><button className="person-cell" onClick={() => review(student)}><Avatar name={student.name} /><span><b>{student.name}</b><small>{student.email || 'Sin correo'}</small></span></button></td>
             <td><LevelPill level={student.level} hasGrades={student.hasGrades} /></td>
             <td className="num">{student.hasGrades ? <b className={student.level === 'LOW' ? 'is-low' : ''}>{formatGrade(student.average)}</b> : <span className="muted">—</span>}</td>
             <td className="num">{student.gradeCount}</td>
+            <td><TrendTag direction={trendOf.get(student.id)} /></td>
             <td><div className="row-actions">
               <button className="btn btn-ghost btn-small" onClick={() => review(student)}>Ver</button>
               <button className="icon-btn" onClick={() => setEditing(student)} aria-label={`Editar a ${student.name}`}><Pencil size={16} /></button>
@@ -131,4 +134,11 @@ function StudentForm({ student, courseId, onClose, onSaved }: { student: Student
       <div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={saving}>{saving && <Spinner />}{saving ? 'Guardando…' : student ? 'Guardar cambios' : 'Agregar estudiante'}</button></div>
     </form>
   </Modal>
+}
+
+function TrendTag({ direction }: { direction?: 'down' | 'up' | 'flat' | 'unknown' }) {
+  if (direction === 'down') return <span className="trend trend-down">↓ Baja</span>
+  if (direction === 'up') return <span className="trend trend-up">↑ Sube</span>
+  if (direction === 'flat') return <span className="muted">Estable</span>
+  return <span className="muted">—</span>
 }
