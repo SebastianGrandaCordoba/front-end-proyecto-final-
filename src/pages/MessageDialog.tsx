@@ -10,7 +10,7 @@ type Feedback = { studentId: number; studentName: string; email: string | null; 
 /** The backend writes the message from the student's grades (FeedbackTemplate); the teacher edits and sends it. */
 export default function MessageDialog({ courseId, student, onClose }: { courseId: number; student: Candidate; onClose: () => void }) {
   const { notify } = useFeedback()
-  const [tone, setTone] = useState<'cercano' | 'formal'>('cercano')
+  const [tone, setTone] = useState<'cercano' | 'formal' | 'motivador'>('cercano')
   const [draft, setDraft] = useState<Feedback | null>(null)
   const [text, setText] = useState('')
   const [error, setError] = useState('')
@@ -25,7 +25,7 @@ export default function MessageDialog({ courseId, student, onClose }: { courseId
   const copy = async () => { try { await navigator.clipboard.writeText(text); notify('Mensaje copiado. Pégalo donde quieras enviarlo.') } catch { notify('No se pudo copiar.', 'error') } }
   return <Modal title={`Mensaje para ${student.name}`} description="Lo redacté con sus notas. Revísalo y ajústalo antes de enviarlo." onClose={onClose} size="large">
     <div className="form">
-      <Segmented label="Tono" value={tone} onChange={setTone} options={[{ value: 'cercano', label: 'Cercano' }, { value: 'formal', label: 'Formal' }]} />
+      <Segmented label="Tono" value={tone} onChange={setTone} options={[{ value: 'cercano', label: 'Cercano' }, { value: 'motivador', label: 'Motivador' }, { value: 'formal', label: 'Formal' }]} />
       {error ? <div className="form-error" role="alert">{error}</div>
         : !draft ? <div className="mini-loading"><Spinner /> Redactando…</div>
           : <textarea className="message-text" rows={14} value={text} onChange={event => setText(event.target.value)} aria-label="Texto del mensaje" />}
