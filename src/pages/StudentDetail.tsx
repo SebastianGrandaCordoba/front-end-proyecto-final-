@@ -5,14 +5,14 @@ import { Avatar, LevelPill, Modal } from '../components/ui'
 import { formatGrade, gradeTone, plural, studentAdvice, type Candidate, type Subject } from '../lib/domain'
 import type { Projection, Trend } from '../lib/insights'
 
-export default function StudentDetail({ student, trend, projection, grades, subjects, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
+export default function StudentDetail({ student, trend, projection, grades, subjects, courseAverage, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; courseAverage?: number | null; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
   const names = new Map(subjects.map(subject => [Number(subject.id), subject.name]))
   const tone = gradeTone
   return <Modal title={student.name} description={student.email || undefined} onClose={onClose} size="large">
     <div className="student-detail">
       <div className="student-summary">
         <Avatar name={student.name} size={44} />
-        <div><b className="num">{student.hasGrades ? formatGrade(student.average) : '—'}</b><small>{student.hasGrades ? `promedio en ${plural(student.gradeCount, 'nota', 'notas')}` : 'sin notas cargadas'}</small></div>
+        <div><b className="num">{student.hasGrades ? formatGrade(student.average) : '—'}</b><small>{student.hasGrades ? `promedio en ${plural(student.gradeCount, 'nota', 'notas')}${courseAverage != null ? ` · curso ${formatGrade(courseAverage)}` : ''}` : 'sin notas cargadas'}</small></div>
         {trend?.direction === 'down' && <span className="trend trend-down"><TrendingDown size={15} aria-hidden />Viene bajando</span>}
         {trend?.direction === 'up' && <span className="trend trend-up"><TrendingUp size={15} aria-hidden />Viene mejorando</span>}
         <LevelPill level={student.level} hasGrades={student.hasGrades} />
