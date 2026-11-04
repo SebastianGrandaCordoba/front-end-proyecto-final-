@@ -12,6 +12,7 @@ import StudentDetail from './pages/StudentDetail'
 import MessageDialog from './pages/MessageDialog'
 import Buho, { type BuhoContext } from './components/Buho'
 import Sidebar, { nav } from './components/Sidebar'
+import ShortcutsDialog from './components/ShortcutsDialog'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
 
@@ -46,6 +47,21 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const brief = useCallback(() => { setBuhoOpen(true); setBriefToken(value => value + 1) }, [])
 
   useEffect(() => { document.title = `${titles[route]} · FairTeam` }, [route])
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  // "?" shows the shortcuts; "g" then a letter jumps to a screen. Ignored while typing.
+  useEffect(() => {
+    let pendingG = 0
+    const goto: Record<string, Route> = { i: 'inicio', e: 'estudiantes', s: 'seguimiento', t: 'talleres', q: 'equipos', c: 'cursos' }
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement
+      if (target.closest('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return
+      if (event.key === '?') { event.preventDefault(); setShowShortcuts(true); return }
+      if (event.key === 'g') { pendingG = Date.now(); return }
+      if (Date.now() - pendingG < 900 && goto[event.key]) { navigate(goto[event.key]); pendingG = 0 }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [navigate])
   useEffect(() => { setMenuOpen(false) }, [route])
 
   const startWorkshop = useCallback((next: WorkshopIntent) => {
@@ -102,6 +118,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
 
     {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
     {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
+    {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />
   </div>
 }
