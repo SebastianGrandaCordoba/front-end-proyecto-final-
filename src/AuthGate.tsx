@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { clearAccessToken, request, saveAccessToken, TOKEN_KEY, warmUpBackend, type AuthResponse, type TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
-import FairTeamOwl from './FairTeamOwl'
+import Owl from './components/Owl'
 import LandingPage from './LandingPage'
 import { FeedbackProvider, Spinner } from './components/ui'
 
@@ -79,7 +79,7 @@ function AuthScreen({ mode, setMode, onAuthenticated }: { mode: 'login' | 'regis
       <p className="auth-switch">{isLogin ? '¿Aún no tienes cuenta?' : '¿Ya tienes cuenta?'} <button className="link-btn" disabled={working} onClick={() => { setMode(isLogin ? 'register' : 'login'); setMessage('') }}>{isLogin ? 'Créala aquí' : 'Entra aquí'}</button></p>
     </section>
     <aside className="auth-aside">
-      <div className="auth-owl" aria-hidden><FairTeamOwl /></div>
+      <div className="auth-owl" aria-hidden><Owl pose="wave" size={300} /></div>
       <ul className="auth-points">
         <li><b>Quién necesita apoyo</b><span>Lo calculo con tus notas, al instante.</span></li>
         <li><b>Talleres desde tu material</b><span>Listos para revisar, imprimir o descargar.</span></li>
