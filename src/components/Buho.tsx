@@ -111,6 +111,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
         <div className="buho-title"><b>Búho</b><span aria-live="polite">{statusLabel}</span></div>
         {canSpeak() && <button className="icon-btn" onClick={toggleVoice} aria-label={voiceOn ? 'Silenciar respuestas' : 'Leer respuestas en voz alta'} title={voiceOn ? 'Silenciar' : 'Activar voz'}>{voiceOn ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>}
         {status === 'speaking' && <button className="icon-btn" onClick={() => { stopSpeaking(); setStatus('idle') }} aria-label="Detener la voz"><Square size={15} /></button>}
+        {messages.length > 0 && <button className="icon-btn" onClick={() => { stopSpeaking(); setMessages([]) }} aria-label="Borrar la conversación" title="Nueva conversación"><Trash2 size={16} /></button>}
         <button className="icon-btn" onClick={() => setOpen(false)} aria-label="Cerrar asistente"><X size={18} /></button>
       </header>
 
