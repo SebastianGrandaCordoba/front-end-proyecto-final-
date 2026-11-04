@@ -738,3 +738,10 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .heat-medium { background: var(--medium-bg); color: var(--medium); }
 .heat-high { background: var(--high-bg); color: var(--high); }
 .heat-none { background: var(--panel); color: var(--ink-3); }
+
+.course-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 6px 0 0; border-top: 1px solid var(--line); padding-top: 10px; }
+.course-stats div { display: grid; gap: 2px; }
+.course-stats dt { color: var(--ink-3); font-size: 12px; }
+.course-stats dd { margin: 0; font-size: 20px; font-variant-numeric: tabular-nums; }
+.course-stats .is-alert dd { color: var(--low); }
+.course-weakest { grid-column: 1 / -1; margin-top: 8px; color: var(--ink-2); font-size: 13px; }

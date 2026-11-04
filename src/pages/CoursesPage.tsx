@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { formatGrade } from '../lib/domain'
 import { ArrowRight, FolderOpen, Plus, Trash2 } from 'lucide-react'
 import { request, type Course } from '../api'
 import type { PageProps } from '../App'
@@ -10,6 +11,14 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
   const [creating, setCreating] = useState(params.get('nuevo') === '1')
   const [deleting, setDeleting] = useState<number | null>(null)
   useEffect(() => { if (params.get('nuevo') === '1') setCreating(true) }, [params])
+  // One summary per course, computed by the backend (TeacherOverviewUseCase).
+  type Overview = { courseId: number; students: number; average: number | null; low: number; fallingBehind: number; ungraded: number; weakestSubject: string | null }
+  const [overview, setOverview] = useState<Map<number, Overview>>(new Map())
+  useEffect(() => {
+    let active = true
+    request<Overview[]>('/api/insights/overview').then(rows => { if (active) setOverview(new Map(rows.map(r => [r.courseId, r]))) }).catch(() => undefined)
+    return () => { active = false }
+  }, [courses.length])
 
   const remove = async (course: Course) => {
     const ok = await confirm({ title: `¿Eliminar “${course.name}”?`, body: 'Solo se puede eliminar un curso vacío, sin estudiantes ni notas.', confirm: 'Eliminar curso', danger: true })
@@ -36,6 +45,7 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
         <button className="icon-btn icon-danger push" onClick={() => void remove(course)} disabled={deleting === course.id} aria-label={`Eliminar ${course.name}`}>{deleting === course.id ? <Spinner /> : <Trash2 size={16} />}</button></div>
       <h2>{course.name}</h2>
       <p>{course.description || 'Sin descripción.'}</p>
+      {overview.get(course.id) && <CourseStats data={overview.get(course.id)!} />}
       <button className="btn btn-secondary" onClick={() => { setCourseId(course.id); navigate('inicio') }}>{active?.id === course.id ? 'Ir al inicio' : 'Abrir curso'}<ArrowRight size={16} aria-hidden /></button>
     </li>)}</ul> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas." action={<button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button>} /></div>}
 
@@ -65,4 +75,13 @@ function CourseForm({ onClose, onCreated }: { onClose: () => void; onCreated: (c
       <div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={saving}>{saving && <Spinner />}{saving ? 'Creando…' : 'Crear curso'}</button></div>
     </form>
   </Modal>
+}
+
+function CourseStats({ data }: { data: { students: number; average: number | null; low: number; fallingBehind: number; weakestSubject: string | null } }) {
+  return <dl className="course-stats">
+    <div><dt>Estudiantes</dt><dd className="num">{data.students}</dd></div>
+    <div><dt>Promedio</dt><dd className="num">{data.average == null ? '—' : formatGrade(data.average)}</dd></div>
+    <div className={data.low ? 'is-alert' : ''}><dt>Refuerzo</dt><dd className="num">{data.low}</dd></div>
+    {data.weakestSubject && <p className="course-weakest">Tema más bajo: <b>{data.weakestSubject}</b>{data.fallingBehind ? ` · ${data.fallingBehind} vienen bajando` : ''}</p>}
+  </dl>
 }
