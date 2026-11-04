@@ -21,7 +21,7 @@ export function Library({ items, onOpen, onRemove }: { items: GeneratedWorkshop[
     <button className="lib-open" onClick={() => onOpen(item)}>
       <span className="lib-type">{item.supportType === 'quiz' ? 'Quiz' : 'Taller'} · {levelLabel[levelOf(item.targetLevel)]}</span>
       <b>{item.title}</b>
-      <small>{item.subject} · {relativeDate(item.savedAt)}</small>
+      <small>{item.subject} · {item.supportType === 'quiz' ? `${item.assessment.length} preguntas` : `${item.activities.reduce((s, a) => s + (a.estimatedMinutes || 0), 0)} min`} · {relativeDate(item.savedAt)}</small>
     </button>
     <div className="lib-actions">
       <button className="icon-btn" onClick={() => downloadWorkshopDocument(item)} aria-label={`Descargar ${item.title}`} title="Descargar para estudiantes"><Download size={16} /></button>
