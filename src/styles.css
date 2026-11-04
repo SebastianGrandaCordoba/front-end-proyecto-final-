@@ -794,3 +794,4 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .chip.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
 .chip:disabled { opacity: .45; cursor: not-allowed; }
 .sim-config { grid-template-columns: auto auto 1fr minmax(220px, 1fr); }
+.whatif-pass { color: var(--high); font-weight: 600; }

@@ -157,7 +157,7 @@ function Simulator({ workspace, review }: { workspace: PageProps['workspace']; r
         <td className="num">{p.status === 'no-data' ? '—' : formatGrade(p.current)}</td>
         <td className="num"><b className={p.status === 'impossible' || p.status === 'hard' ? 'is-low' : ''}>{p.needed == null ? '—' : formatGrade(p.needed)}</b></td>
         <td><span className={`pill pill-${statusTone[p.status]}`}>{statusLabel[p.status]}</span></td>
-        <td className={`num${Math.round(final * 10) < 30 ? ' is-low' : ''}`}>{p.status === 'no-data' ? '—' : formatGrade(final)}</td>
+        <td className={`num${Math.round(final * 10) < 30 ? ' is-low' : ''}`}>{p.status === 'no-data' ? '—' : <>{formatGrade(final)}{Math.round(final * 10) >= 30 && p.status !== 'passed' && <span className="whatif-pass" title="Con esa nota aprobaría"> ✓</span>}</>}</td>
       </tr> })}</tbody>
     </table>{!rows.length && <EmptyState art="celebrate" title="Nadie en riesgo" text="Con las notas actuales todos pueden aprobar cómodamente." />}</div>
   </>
