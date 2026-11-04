@@ -45,6 +45,14 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
     </section>
 
     <section className="panel settings">
+      <h2>Ayuda</h2>
+      <div className="button-row">
+        <button className="btn btn-secondary" onClick={() => { try { localStorage.removeItem(`fairteam.welcome.${user.id}`) } catch { /* private mode */ } window.location.reload() }}>Ver de nuevo la bienvenida</button>
+        <button className="btn btn-ghost" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))}>Atajos de teclado</button>
+      </div>
+    </section>
+
+    <section className="panel settings">
       <h2>Apariencia</h2>
       <Segmented label="Tema" value={theme} onChange={value => { setTheme(value); saveTheme(value) }} options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }, { value: 'system', label: 'Como el sistema' }]} />
       <p className="muted">El modo oscuro descansa la vista al revisar notas de noche.</p>
