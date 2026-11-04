@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, Pencil, Plus, Shuffle, Trash2, UsersRound } from 'lucide-react'
 import { request, type Project, type Team } from '../api'
 import type { PageProps } from '../App'
-import { Avatar, EmptyState, Field, Modal, Spinner, useFeedback } from '../components/ui'
+import { Avatar, EmptyState, Spinner, useFeedback } from '../components/ui'
 import { formatGrade, levelShort, plural, type Candidate } from '../lib/domain'
+import { ProjectForm, storedSize } from './teams/ProjectForm'
 
 type Draft = { name: string; members: Candidate[]; score: number; explanation: string }
 const fallbackScore = { LOW: 2.4, MEDIUM: 3.5, HIGH: 4.5 } as const
 const scoreOf = (student: Candidate) => student.hasGrades ? student.average : fallbackScore[student.level]
-const storedSize = () => { const value = Number(localStorage.getItem('fairteam.defaultTeamSize')); return [2, 3, 4, 5, 6].includes(value) ? value : 3 }
 
 function balance(members: Candidate[]) {
   if (!members.length) return 0
@@ -50,8 +50,7 @@ export default function TeamsPage({ workspace }: PageProps) {
       try {
         const result = await request<{ score: number; explanation: string }>('/api/teams/analyze?strategy=balanced', {
           method: 'POST',
-          body: JSON.stringify(group.members.map(member => ({ studentId: member.id, academicScore: scoreOf(member), skillScore: 50, availabilityScore: 50 }))),
-        })
+          body: JSON.stringify(group.members.map(member => ({ studentId: member.id, academicScore: scoreOf(member), skillScore: 50, availabilityScore: 50 }))) })
         return { name: group.name, members: group.members, score: balance(group.members), explanation: result.explanation }
       } catch { return { name: group.name, members: group.members, score: balance(group.members), explanation: 'Equilibrado por nivel académico.' } }
     }))
@@ -137,27 +136,3 @@ export default function TeamsPage({ workspace }: PageProps) {
   </section>
 }
 
-function ProjectForm({ project, onClose, onSaved }: { project: Project | null; onClose: () => void; onSaved: (project: Project | null) => void }) {
-  const { notify } = useFeedback()
-  const [name, setName] = useState(project?.name ?? '')
-  const [description, setDescription] = useState(project?.description ?? '')
-  const [teamSize, setTeamSize] = useState(project?.teamSize ?? storedSize())
-  const [saving, setSaving] = useState(false)
-  const submit = async (event: FormEvent) => {
-    event.preventDefault(); setSaving(true)
-    try {
-      const saved = await request<Project>(project ? `/api/projects/${project.id}` : '/api/projects', { method: project ? 'PUT' : 'POST', body: JSON.stringify({ name: name.trim(), description: description.trim(), teamSize }) })
-      notify(project ? 'Proyecto actualizado.' : 'Proyecto creado.')
-      onSaved(saved)
-    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo guardar el proyecto.', 'error') }
-    finally { setSaving(false) }
-  }
-  return <Modal title={project ? 'Editar proyecto' : 'Nuevo proyecto'} onClose={onClose} size="small">
-    <form className="form" onSubmit={submit}>
-      <Field label="Nombre"><input required maxLength={150} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Proyecto final de semestre…" autoComplete="off" /></Field>
-      <Field label="Descripción" optional><textarea rows={3} maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} placeholder="Qué van a construir juntos…" /></Field>
-      <Field label="Personas por equipo" hint={project ? 'Se define al crear el proyecto.' : undefined}><select value={teamSize} disabled={Boolean(project)} onChange={event => setTeamSize(Number(event.target.value))}>{[2, 3, 4, 5, 6].map(value => <option key={value} value={value}>{value} personas</option>)}</select></Field>
-      <div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={saving}>{saving && <Spinner />}{project ? 'Guardar' : 'Crear proyecto'}</button></div>
-    </form>
-  </Modal>
-}
