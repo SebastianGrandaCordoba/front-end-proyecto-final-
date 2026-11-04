@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useRef, useSt
 import { AlertTriangle, CheckCircle2, Info, LoaderCircle, X } from 'lucide-react'
 import type { AcademicLevel } from '../api'
 import { initials, levelShort } from '../lib/domain'
+import Owl, { type OwlPose } from './Owl'
 
 /* ---------- Feedback: toasts and confirmation, shared through context ---------- */
 
@@ -99,8 +100,8 @@ export function Spinner({ size = 16 }: { size?: number }) {
   return <LoaderCircle size={size} className="spin" aria-hidden />
 }
 
-export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; title: string; text: string; action?: ReactNode }) {
-  return <div className="empty">{icon && <span className="empty-icon" aria-hidden>{icon}</span>}<strong>{title}</strong><p>{text}</p>{action && <div className="empty-action">{action}</div>}</div>
+export function EmptyState({ icon, art, title, text, action }: { icon?: ReactNode; art?: OwlPose; title: string; text: string; action?: ReactNode }) {
+  return <div className="empty">{art ? <Owl pose={art} size={120} className="empty-art" /> : icon && <span className="empty-icon" aria-hidden>{icon}</span>}<strong>{title}</strong><p>{text}</p>{action && <div className="empty-action">{action}</div>}</div>
 }
 
 const avatarHues = [184, 28, 262, 138, 340, 210, 52, 300]

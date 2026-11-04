@@ -711,3 +711,4 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 @keyframes owl-confetti { 0% { opacity: 0; transform: translateY(6px) scale(.9); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px) scale(1.05); } }
 .owl-eyes { animation: owl-blink 6s infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes owl-blink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }
+.empty-art { margin-bottom: 2px; }
