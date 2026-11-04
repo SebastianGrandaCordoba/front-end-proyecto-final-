@@ -72,7 +72,7 @@ function AuthScreen({ mode, setMode, onAuthenticated }: { mode: 'login' | 'regis
           </span>
           {!isLogin && <span className="field-hint">Mínimo 10 caracteres.</span>}
         </label>
-        {message && <div className="form-error" role="alert">{message}</div>}
+        {message && <div className="form-error" role="alert" tabIndex={-1} ref={node => node?.focus()}>{message}</div>}
         {slow && <div className="form-note" role="status">El servidor se está despertando; puede tardar hasta un minuto. No cierres la página.</div>}
         <button className="btn btn-primary btn-large" disabled={working}>{working && <Spinner />}{working ? (slow ? 'Despertando el servidor…' : 'Entrando…') : isLogin ? 'Entrar' : 'Crear cuenta'}</button>
       </form>
