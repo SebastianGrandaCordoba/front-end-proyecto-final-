@@ -2,12 +2,12 @@ import { Download, FileText, Sparkles } from 'lucide-react'
 import type { PageProps } from '../App'
 import { ImportButton } from '../app/actions'
 import { Avatar, EmptyState, useFeedback } from '../components/ui'
-import Heatmap from '../components/Heatmap'
 import { API_BASE, TOKEN_KEY } from '../api'
 import { downloadBlob, downloadLearningReport, slugify } from '../lib/files'
 import { formatGrade, plural, type Candidate } from '../lib/domain'
 import { Simulator } from './followup/Simulator'
 import { Trends } from './followup/Trends'
+import { SubjectMap } from './followup/SubjectMap'
 
 type View = 'prioridad' | 'tendencia' | 'mapa' | 'simulador'
 type Group = { id: string; title: string; rule: string; tone: string; students: Candidate[]; reason: (student: Candidate) => string }
@@ -74,12 +74,4 @@ function Priorities({ candidates, review }: { candidates: Candidate[]; review: (
   </>
 }
 
-function SubjectMap({ workspace, review }: { workspace: PageProps['workspace']; review: (s: Candidate) => void }) {
-  const subjects = workspace.insights.map(s => s.name)
-  if (!subjects.length) return <div className="panel"><EmptyState art="read" title="Aún no hay notas por tema" text="Cuando cargues notas con su materia, verás aquí quién va bien y quién no en cada tema." /></div>
-  return <>
-    <p className="explainer">Cada celda es el promedio del estudiante en ese tema. Los temas van del más difícil al más fácil, así ves de un vistazo dónde reforzar.</p>
-    <Heatmap trends={workspace.trends} subjects={subjects} onSelect={review} />
-  </>
-}
 
