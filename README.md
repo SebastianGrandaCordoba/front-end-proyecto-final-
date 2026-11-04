@@ -15,6 +15,8 @@ Aplicación docente para revisar notas y progreso, identificar estudiantes que p
 - `src/app/`: estado de la sesión (`useWorkspace`, con caché por curso y cargas en paralelo), enrutamiento por hash (`#/estudiantes`, `#/talleres`…) y acciones reutilizables (importar Excel, subir material).
 - `src/pages/`: una pantalla por archivo, cargadas bajo demanda (`React.lazy`).
 - `src/components/ui.tsx`: modal accesible, confirmaciones, avisos y controles compartidos.
+- `src/pages/<pantalla>/`: subcomponentes de cada pantalla (por ejemplo `followup/Simulator.tsx`, `workshops/WorkshopView.tsx`).
+- `src/components/`: piezas compartidas: `Buho`, `Sidebar`, `Owl`, `Histogram`, `Heatmap`, `ErrorBoundary`, `Welcome`.
 - `src/styles.css`: una sola hoja de estilos con tokens de color, tipografía Instrument Sans/Serif y diseño responsivo.
 
 ## El asistente Búho
