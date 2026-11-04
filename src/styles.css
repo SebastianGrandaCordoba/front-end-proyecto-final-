@@ -826,3 +826,4 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .heat-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 13px; color: var(--ink-2); }
 .heat-legend li { display: flex; align-items: center; gap: 6px; }
 .heat-legend i { width: 14px; height: 14px; border-radius: 4px; }
+@media (max-width: 360px) { .buho-mobile span { display: none; } .buho-mobile { padding: 4px; } }
