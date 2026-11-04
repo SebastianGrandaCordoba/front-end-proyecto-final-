@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowUp, Mic, Play, Square, Volume2, VolumeX, X } from 'lucide-react'
 import FairTeamMark from '../FairTeamMark'
+import Owl from './Owl'
 import { request } from '../api'
 import { adaptReply, examples, type ApiReply, type BuhoAction, type BuhoReply } from '../lib/buho'
 import type { Candidate } from '../lib/domain'
@@ -110,6 +111,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
 
       <div className="buho-body" ref={list}>
         {messages.length === 0 && <div className="buho-welcome">
+          <Owl pose="wave" size={112} className="buho-welcome-owl" />
           <p className="buho-hello">Hola, {context.teacher.split(/\s+/)[0]}. Soy tu asistente. Pregúntame por tus estudiantes o pídeme que prepare algo.</p>
           <button className="buho-brief" onClick={() => void playBriefing()} disabled={status === 'thinking'}><span><Play size={16} aria-hidden /></span><b>Escuchar el resumen del día</b><small>Cómo va {context.courseName ?? 'tu curso'} y qué hacer primero</small></button>
           <div className="buho-examples"><span>Prueba con:</span>{examples.map(example => <button key={example} className="chip" onClick={() => void ask(example)}>{example}</button>)}</div>
