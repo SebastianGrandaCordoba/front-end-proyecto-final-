@@ -10,8 +10,9 @@ type ApiSubject = { subjectId: number; name: string; average: number; count: num
 type ApiLevel = AcademicLevel | 'NO_DATA'
 type ApiPerformance = { student: ApiStudent; average: number | null; gradeCount: number; level: ApiLevel; periods: ApiPeriod[]; delta: number | null; direction: 'DOWN' | 'UP' | 'FLAT' | 'UNKNOWN'; risk: number; subjects: ApiSubject[] }
 type ApiProjection = { studentId: number; studentName: string; earned: number; current: number; remainingWeight: number; needed: number | null; status: 'PASSED' | 'POSSIBLE' | 'HARD' | 'IMPOSSIBLE' | 'NO_DATA'; explanation: string }
+export type GradeBand = { label: string; from: number; to: number; students: number }
 export type ApiInsights = {
-  analysis: { courseId: number; courseName: string; summary: CourseSummary & { fallingBehind: number }; periods: string[]; subjects: ApiSubject[]; students: ApiPerformance[] }
+  analysis: { courseId: number; courseName: string; summary: CourseSummary & { fallingBehind: number }; periods: string[]; subjects: ApiSubject[]; students: ApiPerformance[]; distribution?: GradeBand[] }
   scheme: { weights: number[]; passingGrade: number; periods: string[]; observedPeriods: string[]; custom: boolean }
   projections: ApiProjection[]
   briefing: string
@@ -45,6 +46,7 @@ export type Insights = {
   projections: Map<number, Projection>
   sim: Sim
   briefing: string
+  distribution: GradeBand[]
 }
 
 /** Turns the backend's reading into the view models; students keep their roster data (email, course). */
@@ -85,5 +87,6 @@ export function adaptInsights(api: ApiInsights, roster: Candidate[]): Insights {
     projections,
     sim: { weights: api.scheme.weights, passingGrade: api.scheme.passingGrade, periods: api.scheme.periods, observed: api.scheme.observedPeriods, custom: api.scheme.custom },
     briefing: api.briefing,
+    distribution: api.analysis.distribution ?? [],
   }
 }

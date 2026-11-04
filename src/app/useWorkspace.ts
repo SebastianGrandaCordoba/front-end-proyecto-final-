@@ -135,6 +135,7 @@ export function useWorkspace(user: TeacherProfile) {
   const projections = reading?.projections ?? new Map<number, Projection>()
   const sim = reading?.sim ?? { weights: [30, 30, 40], passingGrade: 3, periods: ['Corte 1', 'Corte 2', 'Corte 3'], observed: [], custom: false }
   const briefing = reading?.briefing ?? ''
+  const distribution = reading?.distribution ?? []
   const course = courses.find(item => item.id === courseId) ?? null
 
   const saveScheme = useCallback(async (weights: number[]) => {
@@ -148,7 +149,7 @@ export function useWorkspace(user: TeacherProfile) {
     courses, setCourses, coursesState, loadCourses,
     course, courseId, setCourseId, courseState,
     students, grades, candidates, summary, insights, subjects,
-    trends, projections, sim, saveScheme, briefing, analysisState,
+    trends, projections, sim, saveScheme, briefing, analysisState, distribution,
     materials, updateMaterials,
     projects, teams,
     workshops, saveWorkshop, removeWorkshop, clearWorkshops,
