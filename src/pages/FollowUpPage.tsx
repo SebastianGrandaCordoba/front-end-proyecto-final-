@@ -4,7 +4,8 @@ import type { PageProps } from '../App'
 import { ImportButton } from '../app/actions'
 import { Avatar, EmptyState, useFeedback } from '../components/ui'
 import Heatmap from '../components/Heatmap'
-import { downloadLearningReport } from '../lib/files'
+import { API_BASE, TOKEN_KEY } from '../api'
+import { downloadBlob, downloadLearningReport, slugify } from '../lib/files'
 import { formatGrade, plural, type Candidate } from '../lib/domain'
 import type { Projection } from '../lib/insights'
 
@@ -15,13 +16,26 @@ export default function FollowUpPage({ workspace, review, startWorkshop, assista
   const { course, candidates, summary, insights } = workspace
   const view = (['prioridad', 'tendencia', 'mapa', 'simulador'].includes(params.get('vista') ?? '') ? params.get('vista') : 'prioridad') as View
   const weakest = insights[0]
+  const { notify } = useFeedback()
+  // The backend writes the report (with trend, risk and projection); fall back to the local CSV if it is unavailable.
+  const downloadServerCsv = async () => {
+    if (!course) return
+    try {
+      const response = await fetch(`${API_BASE}/api/courses/${course.id}/insights/report.csv`, { headers: { Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY) ?? ''}` } })
+      if (!response.ok) throw new Error(String(response.status))
+      downloadBlob(`seguimiento-${slugify(course.name)}.csv`, await response.blob())
+    } catch {
+      downloadLearningReport(candidates, course.name)
+      notify('Descargué la versión básica del reporte; el servidor no respondió.', 'info')
+    }
+  }
 
   return <section className="page">
     <header className="page-head">
       <div><h1>Seguimiento</h1><p>{summary.gradeCount ? `${course?.name}: ${plural(summary.low, 'estudiante necesita', 'estudiantes necesitan')} refuerzo y ${workspace.trends.filter(t => t.direction === 'down').length} ${workspace.trends.filter(t => t.direction === 'down').length === 1 ? 'viene' : 'vienen'} bajando.` : `Carga las notas de ${course?.name} para ver quién necesita apoyo.`}</p></div>
       <div className="page-actions">
         <button className="btn btn-secondary" onClick={assistant.report} disabled={!summary.gradeCount}><FileText size={16} aria-hidden />Informe PDF</button>
-        <button className="btn btn-ghost" onClick={() => downloadLearningReport(candidates, course?.name ?? 'curso')} disabled={!candidates.length}><Download size={16} aria-hidden />CSV</button>
+        <button className="btn btn-ghost" onClick={() => void downloadServerCsv()} disabled={!candidates.length}><Download size={16} aria-hidden />CSV</button>
         {summary.low > 0 && <button className="btn btn-primary" onClick={() => startWorkshop({ mode: 'workshop', level: 'LOW', group: summary.low, topic: weakest && weakest.average < 3.5 ? weakest.name : undefined })}><Sparkles size={16} aria-hidden />Refuerzo para el grupo</button>}
       </div>
     </header>
