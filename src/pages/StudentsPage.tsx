@@ -7,6 +7,7 @@ import { Avatar, EmptyState, LevelPill, Segmented, Spinner, useFeedback } from '
 import { downloadRoster, downloadTemplate } from '../lib/files'
 import { formatGrade, plural } from '../lib/domain'
 import { StudentForm } from './students/StudentForm'
+import { TrendTag } from './students/TrendTag'
 
 type Filter = 'todos' | 'refuerzo' | 'seguimiento' | 'progreso' | 'sin-notas'
 type Sort = 'nombre' | 'promedio'
@@ -109,9 +110,3 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
 }
 
 
-function TrendTag({ direction }: { direction?: 'down' | 'up' | 'flat' | 'unknown' }) {
-  if (direction === 'down') return <span className="trend trend-down">↓ Baja</span>
-  if (direction === 'up') return <span className="trend trend-up">↑ Sube</span>
-  if (direction === 'flat') return <span className="muted">Estable</span>
-  return <span className="muted">—</span>
-}
