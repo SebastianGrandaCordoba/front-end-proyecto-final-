@@ -1,5 +1,5 @@
 /** Original FairTeam owl, drawn in code so it stays crisp, light and on-brand. */
-export type OwlPose = 'wave'
+export type OwlPose = 'wave' | 'read'
 
 const ink = '#14394a', teal = '#1d7a90', tealDark = '#155b6f', cream = '#fbf8f1', gold = '#e3a848'
 
@@ -18,5 +18,6 @@ export default function Owl({ pose = 'wave', size = 160, className = '' }: { pos
       <path d="m70 36 30-16 30 16-30 15-30-15Z" fill={ink} /><path d="M83 42v9c0 6 8 10 17 10s17-4 17-10v-9" fill="#1f5468" /><path d="M70 36v15" stroke={gold} strokeWidth="2.5" strokeLinecap="round" /><circle cx="70" cy="54" r="3" fill={gold} />
     </g>
     {pose === 'wave' && <g className="owl-wave"><path d="M146 112c14-6 24-18 26-34 1-6-6-9-9-4-6 10-13 18-24 22" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /><path d="M54 112c-10 4-16 14-16 26 0 6 7 8 10 3 4-7 9-12 16-15" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /></g>}
+    {pose === 'read' && <g className="owl-read"><path d="M58 150l42 12 42-12v26l-42 12-42-12v-26Z" fill="#fff" stroke="#cfe0e3" strokeWidth="2.5" strokeLinejoin="round" /><path d="M100 162v26" stroke="#cfe0e3" strokeWidth="2.5" /><path d="M70 160l20 5M70 168l20 5M110 165l20-5M110 173l20-5" stroke="#d9e8ea" strokeWidth="2" strokeLinecap="round" /><path d="M54 126c-6 10-6 22 2 30M146 126c6 10 6 22-2 30" fill="none" stroke={tealDark} strokeWidth="3" strokeLinecap="round" /></g>}
   </svg>
 }
