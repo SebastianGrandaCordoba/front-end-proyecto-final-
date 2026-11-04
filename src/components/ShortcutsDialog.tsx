@@ -7,6 +7,8 @@ const shortcuts: [string, string][] = [
   ['g luego e', 'Ir a Estudiantes y notas'],
   ['g luego s', 'Ir a Seguimiento'],
   ['g luego t', 'Ir a Talleres y quizzes'],
+  ['g luego q', 'Ir a Equipos'],
+  ['g luego c', 'Ir a Mis cursos'],
   ['Esc', 'Cerrar ventanas y el Búho'],
 ]
 
