@@ -5,3 +5,5 @@ dist/
 .DS_Store
 *.tsbuildinfo
 .taste-skill/
+*.tsbuildinfo
+src/**/*.js
