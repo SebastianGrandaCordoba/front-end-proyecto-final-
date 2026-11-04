@@ -52,6 +52,15 @@ VITE_API_BASE_URL=http://localhost:8080
 
 En Render crea un Static Site de este repositorio con build `pnpm install --frozen-lockfile && pnpm build`, directorio publicado `dist` y `VITE_API_BASE_URL` apuntando al backend.
 
+## Pruebas
+
+```bash
+pnpm test     # Vitest: lógica de dominio, adaptadores del backend, CSV, router y tema
+pnpm build    # verificación de tipos y compilación
+```
+
+GitHub Actions ejecuta ambos en cada push (`.github/workflows/ci.yml`).
+
 ## Flujos principales
 
 - Registro abierto e inicio de sesión con cuenta FairTeam; los datos académicos se aíslan por cuenta en PostgreSQL.
