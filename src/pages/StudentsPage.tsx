@@ -93,7 +93,7 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
             </div></td>
           </tr>)}</tbody>
         </table>
-        : <EmptyState icon={<Users size={22} />} title={summary.students ? 'Nadie coincide con la búsqueda' : 'Aún no hay estudiantes en este curso'} text={summary.students ? 'Prueba con otro nombre o cambia el filtro.' : 'Importa el Excel con la lista del grupo o agrega estudiantes uno por uno.'}
+        : <EmptyState icon={<Users size={22} />} art={summary.students ? undefined : 'read'} title={summary.students ? 'Nadie coincide con la búsqueda' : 'Aún no hay estudiantes en este curso'} text={summary.students ? 'Prueba con otro nombre o cambia el filtro.' : 'Importa el Excel con la lista del grupo o agrega estudiantes uno por uno.'}
           action={summary.students ? <button className="btn btn-secondary" onClick={() => { setQuery(''); setFilter('todos') }}>Ver todos</button> : <ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} />}
       {visible.length > 0 && <footer className="table-foot">Mostrando {visible.length} de {summary.students}. El estado se calcula con el promedio de las notas cargadas.</footer>}
     </div>
