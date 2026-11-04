@@ -14,7 +14,8 @@ type Status = 'idle' | 'listening' | 'thinking' | 'speaking'
 export type BuhoContext = { teacher: string; courseId: number | null; courseName: string | null; candidates: Candidate[] }
 
 export default function Buho({ context, onAction, open, setOpen, briefToken }: { context: BuhoContext; onAction: (action: BuhoAction) => void; open: boolean; setOpen: (open: boolean) => void; briefToken: number }) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const storageKey = `fairteam.buho.${context.courseId ?? 'none'}`
+  const [messages, setMessages] = useState<Message[]>(() => { try { return JSON.parse(sessionStorage.getItem(storageKey) || '[]') as Message[] } catch { return [] } })
   const [draft, setDraft] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [voiceOn, setVoiceOn] = useState(() => canSpeak() && localStorage.getItem('fairteam.buho.voice') !== 'off')
@@ -36,6 +37,10 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   }, [open, setOpen])
   useEffect(() => { if (open) window.setTimeout(() => input.current?.focus(), 60); else { stopSpeaking(); stopListening.current(); setStatus('idle') } }, [open])
   useEffect(() => { list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' }) }, [messages, status])
+  // Keep the conversation of each course while the tab is open.
+  useEffect(() => { try { setMessages(JSON.parse(sessionStorage.getItem(storageKey) || '[]') as Message[]) } catch { setMessages([]) } }, [storageKey])
+  useEffect(() => { try { sessionStorage.setItem(storageKey, JSON.stringify(messages.slice(-40))) } catch { /* storage full */ } }, [messages, storageKey])
+  useEffect(() => { counter.current = Math.max(counter.current, ...messages.map(m => m.id), 0) }, [messages])
 
   const say = useCallback((text: string, force = false) => {
     if (!(voiceOn || force) || !canSpeak()) { setStatus('idle'); return }
