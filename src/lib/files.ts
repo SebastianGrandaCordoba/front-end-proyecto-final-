@@ -105,3 +105,10 @@ ${workshop.supportType === 'quiz' ? '' : `<h2>Actividades</h2>${workshop.activit
   frame.contentWindow?.print()
   window.setTimeout(() => frame.remove(), 1500)
 }
+
+/** The course roster with each student's current average, ready for Excel. */
+export function downloadRoster(students: Candidate[], courseName: string) {
+  const rows = [['Nombre', 'Correo', 'Promedio', 'Notas', 'Estado'], ...students.map(s => [s.name, s.email || '', s.hasGrades ? formatGrade(s.average) : '', String(s.gradeCount), s.hasGrades ? levelLabel[s.level] : 'Sin notas'])]
+  const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\r\n')
+  downloadText(`lista-${slugify(courseName) || 'curso'}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8')
+}
