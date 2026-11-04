@@ -3,16 +3,17 @@ import { Download, FileText, MessageSquareText, Sparkles } from 'lucide-react'
 import type { PageProps } from '../App'
 import { ImportButton } from '../app/actions'
 import { Avatar, EmptyState, useFeedback } from '../components/ui'
+import Heatmap from '../components/Heatmap'
 import { downloadLearningReport } from '../lib/files'
 import { formatGrade, plural, type Candidate } from '../lib/domain'
 import type { Projection } from '../lib/insights'
 
-type View = 'prioridad' | 'tendencia' | 'simulador'
+type View = 'prioridad' | 'tendencia' | 'mapa' | 'simulador'
 type Group = { id: string; title: string; rule: string; tone: string; students: Candidate[]; reason: (student: Candidate) => string }
 
 export default function FollowUpPage({ workspace, review, startWorkshop, assistant, params, navigate }: PageProps & { params: URLSearchParams }) {
   const { course, candidates, summary, insights } = workspace
-  const view = (['prioridad', 'tendencia', 'simulador'].includes(params.get('vista') ?? '') ? params.get('vista') : 'prioridad') as View
+  const view = (['prioridad', 'tendencia', 'mapa', 'simulador'].includes(params.get('vista') ?? '') ? params.get('vista') : 'prioridad') as View
   const weakest = insights[0]
 
   return <section className="page">
@@ -26,12 +27,13 @@ export default function FollowUpPage({ workspace, review, startWorkshop, assista
     </header>
 
     <div className="tabs tabs-page" role="tablist" aria-label="Vista de seguimiento">
-      {([['prioridad', 'Prioridades'], ['tendencia', 'Tendencia'], ['simulador', 'Simulador']] as const).map(([id, label]) => <button key={id} role="tab" aria-selected={view === id} className={view === id ? 'is-on' : ''} onClick={() => navigate('seguimiento', id === 'prioridad' ? undefined : { vista: id })}>{label}</button>)}
+      {([['prioridad', 'Prioridades'], ['tendencia', 'Tendencia'], ['mapa', 'Mapa por tema'], ['simulador', 'Simulador']] as const).map(([id, label]) => <button key={id} role="tab" aria-selected={view === id} className={view === id ? 'is-on' : ''} onClick={() => navigate('seguimiento', id === 'prioridad' ? undefined : { vista: id })}>{label}</button>)}
     </div>
 
     {!candidates.length ? <div className="panel"><EmptyState art="read" title="Aún no hay estudiantes" text="Importa la lista y las notas del curso para empezar el seguimiento." action={<ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} /></div>
       : view === 'prioridad' ? <Priorities candidates={candidates} review={review} />
         : view === 'tendencia' ? <Trends workspace={workspace} review={review} message={assistant.message} />
+          : view === 'mapa' ? <SubjectMap workspace={workspace} review={review} />
           : <Simulator workspace={workspace} review={review} />}
   </section>
 }
@@ -55,6 +57,15 @@ function Priorities({ candidates, review }: { candidates: Candidate[]; review: (
         <span className="person-cta">Ver ficha</span>
       </button></li>)}</ul>
     </section>)}</div>
+  </>
+}
+
+function SubjectMap({ workspace, review }: { workspace: PageProps['workspace']; review: (s: Candidate) => void }) {
+  const subjects = workspace.insights.map(s => s.name)
+  if (!subjects.length) return <div className="panel"><EmptyState art="read" title="Aún no hay notas por tema" text="Cuando cargues notas con su materia, verás aquí quién va bien y quién no en cada tema." /></div>
+  return <>
+    <p className="explainer">Cada celda es el promedio del estudiante en ese tema. Los temas van del más difícil al más fácil, así ves de un vistazo dónde reforzar.</p>
+    <Heatmap trends={workspace.trends} subjects={subjects} onSelect={review} />
   </>
 }
 
