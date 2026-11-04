@@ -5,11 +5,14 @@ const routes: Route[] = ['inicio', 'estudiantes', 'seguimiento', 'talleres', 'eq
 
 export type Location = { route: Route; params: URLSearchParams }
 
-function parse(): Location {
-  const [path, query = ''] = window.location.hash.replace(/^#\/?/, '').split('?')
+/** Reads a hash like "#/seguimiento?vista=simulador"; unknown routes go home. */
+export function parseHash(hash: string): Location {
+  const [path, query = ''] = hash.replace(/^#\/?/, '').split('?')
   const route = routes.includes(path as Route) ? path as Route : 'inicio'
   return { route, params: new URLSearchParams(query) }
 }
+
+const parse = () => parseHash(window.location.hash)
 
 /** Hash routing: the back button works, a reload keeps the page and any screen can be linked. */
 export function useRouter() {
