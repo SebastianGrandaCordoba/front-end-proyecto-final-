@@ -34,6 +34,13 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
   const [selected, setSelected] = useState<number[]>([])
   const [result, setResult] = useState<GeneratedWorkshop | null>(() => viewTitle ? workshops.find(item => item.title === viewTitle) ?? null : null)
   const [generating, setGenerating] = useState(false)
+  // Closing the tab mid-generation would lose the result; ask first.
+  useEffect(() => {
+    if (!generating) return
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault() }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [generating])
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState('')
   const abort = useRef<AbortController | null>(null)
