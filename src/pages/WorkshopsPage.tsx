@@ -221,7 +221,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
           <div className="gen-bar" aria-hidden><span style={{ width: `${Math.min(95, elapsed * 2.2)}%` }} /></div>
           <button className="btn btn-ghost btn-small" onClick={() => abort.current?.abort()}>Cancelar</button>
         </div>
-          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} />
+          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
               : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text="Con objetivos, actividades paso a paso y preguntas con su respuesta. Podrás descargarla para tus estudiantes y una clave solo para ti." /></div>}
       </div>
@@ -229,7 +229,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
   </section>
 }
 
-function WorkshopView({ workshop, onCopy, onNew, onEdit }: { workshop: GeneratedWorkshop; onCopy: () => void; onNew: () => void; onEdit: (next: GeneratedWorkshop) => void }) {
+function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz }: { workshop: GeneratedWorkshop; onCopy: () => void; onNew: () => void; onEdit: (next: GeneratedWorkshop) => void; onQuiz?: () => void }) {
   const isQuiz = workshop.supportType === 'quiz'
   const minutes = workshop.activities.reduce((sum, item) => sum + (item.estimatedMinutes || 0), 0)
   return <article className="panel workshop">
@@ -244,7 +244,8 @@ function WorkshopView({ workshop, onCopy, onNew, onEdit }: { workshop: Generated
       <button className="btn btn-secondary" onClick={() => downloadWorkshopDocument(workshop, true)}><KeyRound size={16} aria-hidden />Clave docente</button>
       <button className="icon-btn" onClick={() => printWorkshop(workshop)} aria-label="Imprimir o guardar como PDF" title="Imprimir o guardar como PDF"><Printer size={17} /></button>
       <button className="icon-btn" onClick={onCopy} aria-label="Copiar texto" title="Copiar texto"><Copy size={17} /></button>
-      <button className="btn btn-ghost btn-small push" onClick={onNew}>Crear otra</button>
+      {workshop.supportType !== 'quiz' && onQuiz && <button className="btn btn-ghost btn-small push" onClick={onQuiz}>Hacer un quiz del tema</button>}
+      <button className={`btn btn-ghost btn-small${workshop.supportType === 'quiz' || !onQuiz ? ' push' : ''}`} onClick={onNew}>Crear otra</button>
     </div>
 
     <section className="w-section"><h3>Objetivos</h3><ol className="objectives">{workshop.learningObjectives.map((item, index) => <li key={index}>{item}</li>)}</ol></section>
