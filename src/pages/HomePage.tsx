@@ -2,6 +2,7 @@ import { ArrowRight, BookOpen, Check, FileText, MessageCircle, Play } from 'luci
 import type { TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import FairTeamMark from '../FairTeamMark'
+import Owl from '../components/Owl'
 import { ImportButton, MaterialUploadButton } from '../app/actions'
 import { headline, recommendations, setupSteps, type Recommendation } from '../lib/assistant'
 import { firstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
@@ -41,6 +42,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
 
   return <section className="page page-home">
     <header className="greeting">
+      <Owl pose={!loading && summary.gradeCount > 0 && summary.low === 0 ? 'celebrate' : 'wave'} size={150} className="greeting-owl" />
       <h1>{greetingFor()}, {firstName(user.name)}.</h1>
       <p>{loading ? 'Revisando tu curso…' : headline(input)} <span className="greeting-date">· {todayLabel()}</span></p>
       <div className="greeting-actions">
