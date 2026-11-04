@@ -135,6 +135,9 @@ function Simulator({ workspace, review }: { workspace: PageProps['workspace']; r
 
   return <>
     <div className="sim-config panel">
+      <div className="sim-block"><span className="field-label">Esquemas comunes</span>
+        <div className="presets">{[[30, 30, 40], [20, 30, 50], [33, 33, 34], [50, 50]].map(preset => <button key={preset.join('-')} type="button" className={`chip${draft.join(',') === preset.join(',') ? ' is-on' : ''}`} disabled={preset.length < sim.observed.length} onClick={() => setDraft(preset)}>{preset.join(' / ')}</button>)}</div>
+      </div>
       <div className="sim-block"><span className="field-label">Cortes del semestre</span>
         <div className="size-picker" role="radiogroup" aria-label="Número de cortes">{[2, 3, 4].map(n => <button key={n} type="button" role="radio" aria-checked={draft.length === n} className={draft.length === n ? 'is-on' : ''} disabled={n < sim.observed.length} onClick={() => setTotal(n)}>{n}</button>)}</div>
       </div>

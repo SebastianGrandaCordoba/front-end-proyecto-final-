@@ -790,3 +790,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .msg-copy { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; opacity: 0; transition: opacity .15s; }
 .msg-buho:hover .msg-copy, .msg-copy:focus-visible { opacity: 1; }
 .msg-buho p { padding-right: 18px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
+.chip:disabled { opacity: .45; cursor: not-allowed; }
+.sim-config { grid-template-columns: auto auto 1fr minmax(220px, 1fr); }
