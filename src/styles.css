@@ -786,3 +786,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 :root[data-theme="dark"] .owl ellipse { opacity: .3; }
 .msg-followups { display: flex; flex-wrap: wrap; gap: 6px; }
 .msg-followups .chip { font-size: 13px; }
+.msg-buho { position: relative; }
+.msg-copy { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; opacity: 0; transition: opacity .15s; }
+.msg-buho:hover .msg-copy, .msg-copy:focus-visible { opacity: 1; }
+.msg-buho p { padding-right: 18px; }

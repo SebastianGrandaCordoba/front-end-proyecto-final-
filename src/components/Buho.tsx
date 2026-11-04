@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowUp, Mic, Play, Square, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Copy, Mic, Play, Square, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import FairTeamMark from '../FairTeamMark'
 import Owl from './Owl'
 import { request } from '../api'
@@ -120,6 +120,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
           ? <div key={message.id} className="msg msg-me">{message.text}</div>
           : <div key={message.id} className="msg msg-buho">
             <p>{message.text}</p>
+            <button className="msg-copy icon-btn" onClick={() => void navigator.clipboard?.writeText(message.text)} aria-label="Copiar respuesta" title="Copiar respuesta"><Copy size={14} /></button>
             {message.reply?.items && message.reply.items.length > 0 && <ul className="msg-items">{message.reply.items.map(item => <li key={item.student.id}>
               <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })}>
                 <Avatar name={item.student.name} size={28} /><span><b>{item.student.name}</b><small>{item.note}</small></span><em className={`tone-${item.tone}`}>{item.value}</em>
