@@ -574,7 +574,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 @media print {
-  .sidebar, .mobile-bar, .toast-region, .page-actions, .workshop-actions, .builder-form, .tabs { display: none !important; }
+  .sidebar, .mobile-bar, .toast-region, .page-actions, .workshop-actions, .builder-form, .tabs, .buho, .banner, .greeting-owl, .greeting-actions { display: none !important; }
   body, .sheet { background: #fff; border: 0; margin: 0; }
   .builder { display: block; }
 }
