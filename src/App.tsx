@@ -15,6 +15,7 @@ import Sidebar, { nav } from './components/Sidebar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import Welcome from './components/Welcome'
 import ErrorBoundary from './components/ErrorBoundary'
+import OfflineBanner from './components/OfflineBanner'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
 
@@ -106,6 +107,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     </div>
 
     <main className="sheet" id="contenido" tabIndex={-1}>
+      <OfflineBanner />
       {workspace.coursesState === 'error' && <div className="banner banner-error" role="alert">
         <span>No pudimos conectar con el servidor. Si acaba de despertar, puede tardar hasta un minuto.</span>
         <button className="btn btn-secondary btn-small" onClick={() => { void workspace.loadCourses(); void workspace.loadShared() }}>Reintentar</button>

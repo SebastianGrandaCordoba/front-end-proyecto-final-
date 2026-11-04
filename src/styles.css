@@ -820,3 +820,4 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .welcome-dots { display: flex; gap: 6px; }
 .welcome-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--panel-2); transition: background-color .2s, width .2s; }
 .welcome-dots i.is-on { width: 22px; border-radius: 4px; background: var(--accent); }
+.banner-offline { background: var(--medium-bg); color: var(--medium); }
