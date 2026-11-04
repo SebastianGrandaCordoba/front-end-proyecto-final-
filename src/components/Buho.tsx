@@ -137,7 +137,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
         {status === 'thinking' && <div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i /></div>}
       </div>
 
-      {error && <p className="buho-error" role="alert">{error}</p>}
+      {error && <p className="buho-error" role="alert">{error} <button className="link-btn" onClick={() => { const last = [...messages].reverse().find(m => m.from === 'me'); if (last) void ask(last.text) }}>Reintentar</button></p>}
       <form className="buho-input" onSubmit={submit}>
         {canListen() && <button type="button" className={`buho-mic${status === 'listening' ? ' is-on' : ''}`} onClick={toggleMic} aria-label={status === 'listening' ? 'Dejar de escuchar' : 'Hablar con el Búho'} aria-pressed={status === 'listening'}>
           {status === 'listening' ? <span className="wave" aria-hidden><i /><i /><i /><i /></span> : <Mic size={19} />}
