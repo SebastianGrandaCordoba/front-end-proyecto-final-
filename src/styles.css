@@ -810,3 +810,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .peek-frame { padding: 16px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); overflow-x: auto; }
 .peek-frame .heatmap { background: var(--sheet); border-radius: 12px; }
 @media (max-width: 860px) { .peek { grid-template-columns: 1fr; gap: 24px; } }
+.shortcuts { display: grid; gap: 10px; margin: 0; }
+.shortcuts div { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.shortcuts dd { margin: 0; color: var(--ink-2); }
+kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2px; border-radius: 6px; background: var(--panel); font: 500 12px var(--sans); }
