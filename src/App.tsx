@@ -67,6 +67,8 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     return () => window.removeEventListener('keydown', onKey)
   }, [navigate])
   useEffect(() => { setMenuOpen(false) }, [route])
+  // Move focus to the content after navigating so screen readers announce the new page.
+  useEffect(() => { document.getElementById('contenido')?.focus({ preventScroll: true }) }, [route])
 
   const startWorkshop = useCallback((next: WorkshopIntent) => {
     setIntent(next)
