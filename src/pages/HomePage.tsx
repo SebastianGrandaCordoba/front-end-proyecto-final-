@@ -82,6 +82,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
         <div><dt>Estudiantes</dt><dd>{loading ? '—' : summary.students}</dd><span>{summary.graded ? `${summary.graded} con notas` : 'sin notas aún'}</span></div>
         <div><dt>Promedio del curso</dt><dd>{summary.average == null ? '—' : formatGrade(summary.average)}<small> / 5</small></dd><span>{summary.gradeCount ? plural(summary.gradeCount, 'nota cargada', 'notas cargadas') : 'carga las notas'}</span></div>
         <div className={summary.low ? 'kpi-alert' : ''}><dt>Necesitan refuerzo</dt><dd>{summary.gradeCount ? summary.low : '—'}</dd><span>{levelRule.LOW.toLowerCase()}</span></div>
+        <div className={summary.fallingBehind ? 'kpi-alert' : ''}><dt>Vienen bajando</dt><dd>{workspace.analysisState === 'ready' ? summary.fallingBehind : '—'}</dd><span>entre el primer y el último corte</span></div>
         <div><dt>Material guardado</dt><dd>{materials == null ? '—' : materials.length}</dd><span>{materials?.length ? fileSize(materials.reduce((s, m) => s + m.fileSize, 0)) + ' en total' : 'para crear talleres'}</span></div>
       </dl>
 
