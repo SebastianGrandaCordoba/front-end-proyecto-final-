@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { Download, LogOut, RotateCw, Trash2 } from 'lucide-react'
 import { API_BASE, request, type TeacherProfile } from '../api'
 import type { PageProps } from '../App'
-import { Spinner, useFeedback } from '../components/ui'
+import { Segmented, Spinner, useFeedback } from '../components/ui'
+import { saveTheme, storedTheme, type ThemePreference } from '../lib/theme'
 import { downloadTemplate, downloadText } from '../lib/files'
 import { plural } from '../lib/domain'
 
 export default function SettingsPage({ workspace, user, onLogout }: PageProps & { user: TeacherProfile; onLogout: () => void }) {
   const { notify, confirm } = useFeedback()
   const [checking, setChecking] = useState(false)
+  const [theme, setTheme] = useState<ThemePreference>(storedTheme)
   const { course, students, grades, projects, teams, workshops } = workspace
 
   const check = async () => {
@@ -38,6 +40,12 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
       <h2>Cuenta</h2>
       <dl className="rows"><div><dt>Nombre</dt><dd>{user.name}</dd></div><div><dt>Correo</dt><dd>{user.email}</dd></div><div><dt>Rol</dt><dd>{user.role || 'Docente'}</dd></div></dl>
       <button className="btn btn-secondary" onClick={onLogout}><LogOut size={16} aria-hidden />Cerrar sesión</button>
+    </section>
+
+    <section className="panel settings">
+      <h2>Apariencia</h2>
+      <Segmented label="Tema" value={theme} onChange={value => { setTheme(value); saveTheme(value) }} options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }, { value: 'system', label: 'Como el sistema' }]} />
+      <p className="muted">El modo oscuro descansa la vista al revisar notas de noche.</p>
     </section>
 
     <section className="panel settings">
