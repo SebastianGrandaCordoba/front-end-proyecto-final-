@@ -124,6 +124,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
               <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })}>
                 <Avatar name={item.student.name} size={28} /><span><b>{item.student.name}</b><small>{item.note}</small></span><em className={`tone-${item.tone}`}>{item.value}</em>
               </button></li>)}</ul>}
+            {message.reply?.followUps && message.reply.followUps.length > 0 && message.id === messages[messages.length - 1]?.id && <div className="msg-followups">{message.reply.followUps.map(q => <button key={q} className="chip" onClick={() => void ask(q)}>{q}</button>)}</div>}
             {message.reply?.actions && message.reply.actions.length > 0 && <div className="msg-actions">{message.reply.actions.map((action, i) => <button key={i} className={`btn btn-small ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} onClick={() => onAction(action)}>{action.label}</button>)}</div>}
           </div>)}
         {status === 'thinking' && <div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i /></div>}

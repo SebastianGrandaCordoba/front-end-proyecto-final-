@@ -16,7 +16,7 @@ export type BuhoAction =
   | { kind: 'course'; label: string; courseId: number }
 
 export type BuhoItem = { student: Candidate; value: string; note: string; tone: 'low' | 'medium' | 'high' | 'none' }
-export type BuhoReply = { text: string; items?: BuhoItem[]; actions?: BuhoAction[]; run?: BuhoAction }
+export type BuhoReply = { text: string; items?: BuhoItem[]; actions?: BuhoAction[]; run?: BuhoAction; followUps?: string[] }
 
 type ApiAction = { kind: string; label: string; params: Record<string, string> }
 export type ApiReply = { text: string; intent: string; items: { studentId: number; name: string; value: string; note: string; tone: BuhoItem['tone'] }[]; actions: ApiAction[]; run: ApiAction | null }
@@ -49,6 +49,18 @@ function adaptAction(action: ApiAction, students: Map<number, Candidate>): BuhoA
   }
 }
 
+/** Natural next questions after each kind of answer, so the conversation keeps going. */
+export const followUpsByIntent: Record<string, string[]> = {
+  briefing: ['¿Quién viene bajando?', '¿Qué me recomiendas?'],
+  'falling-behind': ['¿Quién puede perder la materia?', 'Compara los cortes'],
+  'who-needs-help': ['¿Qué tema les cuesta más?', 'Crea un taller de refuerzo'],
+  'passing-grade': ['¿Quién viene bajando?', 'Abre el simulador'],
+  'student-status': ['¿Qué me recomiendas?'],
+  'subject-extremes': ['¿Quién necesita refuerzo?'],
+  'teacher-advice': ['Genera el informe del curso'],
+  average: ['¿Qué tema les cuesta más?'],
+}
+
 export function adaptReply(api: ApiReply, candidates: Candidate[]): BuhoReply {
   const students = new Map(candidates.map(c => [c.id, c]))
   return {
@@ -56,5 +68,6 @@ export function adaptReply(api: ApiReply, candidates: Candidate[]): BuhoReply {
     items: api.items.map(item => students.get(item.studentId) ? { student: students.get(item.studentId)!, value: item.value, note: item.note, tone: item.tone } : null).filter((x): x is BuhoItem => x !== null),
     actions: api.actions.map(a => adaptAction(a, students)).filter((x): x is BuhoAction => x !== null),
     run: api.run ? adaptAction(api.run, students) ?? undefined : undefined,
+    followUps: followUpsByIntent[api.intent] ?? [],
   }
 }

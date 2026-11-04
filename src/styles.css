@@ -784,3 +784,5 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 :root[data-theme="dark"] .buho-brief:hover, :root[data-theme="dark"] .buho-mic:hover, :root[data-theme="dark"] .buho-nav:hover { background: #1d3d46; }
 :root[data-theme="dark"] .table tbody tr:hover { background: #1a2326; }
 :root[data-theme="dark"] .owl ellipse { opacity: .3; }
+.msg-followups { display: flex; flex-wrap: wrap; gap: 6px; }
+.msg-followups .chip { font-size: 13px; }
