@@ -41,7 +41,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const [briefToken, setBriefToken] = useState(0)
   const { course, courses, setCourseId } = workspace
 
-  const buhoContext: BuhoContext = useMemo(() => ({ teacher: user.name, courseId: course?.id ?? null, courseName: course?.name ?? null, candidates: workspace.candidates }), [user.name, course, workspace.candidates])
+  const buhoContext: BuhoContext = useMemo(() => ({ teacher: user.name, courseId: course?.id ?? null, courseName: course?.name ?? null, candidates: workspace.candidates, weakestSubject: workspace.insights[0]?.name ?? null }), [user.name, course, workspace.candidates, workspace.insights])
 
   const report = useCallback(() => {
     if (!course) return

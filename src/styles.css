@@ -822,3 +822,4 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .welcome-dots i.is-on { width: 22px; border-radius: 4px; background: var(--accent); }
 .banner-offline { background: var(--medium-bg); color: var(--medium); }
 .team-why { margin: -4px 0 10px; color: var(--ink-3); font-size: 13px; }
+.chip-accent { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }

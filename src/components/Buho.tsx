@@ -11,7 +11,7 @@ import { Avatar } from './ui'
 type Message = { id: number; from: 'me' | 'buho'; text: string; reply?: BuhoReply }
 type Status = 'idle' | 'listening' | 'thinking' | 'speaking'
 
-export type BuhoContext = { teacher: string; courseId: number | null; courseName: string | null; candidates: Candidate[] }
+export type BuhoContext = { teacher: string; courseId: number | null; courseName: string | null; candidates: Candidate[]; weakestSubject?: string | null }
 
 export default function Buho({ context, onAction, open, setOpen, briefToken }: { context: BuhoContext; onAction: (action: BuhoAction) => void; open: boolean; setOpen: (open: boolean) => void; briefToken: number }) {
   const storageKey = `fairteam.buho.${context.courseId ?? 'none'}`
@@ -120,7 +120,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
           <Owl pose="wave" size={112} className="buho-welcome-owl" />
           <p className="buho-hello">Hola, {context.teacher.split(/\s+/)[0]}. Soy tu asistente. Pregúntame por tus estudiantes o pídeme que prepare algo.</p>
           <button className="buho-brief" onClick={() => void playBriefing()} disabled={status === 'thinking'}><span><Play size={16} aria-hidden /></span><b>Escuchar el resumen del día</b><small>Cómo va {context.courseName ?? 'tu curso'} y qué hacer primero</small></button>
-          <div className="buho-examples"><span>Prueba con:</span>{examples.map(example => <button key={example} className="chip" onClick={() => void ask(example)}>{example}</button>)}</div>
+          <div className="buho-examples"><span>Prueba con:</span>{context.weakestSubject && <button className="chip chip-accent" onClick={() => void ask(`¿Quién necesita refuerzo en ${context.weakestSubject}?`)}>¿Quién necesita refuerzo en {context.weakestSubject}?</button>}{examples.map(example => <button key={example} className="chip" onClick={() => void ask(example)}>{example}</button>)}</div>
         </div>}
         {messages.map(message => message.from === 'me'
           ? <div key={message.id} className="msg msg-me">{message.text}</div>
