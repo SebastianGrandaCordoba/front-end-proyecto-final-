@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { BookOpen, Check, ChevronDown, Clock3, Copy, Download, FileText, KeyRound, Printer, RotateCw, Sparkles, Trash2, X } from 'lucide-react'
+import { BookOpen, Check, ChevronDown, Search, Clock3, Copy, Download, FileText, KeyRound, Printer, RotateCw, Sparkles, Trash2, X } from 'lucide-react'
 import { request, type AcademicLevel, type CourseMaterial, type GeneratedWorkshop } from '../api'
 import type { PageProps } from '../App'
 import { MAX_MATERIAL_BYTES, MaterialUploadButton } from '../app/actions'
@@ -265,8 +265,18 @@ function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz }: { workshop: G
 }
 
 function Library({ items, onOpen, onRemove }: { items: GeneratedWorkshop[]; onOpen: (item: GeneratedWorkshop) => void; onRemove: (item: GeneratedWorkshop) => void }) {
+  const [query, setQuery] = useState('')
+  const [kind, setKind] = useState<'todos' | 'workshop' | 'quiz'>('todos')
   if (!items.length) return <div className="panel"><EmptyState icon={<BookOpen size={22} />} title="Todavía no hay propuestas guardadas" text="Cada taller o quiz que generes se guarda aquí, por curso, en este navegador." /></div>
-  return <ul className="library">{items.map(item => <li key={`${item.title}-${item.savedAt}`} className="panel lib-item">
+  const q = query.trim().toLowerCase()
+  const visible = items.filter(item => (kind === 'todos' || (item.supportType ?? 'workshop') === kind) && (!q || `${item.title} ${item.subject}`.toLowerCase().includes(q)))
+  return <>
+    <div className="toolbar">
+      <label className="search"><Search size={16} aria-hidden /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar en tus talleres…" aria-label="Buscar talleres" /></label>
+      <Segmented label="Tipo" value={kind} onChange={setKind} options={[{ value: 'todos', label: 'Todos', count: items.length }, { value: 'workshop', label: 'Talleres', count: items.filter(i => i.supportType !== 'quiz').length }, { value: 'quiz', label: 'Quizzes', count: items.filter(i => i.supportType === 'quiz').length }]} />
+    </div>
+    {!visible.length && <div className="panel"><EmptyState title="Nada coincide" text="Prueba con otra palabra o cambia el tipo." /></div>}
+    <ul className="library">{visible.map(item => <li key={`${item.title}-${item.savedAt}`} className="panel lib-item">
     <button className="lib-open" onClick={() => onOpen(item)}>
       <span className="lib-type">{item.supportType === 'quiz' ? 'Quiz' : 'Taller'} · {levelLabel[levelOf(item.targetLevel)]}</span>
       <b>{item.title}</b>
@@ -277,4 +287,5 @@ function Library({ items, onOpen, onRemove }: { items: GeneratedWorkshop[]; onOp
       <button className="icon-btn icon-danger" onClick={() => onRemove(item)} aria-label={`Borrar ${item.title}`} title="Borrar"><Trash2 size={16} /></button>
     </div>
   </li>)}</ul>
+  </>
 }
