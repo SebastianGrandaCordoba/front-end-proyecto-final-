@@ -59,8 +59,8 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     let pendingG = 0
     const goto: Record<string, Route> = { i: 'inicio', e: 'estudiantes', s: 'seguimiento', t: 'talleres', q: 'equipos', c: 'cursos' }
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement
-      if (target.closest('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target?.closest?.('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return
       if (event.key === '?') { event.preventDefault(); setShowShortcuts(true); return }
       if (event.key === 'g') { pendingG = Date.now(); return }
       if (Date.now() - pendingG < 900 && goto[event.key]) { navigate(goto[event.key]); pendingG = 0 }
