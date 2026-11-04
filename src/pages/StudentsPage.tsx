@@ -83,6 +83,7 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
     <div className="table-card">
       {courseState === 'loading' ? <div className="table-skeleton" aria-label="Cargando estudiantes">{Array.from({ length: 6 }, (_, i) => <i key={i} />)}</div>
         : visible.length ? <table className="table">
+          <caption className="visually-hidden">Estudiantes de {course?.name} con su estado, promedio, notas y tendencia</caption>
           <thead><tr><th scope="col">Estudiante</th><th scope="col">Estado</th><th scope="col" className="num">Promedio</th><th scope="col" className="num">Notas</th><th scope="col">Tendencia</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
           <tbody>{visible.map(student => <tr key={student.id}>
             <td><button className="person-cell" onClick={() => review(student)}><Avatar name={student.name} /><span><b>{student.name}</b><small>{student.email || 'Sin correo'}</small></span></button></td>

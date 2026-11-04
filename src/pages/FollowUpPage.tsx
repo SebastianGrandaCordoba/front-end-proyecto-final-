@@ -91,6 +91,7 @@ function Trends({ workspace, review, message }: { workspace: PageProps['workspac
   return <>
     <p className="explainer">El riesgo combina el promedio con la tendencia entre {periods[0]} y {periods[periods.length - 1]}. Una caída de 0,3 o más se marca como “baja”.</p>
     <div className="table-card"><table className="table">
+      <caption className="visually-hidden">Promedio de cada estudiante por corte, cambio y riesgo</caption>
       <thead><tr><th scope="col">Estudiante</th>{periods.map(p => <th key={p} scope="col" className="num">{p}</th>)}<th scope="col" className="num">Cambio</th><th scope="col">Riesgo</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
       <tbody>{trends.filter(t => t.student.hasGrades).map(t => <tr key={t.student.id}>
         <td><button className="person-cell" onClick={() => review(t.student)}><Avatar name={t.student.name} /><span><b>{t.student.name}</b><small>{t.weakest ? `Le cuesta ${t.weakest.name}` : ''}</small></span></button></td>
@@ -151,6 +152,7 @@ function Simulator({ workspace, review }: { workspace: PageProps['workspace']; r
     <p className="explainer">{[counts.impossible ? `${plural(counts.impossible, 'estudiante ya no alcanza', 'estudiantes ya no alcanzan')} el 3,0.` : '', counts.hard ? `${plural(counts.hard, 'estudiante necesita', 'estudiantes necesitan')} más de 3,5 en lo que falta.` : '', !counts.impossible && !counts.hard ? 'Con las notas actuales, todos pueden aprobar sin necesitar más de 3,5 en lo que falta.' : ''].filter(Boolean).join(' ')} Para aprobar se necesita 3,0.</p>
     <label className="toggle"><input type="checkbox" checked={onlyRisk} onChange={event => setOnlyRisk(event.target.checked)} /> Ver solo estudiantes en riesgo</label>
     <div className="table-card"><table className="table">
+      <caption className="visually-hidden">Nota necesaria para aprobar y nota final simulada de cada estudiante</caption>
       <thead><tr><th scope="col">Estudiante</th><th scope="col" className="num">Va en</th><th scope="col" className="num">Necesita</th><th scope="col">Estado</th><th scope="col" className="num">Final si saca {formatGrade(whatIf)}</th></tr></thead>
       <tbody>{rows.map(p => { const final = finalWith(p); return <tr key={p.student.id}>
         <td><button className="person-cell" onClick={() => review(p.student)}><Avatar name={p.student.name} /><span><b>{p.student.name}</b><small>{p.explanation}</small></span></button></td>
