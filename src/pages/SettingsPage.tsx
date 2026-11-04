@@ -4,6 +4,7 @@ import { API_BASE, request, type TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import { Segmented, Spinner, useFeedback } from '../components/ui'
 import { saveTheme, storedTheme, type ThemePreference } from '../lib/theme'
+import { canSpeak, setSpeechRate, speak, speechRate } from '../lib/speech'
 import { downloadTemplate, downloadText } from '../lib/files'
 import { plural } from '../lib/domain'
 
@@ -11,6 +12,7 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
   const { notify, confirm } = useFeedback()
   const [checking, setChecking] = useState(false)
   const [theme, setTheme] = useState<ThemePreference>(storedTheme)
+  const [rate, setRate] = useState(speechRate)
   const { course, students, grades, projects, teams, workshops } = workspace
 
   const check = async () => {
@@ -47,6 +49,15 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
       <Segmented label="Tema" value={theme} onChange={value => { setTheme(value); saveTheme(value) }} options={[{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }, { value: 'system', label: 'Como el sistema' }]} />
       <p className="muted">El modo oscuro descansa la vista al revisar notas de noche.</p>
     </section>
+
+    {canSpeak() && <section className="panel settings">
+      <h2>Voz del Búho</h2>
+      <label className="field">
+        <span className="field-label">Velocidad <span className="muted num">{rate.toFixed(2).replace('.', ',')}×</span></span>
+        <input type="range" className="range" min={0.8} max={1.3} step={0.05} value={rate} onChange={event => { const value = Number(event.target.value); setRate(value); setSpeechRate(value) }} />
+      </label>
+      <button className="btn btn-secondary" onClick={() => speak('Hola, soy el Búho. Así sueno a esta velocidad.')}>Probar la voz</button>
+    </section>}
 
     <section className="panel settings">
       <h2>Conexión</h2>
