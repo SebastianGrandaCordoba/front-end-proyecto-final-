@@ -222,7 +222,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
         </div>
           : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
-              : <div className="panel preview"><EmptyState icon={<BookOpen size={22} />} title="Aquí aparecerá tu actividad" text="Con objetivos, actividades paso a paso y preguntas con su respuesta. Podrás descargarla para tus estudiantes y una clave solo para ti." /></div>}
+              : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text="Con objetivos, actividades paso a paso y preguntas con su respuesta. Podrás descargarla para tus estudiantes y una clave solo para ti." /></div>}
       </div>
     </div>}
   </section>
