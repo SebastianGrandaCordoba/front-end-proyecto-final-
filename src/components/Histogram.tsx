@@ -12,6 +12,6 @@ export default function Histogram({ bands }: { bands: GradeBand[] }) {
         <small>{band.label}</small>
       </div>)}
     </div>
-    <figcaption>{total} estudiantes con notas, por promedio</figcaption>
+    <figcaption>{total} estudiantes con notas, por promedio · en rojo, por debajo de 3,0</figcaption>
   </figure>
 }
