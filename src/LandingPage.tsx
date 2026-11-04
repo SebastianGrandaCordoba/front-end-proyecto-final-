@@ -41,6 +41,19 @@ export default function LandingPage({ onLogin, onRegister }: Props) {
         </ol>
       </section>
 
+      <section className="peek" aria-labelledby="peek-title">
+        <div className="peek-copy">
+          <h2 id="peek-title">Un vistazo y sabes dónde reforzar</h2>
+          <p>El mapa por tema cruza a cada estudiante con cada tema. Lo rojo es lo que necesita refuerzo; lo verde, lo que ya dominan.</p>
+          <p className="peek-note">Ejemplo con datos ficticios</p>
+        </div>
+        <div className="peek-frame" data-ui aria-hidden>
+          <table className="heatmap"><thead><tr><th>Estudiante</th><th>Ciclos</th><th>Funciones</th><th>Arreglos</th></tr></thead>
+            <tbody>{([['Valentina', 1.6, 2.1, 2.4], ['Santiago', 3.4, 3.9, 3.6], ['Mariana', 2.6, 3.1, 2.9], ['Juan Pablo', 4.4, 4.8, 4.6]] as const).map(([name, ...values]) => <tr key={name}><th>{name}</th>{values.map((v, i) => <td key={i} className={`heat heat-${v < 3 ? 'low' : v < 4 ? 'medium' : 'high'}`}>{v.toFixed(1).replace('.', ',')}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="decide" id="tu-decides" aria-labelledby="decide-title">
         <div><ShieldCheck size={28} aria-hidden /><h2 id="decide-title">Tú tienes la última palabra</h2></div>
         <ul>

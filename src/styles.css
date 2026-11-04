@@ -802,3 +802,11 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 @media (max-width: 860px) { .table th:nth-child(5), .table td:nth-child(5) { display: none; } }
 .kpis { grid-template-columns: repeat(5, 1fr); }
 @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, 1fr); } .kpis > div:nth-child(4) { border-left: 0; } .kpis > div:nth-child(n+4) { border-top: 1px solid var(--line); } }
+
+.peek { display: grid; grid-template-columns: 5fr 7fr; gap: 48px; align-items: center; width: min(1180px, 100%); margin: 0 auto; padding: 32px 24px 64px; }
+.peek h2 { font-family: var(--serif); font-size: clamp(30px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; }
+.peek-copy p { margin-top: 14px; color: var(--ink-2); font-size: 17px; }
+.peek-copy .peek-note { color: var(--ink-3); font-size: 13px; }
+.peek-frame { padding: 16px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); overflow-x: auto; }
+.peek-frame .heatmap { background: var(--sheet); border-radius: 12px; }
+@media (max-width: 860px) { .peek { grid-template-columns: 1fr; gap: 24px; } }
