@@ -69,6 +69,6 @@ export default function LandingPage({ onLogin, onRegister }: Props) {
       </section>
     </main>
 
-    <footer className="landing-foot"><FairTeamMark size={22} /><span translate="no">FairTeam</span><span>Proyecto final · Patrones de diseño</span></footer>
+    <footer className="landing-foot"><FairTeamMark size={22} /><span translate="no">FairTeam</span><span>Proyecto final · Patrones de diseño</span><a href="#como-funciona">Cómo funciona</a></footer>
   </div>
 }
