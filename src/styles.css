@@ -814,3 +814,9 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .shortcuts div { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
 .shortcuts dd { margin: 0; color: var(--ink-2); }
 kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2px; border-radius: 6px; background: var(--panel); font: 500 12px var(--sans); }
+.welcome { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.welcome p { color: var(--ink-2); max-width: 36ch; }
+.welcome .modal-actions { width: 100%; justify-content: space-between; }
+.welcome-dots { display: flex; gap: 6px; }
+.welcome-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--panel-2); transition: background-color .2s, width .2s; }
+.welcome-dots i.is-on { width: 22px; border-radius: 4px; background: var(--accent); }
