@@ -3,6 +3,7 @@ import type { TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import FairTeamMark from '../FairTeamMark'
 import Owl from '../components/Owl'
+import Histogram from '../components/Histogram'
 import { ImportButton, MaterialUploadButton } from '../app/actions'
 import { headline, recommendations, setupSteps, type Recommendation } from '../lib/assistant'
 import { firstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
@@ -109,6 +110,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
               <li><i className="dot dot-high" />Buen progreso<b className="num">{summary.high}</b></li>
               {summary.ungraded > 0 && <li><i className="dot dot-none" />Sin notas<b className="num">{summary.ungraded}</b></li>}
             </ul>
+            {workspace.distribution.some(b => b.students > 0) && <div className="subjects"><h3>Distribución de promedios</h3><Histogram bands={workspace.distribution} /></div>}
             {insights.length > 0 && <div className="subjects"><h3>Promedio por tema</h3><ul>{insights.slice(0, 4).map(subject => <li key={subject.id}><span>{subject.name}</span><b className={`num${subject.average < 3 ? ' is-low' : ''}`}>{formatGrade(subject.average)}</b></li>)}</ul></div>}
           </> : <EmptyState title="Sin datos todavía" text="La distribución aparece cuando cargas notas." />}
         </section>
