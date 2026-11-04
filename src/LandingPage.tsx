@@ -1,6 +1,7 @@
 import { ArrowRight, Check, FileSpreadsheet, ShieldCheck, Sparkles } from 'lucide-react'
 import FairTeamMark from './FairTeamMark'
 import FairTeamOwl from './FairTeamOwl'
+import Owl from './components/Owl'
 
 type Props = { onLogin: () => void; onRegister: () => void }
 
@@ -34,9 +35,9 @@ export default function LandingPage({ onLogin, onRegister }: Props) {
       <section className="how" id="como-funciona" aria-labelledby="how-title">
         <h2 id="how-title">Tres pasos, sin manuales</h2>
         <ol>
-          <li><span className="how-n">1</span><FileSpreadsheet size={22} aria-hidden /><h3>Sube la lista y las notas</h3><p>Desde Excel o CSV. Reconozco columnas como Nombre, Materia, Nota y Periodo.</p></li>
-          <li><span className="how-n">2</span><Sparkles size={22} aria-hidden /><h3>Mira lo que te recomiendo</h3><p>Quién está por debajo de 3,0, qué tema cuesta más y qué hacer primero, con la razón a la vista.</p></li>
-          <li><span className="how-n">3</span><ArrowRight size={22} aria-hidden /><h3>Crea el taller o el quiz</h3><p>Elige tu material y el nivel. Recibes objetivos, actividades y preguntas con su clave, listos para imprimir.</p></li>
+          <li><span className="how-n">1</span><Owl pose="read" size={92} className="how-owl" /><FileSpreadsheet size={22} aria-hidden /><h3>Sube la lista y las notas</h3><p>Desde Excel o CSV. Reconozco columnas como Nombre, Materia, Nota y Periodo.</p></li>
+          <li><span className="how-n">2</span><Owl pose="think" size={92} className="how-owl" /><Sparkles size={22} aria-hidden /><h3>Mira lo que te recomiendo</h3><p>Quién está por debajo de 3,0, qué tema cuesta más y qué hacer primero, con la razón a la vista.</p></li>
+          <li><span className="how-n">3</span><Owl pose="celebrate" size={92} className="how-owl" /><ArrowRight size={22} aria-hidden /><h3>Crea el taller o el quiz</h3><p>Elige tu material y el nivel. Recibes objetivos, actividades y preguntas con su clave, listos para imprimir.</p></li>
         </ol>
       </section>
 

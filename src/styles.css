@@ -716,3 +716,4 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .greeting { position: relative; padding-right: 180px; }
 .greeting-owl { position: absolute; right: 8px; top: -14px; }
 @media (max-width: 860px) { .greeting { padding-right: 0; } .greeting-owl { position: static; width: 96px; height: 96px; margin: -8px 0 6px -8px; } }
+.how-owl { margin: -6px 0 2px -8px; }
