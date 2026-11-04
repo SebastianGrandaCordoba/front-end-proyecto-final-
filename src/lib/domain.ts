@@ -21,6 +21,12 @@ export function levelOf(value?: string | null): AcademicLevel {
 
 /** Classify on the value the teacher sees (one decimal), so a 2,97 shown as "3,0" is not called "refuerzo". */
 export const round1 = (value: number) => Math.round(value * 10) / 10
+/** CSS tone for a grade: low (<3,0), medium (<4,0) or high, on the displayed value. */
+export function gradeTone(value: number): 'low' | 'medium' | 'high' {
+  const level = levelFromAverage(value)
+  return level === 'LOW' ? 'low' : level === 'MEDIUM' ? 'medium' : 'high'
+}
+
 export function levelFromAverage(average: number): AcademicLevel {
   const shown = round1(average)
   return shown < 3 ? 'LOW' : shown < 4 ? 'MEDIUM' : 'HIGH'
