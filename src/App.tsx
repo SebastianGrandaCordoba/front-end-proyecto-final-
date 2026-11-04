@@ -14,6 +14,7 @@ import Buho, { type BuhoContext } from './components/Buho'
 import Sidebar, { nav } from './components/Sidebar'
 import ShortcutsDialog from './components/ShortcutsDialog'
 import Welcome from './components/Welcome'
+import ErrorBoundary from './components/ErrorBoundary'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
 
@@ -109,6 +110,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
         <span>No pudimos conectar con el servidor. Si acaba de despertar, puede tardar hasta un minuto.</span>
         <button className="btn btn-secondary btn-small" onClick={() => { void workspace.loadCourses(); void workspace.loadShared() }}>Reintentar</button>
       </div>}
+      <ErrorBoundary resetKey={route}>
       <Suspense fallback={<div className="page-loading" role="status" aria-live="polite"><Spinner size={20} /> Cargando…</div>}>
         {route === 'inicio' && <HomePage {...pageProps} user={user} />}
         {needsCourse && route !== 'inicio' ? <NoCourse onCreate={() => navigate('cursos', { nuevo: '1' })} /> : <>
@@ -120,6 +122,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
         {route === 'cursos' && <CoursesPage {...pageProps} params={params} />}
         {route === 'ajustes' && <SettingsPage {...pageProps} user={user} onLogout={onLogout} />}
       </Suspense>
+      </ErrorBoundary>
     </main>
 
     {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
