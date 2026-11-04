@@ -114,32 +114,6 @@ export function summarize(candidates: Candidate[], grades: Grade[]): CourseSumma
   }
 }
 
-/** Average per subject, weakest first. Used to suggest the topic of the next workshop. */
-export function subjectInsights(grades: Grade[], subjects: Subject[]): SubjectInsight[] {
-  const names = new Map(subjects.map(subject => [Number(subject.id), subject.name]))
-  const groups = new Map<number, { marks: number[]; students: Map<number, number[]> }>()
-  for (const grade of grades) {
-    const mark = Number(grade.grade)
-    if (!Number.isFinite(mark) || grade.subjectId == null) continue
-    const id = Number(grade.subjectId)
-    const group = groups.get(id) ?? { marks: [] as number[], students: new Map<number, number[]>() }
-    group.marks.push(mark)
-    const sid = Number(grade.studentId)
-    group.students.set(sid, [...(group.students.get(sid) ?? []), mark])
-    groups.set(id, group)
-  }
-  return [...groups.entries()].map(([id, group]) => {
-    const perStudent = [...group.students.values()].map(list => list.reduce((s, m) => s + m, 0) / list.length)
-    return {
-      id,
-      name: names.get(id) ?? `Materia ${id}`,
-      average: group.marks.reduce((s, m) => s + m, 0) / group.marks.length,
-      count: group.marks.length,
-      lowCount: perStudent.filter(avg => round1(avg) < 3).length,
-    }
-  }).sort((a, b) => a.average - b.average)
-}
-
 export function studentAdvice(student: Candidate) {
   if (!student.hasGrades) return 'Todavía no hay notas de este estudiante. Carga una evaluación para saber cómo va; mientras tanto puedes preparar una actividad preventiva.'
   if (student.level === 'LOW') return 'Conviene retomar los conceptos base con ejemplos resueltos, práctica guiada y una comprobación corta al final.'

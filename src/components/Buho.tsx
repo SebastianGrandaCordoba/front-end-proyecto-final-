@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowUp, Mic, Play, Square, Volume2, VolumeX, X } from 'lucide-react'
 import FairTeamMark from '../FairTeamMark'
-import { briefing, examples, interpret, type BuhoAction, type BuhoContext, type BuhoReply } from '../lib/buho'
+import { request } from '../api'
+import { adaptReply, examples, type ApiReply, type BuhoAction, type BuhoReply } from '../lib/buho'
+import type { Candidate } from '../lib/domain'
 import { canListen, canSpeak, listen, speak, stopSpeaking } from '../lib/speech'
 import { Avatar } from './ui'
 
 type Message = { id: number; from: 'me' | 'buho'; text: string; reply?: BuhoReply }
 type Status = 'idle' | 'listening' | 'thinking' | 'speaking'
+
+export type BuhoContext = { teacher: string; courseId: number | null; courseName: string | null; candidates: Candidate[] }
 
 export default function Buho({ context, onAction, open, setOpen, briefToken }: { context: BuhoContext; onAction: (action: BuhoAction) => void; open: boolean; setOpen: (open: boolean) => void; briefToken: number }) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -37,30 +41,44 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     speak(text, { onStart: () => setStatus('speaking'), onEnd: () => setStatus(current => current === 'speaking' ? 'idle' : current) })
   }, [voiceOn])
 
-  const ask = useCallback((question: string, { spoken = false } = {}) => {
+  /** Asks the backend (insights assistant). Returns null when the course or the server is not available. */
+  const fetchReply = useCallback(async (question: string): Promise<BuhoReply | null> => {
+    const { courseId, candidates } = contextRef.current
+    if (!courseId) return { text: 'Primero crea o elige un curso y te ayudo con todo lo demás.', actions: [{ kind: 'navigate', label: 'Mis cursos', route: 'cursos' }] }
+    try {
+      const api = await request<ApiReply>(`/api/courses/${courseId}/assistant`, { method: 'POST', body: JSON.stringify({ question }) })
+      return adaptReply(api, candidates)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pude conectarme con el servidor.')
+      return null
+    }
+  }, [])
+
+  const ask = useCallback(async (question: string, { spoken = false } = {}) => {
     const q = question.trim()
     if (!q) return
     setError('')
-    const mine: Message = { id: ++counter.current, from: 'me', text: q }
-    setMessages(current => [...current, mine])
+    setMessages(current => [...current, { id: ++counter.current, from: 'me', text: q }])
     setDraft('')
     setStatus('thinking')
-    window.setTimeout(() => {
-      const reply = interpret(q, contextRef.current)
-      setMessages(current => [...current, { id: ++counter.current, from: 'buho', text: reply.text, reply }])
-      if (reply.run) window.setTimeout(() => onAction(reply.run!), 450)
-      say(reply.text, spoken)
-      if (!voiceOn && !spoken) setStatus('idle')
-    }, 280)
-  }, [onAction, say, voiceOn])
+    const reply = await fetchReply(q)
+    if (!reply) { setStatus('idle'); return }
+    setMessages(current => [...current, { id: ++counter.current, from: 'buho', text: reply.text, reply }])
+    if (reply.run) window.setTimeout(() => onAction(reply.run!), 450)
+    if (voiceOn || spoken) say(reply.text, spoken)
+    else setStatus('idle')
+  }, [fetchReply, onAction, say, voiceOn])
 
-  const playBriefing = () => {
-    const text = briefing(contextRef.current)
-    setMessages(current => [...current, { id: ++counter.current, from: 'buho', text, reply: { text, actions: interpret('resumen', contextRef.current).actions } }])
-    say(text, true)
+  const playBriefing = async () => {
+    setError('')
+    setStatus('thinking')
+    const reply = await fetchReply('resumen del día')
+    if (!reply) { setStatus('idle'); return }
+    setMessages(current => [...current, { id: ++counter.current, from: 'buho', text: reply.text, reply }])
+    say(reply.text, true)
   }
 
-  useEffect(() => { if (briefToken > 0) playBriefing() }, [briefToken]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (briefToken > 0) void playBriefing() }, [briefToken]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleMic = () => {
     if (status === 'listening') { stopListening.current(); return }
@@ -69,13 +87,13 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     setStatus('listening')
     stopListening.current = listen({
       onPartial: text => setDraft(text),
-      onFinal: text => ask(text, { spoken: true }),
+      onFinal: text => void ask(text, { spoken: true }),
       onError: message => setError(message),
       onEnd: () => setStatus(current => current === 'listening' ? 'idle' : current),
     })
   }
 
-  const submit = (event: FormEvent) => { event.preventDefault(); stopListening.current(); ask(draft) }
+  const submit = (event: FormEvent) => { event.preventDefault(); stopListening.current(); void ask(draft) }
   const toggleVoice = () => { const next = !voiceOn; setVoiceOn(next); localStorage.setItem('fairteam.buho.voice', next ? 'on' : 'off'); if (!next) { stopSpeaking(); setStatus('idle') } }
   const statusLabel = { idle: 'Listo para ayudarte', listening: 'Te escucho…', thinking: 'Pensando…', speaking: 'Hablando…' }[status]
 
@@ -93,8 +111,8 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
       <div className="buho-body" ref={list}>
         {messages.length === 0 && <div className="buho-welcome">
           <p className="buho-hello">Hola, {context.teacher.split(/\s+/)[0]}. Soy tu asistente. Pregúntame por tus estudiantes o pídeme que prepare algo.</p>
-          <button className="buho-brief" onClick={playBriefing}><span><Play size={16} aria-hidden /></span><b>Escuchar el resumen del día</b><small>Cómo va {context.course?.name ?? 'tu curso'} y qué hacer primero</small></button>
-          <div className="buho-examples"><span>Prueba con:</span>{examples.map(example => <button key={example} className="chip" onClick={() => ask(example)}>{example}</button>)}</div>
+          <button className="buho-brief" onClick={() => void playBriefing()} disabled={status === 'thinking'}><span><Play size={16} aria-hidden /></span><b>Escuchar el resumen del día</b><small>Cómo va {context.courseName ?? 'tu curso'} y qué hacer primero</small></button>
+          <div className="buho-examples"><span>Prueba con:</span>{examples.map(example => <button key={example} className="chip" onClick={() => void ask(example)}>{example}</button>)}</div>
         </div>}
         {messages.map(message => message.from === 'me'
           ? <div key={message.id} className="msg msg-me">{message.text}</div>

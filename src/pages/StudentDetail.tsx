@@ -3,7 +3,7 @@ import type { Grade } from '../api'
 import type { SupportMode } from '../app/types'
 import { Avatar, LevelPill, Modal } from '../components/ui'
 import { formatGrade, plural, round1, studentAdvice, type Candidate, type Subject } from '../lib/domain'
-import { projectionText, type Projection, type Trend } from '../lib/insights'
+import type { Projection, Trend } from '../lib/insights'
 
 export default function StudentDetail({ student, trend, projection, grades, subjects, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
   const names = new Map(subjects.map(subject => [Number(subject.id), subject.name]))
@@ -24,7 +24,7 @@ export default function StudentDetail({ student, trend, projection, grades, subj
           <div className="columns" role="img" aria-label={trend.points.map(p => `${p.period}: ${formatGrade(p.average)}`).join(', ')}>
             {trend.points.map(point => <div key={point.period} className="column"><span className="num">{formatGrade(point.average)}</span><i className={`bar-${tone(point.average)}`} style={{ height: `${Math.max(6, point.average / 5 * 100)}%` }} /><small>{point.period}</small></div>)}
           </div>
-          {projection && <p className={`projection projection-${projection.status}`}>{projectionText(projection)}</p>}
+          {projection && <p className={`projection projection-${projection.status}`}>{projection.explanation}</p>}
         </section>}
         {trend && trend.bySubject.length > 0 && <section className="detail-card">
           <h3>Por tema</h3>

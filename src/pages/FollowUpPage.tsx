@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Download, FileText, MessageSquareText, Sparkles } from 'lucide-react'
 import type { PageProps } from '../App'
 import { ImportButton } from '../app/actions'
-import { Avatar, EmptyState } from '../components/ui'
+import { Avatar, EmptyState, useFeedback } from '../components/ui'
 import { downloadLearningReport } from '../lib/files'
 import { formatGrade, plural, type Candidate } from '../lib/domain'
-import { projectionText, type Projection } from '../lib/insights'
+import type { Projection } from '../lib/insights'
 
 type View = 'prioridad' | 'tendencia' | 'simulador'
 type Group = { id: string; title: string; rule: string; tone: string; students: Candidate[]; reason: (student: Candidate) => string }
@@ -82,25 +82,39 @@ const statusLabel: Record<Projection['status'], string> = { passed: 'Asegurado',
 const statusTone: Record<Projection['status'], string> = { passed: 'high', possible: 'high', hard: 'medium', impossible: 'low', 'no-data': 'none' }
 
 function Simulator({ workspace, review }: { workspace: PageProps['workspace']; review: (s: Candidate) => void }) {
-  const { sim, setSimConfig, projections } = workspace
+  const { sim, saveScheme, projections } = workspace
+  const { notify } = useFeedback()
   const [whatIf, setWhatIf] = useState(3)
   const [onlyRisk, setOnlyRisk] = useState(false)
-  const sum = sim.weights.reduce((s, w) => s + w, 0)
+  const [draft, setDraft] = useState<number[]>(sim.weights)
+  const [saving, setSaving] = useState(false)
+  useEffect(() => { setDraft(sim.weights) }, [sim.weights.join(',')])
+  const sum = draft.reduce((s, w) => s + w, 0)
+  const periods = [...sim.observed, ...Array.from({ length: Math.max(0, draft.length - sim.observed.length) }, (_, i) => `Corte ${sim.observed.length + i + 1}`)]
+  // The backend stores the scheme and recalculates every projection; save once the weights add up to 100.
+  useEffect(() => {
+    if (sum !== 100 || draft.join(',') === sim.weights.join(',')) return
+    const timer = window.setTimeout(() => {
+      setSaving(true)
+      saveScheme(draft).catch(error => notify(error instanceof Error ? error.message : 'No se pudo guardar el esquema.', 'error')).finally(() => setSaving(false))
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [draft.join(','), sum])
   const rows = useMemo(() => [...projections.values()]
     .filter(p => !onlyRisk || p.status === 'hard' || p.status === 'impossible')
     .sort((a, b) => (b.needed ?? -1) - (a.needed ?? -1)), [projections, onlyRisk])
-  const setTotal = (total: number) => setSimConfig({ total, weights: total === 3 ? [30, 30, 40] : Array.from({ length: total }, () => Math.round(100 / total)) })
-  const setWeight = (index: number, value: number) => setSimConfig({ total: sim.total, weights: sim.weights.map((w, i) => i === index ? value : w) })
-  const finalWith = (p: Projection) => p.completed.reduce((s, c) => s + c.average * c.weight, 0) + whatIf * p.remainingWeight
+  const setTotal = (total: number) => setDraft(total === 3 ? [30, 30, 40] : total === 2 ? [50, 50] : [25, 25, 25, 25])
+  const setWeight = (index: number, value: number) => setDraft(current => current.map((w, i) => i === index ? value : w))
+  const finalWith = (p: Projection) => p.earned + whatIf * p.remainingWeight
   const counts = { hard: [...projections.values()].filter(p => p.status === 'hard').length, impossible: [...projections.values()].filter(p => p.status === 'impossible').length }
 
   return <>
     <div className="sim-config panel">
       <div className="sim-block"><span className="field-label">Cortes del semestre</span>
-        <div className="size-picker" role="radiogroup" aria-label="Número de cortes">{[2, 3, 4].map(n => <button key={n} type="button" role="radio" aria-checked={sim.total === n} className={sim.total === n ? 'is-on' : ''} disabled={n < sim.observed.length} onClick={() => setTotal(n)}>{n}</button>)}</div>
+        <div className="size-picker" role="radiogroup" aria-label="Número de cortes">{[2, 3, 4].map(n => <button key={n} type="button" role="radio" aria-checked={draft.length === n} className={draft.length === n ? 'is-on' : ''} disabled={n < sim.observed.length} onClick={() => setTotal(n)}>{n}</button>)}</div>
       </div>
-      <div className="sim-block"><span className="field-label">Peso de cada corte {sum !== 100 && <span className="is-low">· suman {sum}%, deben sumar 100%</span>}</span>
-        <div className="weights">{sim.periods.map((period, i) => <label key={period} className="weight"><small>{period}{i >= sim.observed.length ? ' (falta)' : ''}</small><span><input type="number" min={0} max={100} value={sim.weights[i] ?? 0} onChange={event => setWeight(i, Math.max(0, Math.min(100, Number(event.target.value) || 0)))} inputMode="numeric" />%</span></label>)}</div>
+      <div className="sim-block"><span className="field-label">Peso de cada corte {sum !== 100 ? <span className="is-low">· suman {sum}%, deben sumar 100%</span> : saving ? <span className="muted">· guardando…</span> : sim.custom ? <span className="muted">· guardado en el curso</span> : null}</span>
+        <div className="weights">{periods.map((period, i) => <label key={period} className="weight"><small>{period}{i >= sim.observed.length ? ' (falta)' : ''}</small><span><input type="number" min={0} max={100} value={draft[i] ?? 0} onChange={event => setWeight(i, Math.max(0, Math.min(100, Number(event.target.value) || 0)))} inputMode="numeric" />%</span></label>)}</div>
       </div>
       <div className="sim-block"><label className="field-label" htmlFor="whatif">¿Y si todos sacan <b className="num">{formatGrade(whatIf)}</b> en lo que falta?</label>
         <input id="whatif" type="range" min={0} max={5} step={0.1} value={whatIf} onChange={event => setWhatIf(Number(event.target.value))} className="range" />
@@ -111,7 +125,7 @@ function Simulator({ workspace, review }: { workspace: PageProps['workspace']; r
     <div className="table-card"><table className="table">
       <thead><tr><th scope="col">Estudiante</th><th scope="col" className="num">Va en</th><th scope="col" className="num">Necesita</th><th scope="col">Estado</th><th scope="col" className="num">Final si saca {formatGrade(whatIf)}</th></tr></thead>
       <tbody>{rows.map(p => { const final = finalWith(p); return <tr key={p.student.id}>
-        <td><button className="person-cell" onClick={() => review(p.student)}><Avatar name={p.student.name} /><span><b>{p.student.name}</b><small>{projectionText(p)}</small></span></button></td>
+        <td><button className="person-cell" onClick={() => review(p.student)}><Avatar name={p.student.name} /><span><b>{p.student.name}</b><small>{p.explanation}</small></span></button></td>
         <td className="num">{p.status === 'no-data' ? '—' : formatGrade(p.current)}</td>
         <td className="num"><b className={p.status === 'impossible' || p.status === 'hard' ? 'is-low' : ''}>{p.needed == null ? '—' : formatGrade(p.needed)}</b></td>
         <td><span className={`pill pill-${statusTone[p.status]}`}>{statusLabel[p.status]}</span></td>

@@ -19,10 +19,13 @@ Aplicación docente para revisar notas y progreso, identificar estudiantes que p
 
 ## El asistente Búho
 
-- **Pregúntale por voz o por texto** (botón Búho o `Ctrl + K`): "¿quién viene bajando?", "¿qué nota necesita Valentina para pasar?", "crea un quiz de ciclos para refuerzo", "escríbele un mensaje a Santiago". `src/lib/buho.ts` interpreta la frase sobre los datos del curso, al instante y sin enviar nada a la IA; `src/lib/speech.ts` usa la Web Speech API del navegador para escuchar y responder en voz alta.
-- **Resumen del día hablado**: cómo va el curso y qué hacer primero.
-- **Tendencia y riesgo** entre cortes, y **simulador de notas** con pesos configurables (30/30/40 por defecto) que calcula qué nota necesita cada estudiante para aprobar (`src/lib/insights.ts`).
-- **Mensajes de retroalimentación** redactados con las notas de cada estudiante y **informe del curso en PDF** (`src/lib/report.ts`).
+El cálculo vive en el backend (módulo `insights` de Spring Boot, arquitectura hexagonal). El frontend solo muestra los resultados, escucha y habla:
+
+- **Búho por voz o texto** (`Ctrl + K`): la pregunta se envía a `POST /api/courses/{id}/assistant`, donde una cadena de manejadores (Chain of Responsibility) la interpreta con los datos del curso. `src/lib/speech.ts` usa la Web Speech API del navegador para dictar y leer la respuesta; `src/lib/buho.ts` traduce las acciones que devuelve el servidor.
+- **Análisis, tendencias, riesgo y resumen del día**: `GET /api/courses/{id}/insights`, adaptado en `src/lib/insights.ts`.
+- **Simulador de notas**: los pesos de cada corte se guardan con `PUT /api/courses/{id}/grading-scheme` y el backend recalcula qué nota necesita cada estudiante.
+- **Mensajes de retroalimentación**: `GET /api/courses/{id}/students/{sid}/feedback?tone=`.
+- **Informe del curso en PDF**: se imprime en el navegador con los datos del análisis (`src/lib/report.ts`).
 
 ## Desarrollo local
 

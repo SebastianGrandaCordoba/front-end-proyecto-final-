@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Course, type CourseMaterial, type GeneratedWorkshop, type Grade, type Project, type Student, type Team, type TeacherProfile } from '../api'
-import { buildCandidates, subjectInsights, summarize, type Subject } from '../lib/domain'
-import { defaultWeights, orderedPeriods, project, studentTrends } from '../lib/insights'
+import { buildCandidates, summarize, type Subject } from '../lib/domain'
+import { adaptInsights, type ApiInsights, type Projection, type Trend } from '../lib/insights'
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -29,7 +29,9 @@ export function useWorkspace(user: TeacherProfile) {
   const [teams, setTeams] = useState<Team[]>([])
   const [courseState, setCourseState] = useState<LoadState>('idle')
   const generation = useRef(0)
-  const cache = useRef(new Map<number, { students: Student[]; grades: Grade[]; materials: CourseMaterial[] | null }>())
+  const cache = useRef(new Map<number, { students: Student[]; grades: Grade[]; materials: CourseMaterial[] | null; analysis: ApiInsights | null }>())
+  const [analysis, setAnalysis] = useState<ApiInsights | null>(null)
+  const [analysisState, setAnalysisState] = useState<LoadState>('idle')
 
   const workshopKey = `fairteam.workshops.${user.id}.${courseId ?? 'none'}`
   const [workshops, setWorkshops] = useState<GeneratedWorkshop[]>(() => readJson(workshopKey, []))
@@ -62,25 +64,31 @@ export function useWorkspace(user: TeacherProfile) {
 
   const loadCourse = useCallback(async (id: number | null, { silent = false } = {}) => {
     const current = ++generation.current
-    if (!id) { setStudents([]); setGrades([]); setMaterials(null); setCourseState('idle'); return }
+    if (!id) { setStudents([]); setGrades([]); setMaterials(null); setAnalysis(null); setCourseState('idle'); setAnalysisState('idle'); return }
     const cached = cache.current.get(id)
-    if (cached) { setStudents(cached.students); setGrades(cached.grades); setMaterials(cached.materials) }
-    else if (!silent) { setStudents([]); setGrades([]); setMaterials(null) }
+    if (cached) { setStudents(cached.students); setGrades(cached.grades); setMaterials(cached.materials); setAnalysis(cached.analysis) }
+    else if (!silent) { setStudents([]); setGrades([]); setMaterials(null); setAnalysis(null) }
     if (!cached && !silent) setCourseState('loading')
-    const [s, g, m] = await Promise.allSettled([
+    if (!cached?.analysis) setAnalysisState('loading')
+    // The roster and grades feed the tables; the backend's insights module computes levels, trends,
+    // projections and the briefing. All four requests run in parallel.
+    const [s, g, m, a] = await Promise.allSettled([
       request<Student[]>(`/api/students?courseId=${id}`),
       request<Grade[]>(`/api/grades?courseId=${id}`),
       request<CourseMaterial[]>(`/api/courses/${id}/materials`),
+      request<ApiInsights>(`/api/courses/${id}/insights`),
     ])
     if (current !== generation.current) return
     const next = {
       students: s.status === 'fulfilled' ? s.value : cached?.students ?? [],
       grades: g.status === 'fulfilled' ? g.value : cached?.grades ?? [],
       materials: m.status === 'fulfilled' ? m.value : cached?.materials ?? null,
+      analysis: a.status === 'fulfilled' ? a.value : cached?.analysis ?? null,
     }
     cache.current.set(id, next)
-    setStudents(next.students); setGrades(next.grades); setMaterials(next.materials)
+    setStudents(next.students); setGrades(next.grades); setMaterials(next.materials); setAnalysis(next.analysis)
     setCourseState(s.status === 'rejected' && g.status === 'rejected' ? 'error' : 'ready')
+    setAnalysisState(next.analysis ? 'ready' : 'error')
   }, [])
 
   const loadShared = useCallback(async () => {
@@ -116,31 +124,31 @@ export function useWorkspace(user: TeacherProfile) {
   const removeWorkshop = useCallback((title: string) => setWorkshops(list => list.filter(item => item.title !== title)), [])
   const clearWorkshops = useCallback(() => setWorkshops([]), [])
 
-  const candidates = useMemo(() => buildCandidates(students, grades), [students, grades])
-  const summary = useMemo(() => summarize(candidates, grades), [candidates, grades])
-  const insights = useMemo(() => subjectInsights(grades, subjects), [grades, subjects])
+  const roster = useMemo(() => buildCandidates(students, grades), [students, grades])
+  // Backend reading when available; until it arrives the tables use a plain local average.
+  const reading = useMemo(() => analysis ? adaptInsights(analysis, roster) : null, [analysis, roster])
+  const candidates = reading?.candidates ?? roster
+  const localSummary = useMemo(() => ({ ...summarize(roster, grades), fallingBehind: 0 }), [roster, grades])
+  const summary = reading?.summary ?? localSummary
+  const insights = reading?.subjects ?? []
+  const trends: Trend[] = reading?.trends ?? []
+  const projections = reading?.projections ?? new Map<number, Projection>()
+  const sim = reading?.sim ?? { weights: [30, 30, 40], passingGrade: 3, periods: ['Corte 1', 'Corte 2', 'Corte 3'], observed: [], custom: false }
+  const briefing = reading?.briefing ?? ''
   const course = courses.find(item => item.id === courseId) ?? null
 
-  // Grade simulator: how many periods the course has and how much each weighs (30/30/40 by default).
-  const simKey = `fairteam.sim.${user.id}.${courseId ?? 'none'}`
-  const observed = useMemo(() => orderedPeriods(grades), [grades])
-  const [simConfig, setSimConfigState] = useState<{ total: number; weights: number[] } | null>(() => readJson(simKey, null))
-  useEffect(() => { setSimConfigState(readJson(simKey, null)) }, [simKey])
-  const sim = useMemo(() => {
-    const total = Math.max(simConfig?.total ?? 3, observed.length, 1)
-    const weights = simConfig?.weights?.length === total ? simConfig.weights : defaultWeights(total)
-    const periods = [...observed, ...Array.from({ length: Math.max(0, total - observed.length) }, (_, i) => `Corte ${observed.length + i + 1}`)]
-    return { total, weights, periods, observed }
-  }, [simConfig, observed])
-  const setSimConfig = useCallback((next: { total: number; weights: number[] }) => { setSimConfigState(next); writeJson(simKey, next) }, [simKey])
-  const trends = useMemo(() => studentTrends(candidates, grades, subjects), [candidates, grades, subjects])
-  const projections = useMemo(() => new Map(trends.map(t => [t.student.id, project(t, sim.periods, sim.weights)])), [trends, sim])
+  const saveScheme = useCallback(async (weights: number[]) => {
+    if (!courseId) return
+    await request(`/api/courses/${courseId}/grading-scheme`, { method: 'PUT', body: JSON.stringify({ weights, passingGrade: 3 }) })
+    cache.current.delete(courseId)
+    await loadCourse(courseId, { silent: true })
+  }, [courseId, loadCourse])
 
   return {
     courses, setCourses, coursesState, loadCourses,
     course, courseId, setCourseId, courseState,
     students, grades, candidates, summary, insights, subjects,
-    trends, projections, sim, setSimConfig,
+    trends, projections, sim, saveScheme, briefing, analysisState,
     materials, updateMaterials,
     projects, teams,
     workshops, saveWorkshop, removeWorkshop, clearWorkshops,

@@ -10,8 +10,8 @@ import type { Candidate } from './lib/domain'
 import HomePage from './pages/HomePage'
 import StudentDetail from './pages/StudentDetail'
 import MessageDialog from './pages/MessageDialog'
-import Buho from './components/Buho'
-import type { BuhoAction, BuhoContext } from './lib/buho'
+import Buho, { type BuhoContext } from './components/Buho'
+import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
 
 const StudentsPage = lazy(() => import('./pages/StudentsPage'))
@@ -44,10 +44,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const [briefToken, setBriefToken] = useState(0)
   const { course, courses, setCourseId } = workspace
 
-  const buhoContext: BuhoContext = useMemo(() => ({
-    teacher: user.name, course, courses, candidates: workspace.candidates, summary: workspace.summary, insights: workspace.insights,
-    subjects: workspace.subjects, trends: workspace.trends, projections: workspace.projections, materials: workspace.materials, workshops: workspace.workshops,
-  }), [user.name, course, courses, workspace.candidates, workspace.summary, workspace.insights, workspace.subjects, workspace.trends, workspace.projections, workspace.materials, workspace.workshops])
+  const buhoContext: BuhoContext = useMemo(() => ({ teacher: user.name, courseId: course?.id ?? null, courseName: course?.name ?? null, candidates: workspace.candidates }), [user.name, course, workspace.candidates])
 
   const report = useCallback(() => {
     if (!course) return
@@ -157,7 +154,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     </main>
 
     {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
-    {messageFor && workspace.trends.some(t => t.student.id === messageFor.id) && <MessageDialog trend={workspace.trends.find(t => t.student.id === messageFor.id)!} projection={workspace.projections.get(messageFor.id) ?? null} teacher={user.name} course={course?.name ?? 'el curso'} onClose={() => setMessageFor(null)} />}
+    {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />
   </div>
 }

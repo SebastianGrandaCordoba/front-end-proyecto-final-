@@ -1,27 +1,6 @@
 import type { Course, GeneratedWorkshop } from '../api'
-import { firstName, formatGrade, levelLabel, plural, todayLabel, type CourseSummary, type SubjectInsight } from './domain'
-import { projectionText, type Projection, type Trend } from './insights'
-
-/** A ready-to-send, warm and specific feedback message. The teacher reviews it before sending. */
-export function feedbackMessage({ trend, projection, teacher, course, tone = 'cercano' }: { trend: Trend; projection: Projection | null; teacher: string; course: string; tone?: 'cercano' | 'formal' }) {
-  const s = trend.student
-  const name = firstName(s.name)
-  const hi = tone === 'formal' ? `Estimado(a) ${s.name}:` : `Hola, ${name}:`
-  const lines: string[] = [hi, '']
-  if (!s.hasGrades) {
-    lines.push(`Aún no tengo notas tuyas registradas en ${course}. Si entregaste alguna actividad que no aparece, cuéntame para revisarlo.`)
-  } else if (s.level === 'HIGH') {
-    lines.push(`Quería felicitarte: vas con un promedio de ${formatGrade(s.average)} en ${course}.${trend.direction === 'up' ? ' Además se nota que has mejorado de un corte a otro.' : ''}`)
-    lines.push('Si quieres un reto adicional, puedo proponerte un ejercicio de profundización.')
-  } else {
-    lines.push(`Te escribo para acompañarte en ${course}. Tu promedio va en ${formatGrade(s.average)}${trend.direction === 'down' ? ' y ha bajado respecto al primer corte' : trend.direction === 'up' ? ' y vienes mejorando, ¡bien!' : ''}.`)
-    if (trend.weakest) lines.push(`El tema donde más te está costando es ${trend.weakest.name} (${formatGrade(trend.weakest.average)}).`)
-    if (projection && projection.needed != null && (projection.status === 'possible' || projection.status === 'hard')) lines.push(`Para llegar a 3,0 necesitas ${formatGrade(projection.needed)} en lo que falta del semestre. ${projection.status === 'hard' ? 'Es exigente, pero se puede si empezamos ya.' : 'Es totalmente alcanzable.'}`)
-    lines.push('', 'Te propongo:', `• Repasar ${trend.weakest?.name ?? 'los temas recientes'} con el taller que te voy a compartir.`, '• Venir a asesoría esta semana para resolver dudas.', '• Contarme si hay algo que te esté dificultando el curso.')
-  }
-  lines.push('', tone === 'formal' ? 'Cordialmente,' : 'Un saludo,', teacher)
-  return lines.join('\n')
-}
+import { formatGrade, levelLabel, plural, todayLabel, type CourseSummary, type SubjectInsight } from './domain'
+import type { Projection, Trend } from './insights'
 
 export function mailtoLink(email: string | null | undefined, subject: string, body: string) {
   return `mailto:${encodeURIComponent(email ?? '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
@@ -35,7 +14,7 @@ export function printCourseReport({ course, teacher, summary, insights, trends, 
   const priority = trends.filter(t => t.student.hasGrades && t.risk >= 50).slice(0, 12)
   const rows = trends.map(t => {
     const p = projections.get(t.student.id)
-    return `<tr><td>${esc(t.student.name)}</td><td class="n">${t.student.hasGrades ? formatGrade(t.student.average) : '—'}</td><td>${t.student.hasGrades ? levelLabel[t.student.level] : 'Sin notas'}</td><td>${t.direction === 'down' ? '↓ baja' : t.direction === 'up' ? '↑ sube' : t.direction === 'flat' ? '= estable' : '—'}</td><td>${p ? esc(projectionText(p)) : '—'}</td></tr>`
+    return `<tr><td>${esc(t.student.name)}</td><td class="n">${t.student.hasGrades ? formatGrade(t.student.average) : '—'}</td><td>${t.student.hasGrades ? levelLabel[t.student.level] : 'Sin notas'}</td><td>${t.direction === 'down' ? '↓ baja' : t.direction === 'up' ? '↑ sube' : t.direction === 'flat' ? '= estable' : '—'}</td><td>${p ? esc(p.explanation) : '—'}</td></tr>`
   }).join('')
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Informe · ${esc(course.name)}</title><style>
 @page{size:A4;margin:16mm}body{font-family:"Instrument Sans",Arial,sans-serif;color:#14232a;font-size:12px;line-height:1.5;margin:0}
