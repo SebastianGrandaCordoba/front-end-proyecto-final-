@@ -23,8 +23,8 @@ export function StudentForm({ student, courseId, onClose, onSaved }: { student: 
   }
   return <Modal title={student ? 'Editar estudiante' : 'Agregar estudiante'} onClose={onClose} size="small">
     <form className="form" onSubmit={submit}>
-      <Field label="Nombre completo"><input required minLength={2} maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Valentina Rojas…" autoComplete="off" /></Field>
-      <Field label="Correo" optional><input type="email" maxLength={180} value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@universidad.edu.co…" autoComplete="off" spellCheck={false} /></Field>
+      <Field label="Nombre completo"><input name="name" required minLength={2} maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Valentina Rojas…" autoComplete="off" /></Field>
+      <Field label="Correo" optional><input name="email" type="email" maxLength={180} value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@universidad.edu.co…" autoComplete="off" spellCheck={false} /></Field>
       {!student && <Field label="Nivel inicial" hint="Se reemplaza por el promedio en cuanto cargues notas.">
         <select value={level} onChange={event => setLevel(event.target.value as AcademicLevel)}><option value="LOW">Necesita refuerzo</option><option value="MEDIUM">En seguimiento</option><option value="HIGH">Buen progreso</option></select>
       </Field>}
