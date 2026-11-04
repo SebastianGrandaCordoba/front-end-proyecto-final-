@@ -29,7 +29,7 @@ export default function FollowUpPage({ workspace, review, startWorkshop, assista
       {([['prioridad', 'Prioridades'], ['tendencia', 'Tendencia'], ['simulador', 'Simulador']] as const).map(([id, label]) => <button key={id} role="tab" aria-selected={view === id} className={view === id ? 'is-on' : ''} onClick={() => navigate('seguimiento', id === 'prioridad' ? undefined : { vista: id })}>{label}</button>)}
     </div>
 
-    {!candidates.length ? <div className="panel"><EmptyState title="Aún no hay estudiantes" text="Importa la lista y las notas del curso para empezar el seguimiento." action={<ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} /></div>
+    {!candidates.length ? <div className="panel"><EmptyState art="read" title="Aún no hay estudiantes" text="Importa la lista y las notas del curso para empezar el seguimiento." action={<ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} /></div>
       : view === 'prioridad' ? <Priorities candidates={candidates} review={review} />
         : view === 'tendencia' ? <Trends workspace={workspace} review={review} message={assistant.message} />
           : <Simulator workspace={workspace} review={review} />}
@@ -131,6 +131,6 @@ function Simulator({ workspace, review }: { workspace: PageProps['workspace']; r
         <td><span className={`pill pill-${statusTone[p.status]}`}>{statusLabel[p.status]}</span></td>
         <td className={`num${Math.round(final * 10) < 30 ? ' is-low' : ''}`}>{p.status === 'no-data' ? '—' : formatGrade(final)}</td>
       </tr> })}</tbody>
-    </table>{!rows.length && <EmptyState title="Nadie en riesgo" text="Con las notas actuales todos pueden aprobar cómodamente." />}</div>
+    </table>{!rows.length && <EmptyState art="celebrate" title="Nadie en riesgo" text="Con las notas actuales todos pueden aprobar cómodamente." />}</div>
   </>
 }
