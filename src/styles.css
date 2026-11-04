@@ -699,3 +699,15 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .buho-nav-orb { position: relative; display: grid; place-items: center; border-radius: 50%; }
 .buho-nav-orb::after { content: ""; position: absolute; inset: -3px; border-radius: 9px; border: 2px solid var(--accent); opacity: 0; animation: halo 3.2s ease-out infinite; }
 .buho-mobile { display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border: 1px solid #cfe0e3; border-radius: 99px; background: var(--accent-soft); font-weight: 600; font-size: 14px; }
+
+/* ---------- Owl illustrations ---------- */
+.owl { display: block; overflow: visible; }
+.owl-body { animation: owl-bob 5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes owl-bob { 50% { transform: translateY(-3px); } }
+.owl-wave > path:first-child { animation: owl-wave 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
+@keyframes owl-wave { 0%, 60%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(8deg); } }
+.owl-think .owl-sparkles { animation: pulse 1.6s ease-in-out infinite; }
+.owl-confetti { animation: owl-confetti 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes owl-confetti { 0% { opacity: 0; transform: translateY(6px) scale(.9); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px) scale(1.05); } }
+.owl-eyes { animation: owl-blink 6s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes owl-blink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }
