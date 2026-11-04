@@ -28,6 +28,9 @@ export const examples = [
   '¿Qué nota necesita Valentina para pasar?',
   'Crea un quiz de ciclos para refuerzo',
   'Escríbele un mensaje a Santiago',
+  '¿Por qué Valentina está en riesgo?',
+  '¿Qué me recomiendas?',
+  'Compara los cortes',
   'Genera el informe del curso',
 ]
 
