@@ -120,6 +120,7 @@ export default function TeamsPage({ workspace }: PageProps) {
           <header className="panel-head"><h2>Propuesta</h2><span className="count">{drafts.length}</span><button className="btn btn-ghost btn-small push" onClick={() => void propose()}><Shuffle size={15} aria-hidden />Otra vez</button></header>
           <div className="teams">{drafts.map(draft => <article key={draft.name} className="team">
             <header><b>{draft.name}</b><span className="num">{draft.score}% equilibrio</span></header>
+            {draft.explanation && <p className="team-why">{draft.explanation}</p>}
             <ul>{draft.members.map(member => <li key={member.id}><Avatar name={member.name} size={26} /><span>{member.name}</span><span className="num muted">{member.hasGrades ? formatGrade(member.average) : '—'}</span></li>)}</ul>
           </article>)}</div>
           <button className="btn btn-primary btn-large" onClick={() => void save()} disabled={working || !project}>{working ? <Spinner /> : <Check size={18} aria-hidden />}{project ? `Guardar en ${project.name}` : 'Elige un proyecto para guardar'}</button>
