@@ -18,8 +18,8 @@ export function CourseForm({ course, onClose, onCreated }: { course?: Course; on
   }
   return <Modal title={course ? 'Editar curso' : 'Crear curso'} description={course ? undefined : 'Podrás cargar la lista y las notas enseguida.'} onClose={onClose} size="small">
     <form className="form" onSubmit={submit}>
-      <Field label="Nombre del curso"><input required maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Programación I · Grupo A…" autoComplete="off" /></Field>
-      <Field label="Periodo" optional><input maxLength={40} value={period} onChange={event => setPeriod(event.target.value)} placeholder="Ej. 2026-2…" autoComplete="off" /></Field>
+      <Field label="Nombre del curso"><input name="courseName" required maxLength={120} value={name} onChange={event => setName(event.target.value)} placeholder="Ej. Programación I · Grupo A…" autoComplete="off" /></Field>
+      <Field label="Periodo" optional><input name="period" maxLength={40} value={period} onChange={event => setPeriod(event.target.value)} placeholder="Ej. 2026-2…" autoComplete="off" /></Field>
       <Field label="Descripción" optional><textarea rows={2} maxLength={500} value={description} onChange={event => setDescription(event.target.value)} placeholder="Jornada, salón o lo que te ayude a reconocerlo…" /></Field>
       <div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button className="btn btn-primary" disabled={saving}>{saving && <Spinner />}{saving ? 'Guardando…' : course ? 'Guardar cambios' : 'Crear curso'}</button></div>
     </form>
