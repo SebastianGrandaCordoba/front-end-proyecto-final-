@@ -13,6 +13,7 @@ import MessageDialog from './pages/MessageDialog'
 import Buho, { type BuhoContext } from './components/Buho'
 import Sidebar, { nav } from './components/Sidebar'
 import ShortcutsDialog from './components/ShortcutsDialog'
+import Welcome from './components/Welcome'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
 
@@ -48,6 +49,9 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
 
   useEffect(() => { document.title = `${titles[route]} · FairTeam` }, [route])
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const welcomeKey = `fairteam.welcome.${user.id}`
+  const [showWelcome, setShowWelcome] = useState(() => { try { return !localStorage.getItem(welcomeKey) } catch { return false } })
+  const closeWelcome = () => { try { localStorage.setItem(welcomeKey, '1') } catch { /* private mode */ } setShowWelcome(false) }
   // "?" shows the shortcuts; "g" then a letter jumps to a screen. Ignored while typing.
   useEffect(() => {
     let pendingG = 0
@@ -119,6 +123,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
     {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
     {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
+    {showWelcome && <Welcome onClose={closeWelcome} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />
   </div>
 }
