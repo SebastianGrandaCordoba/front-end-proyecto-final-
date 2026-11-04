@@ -4,7 +4,7 @@ import { request, type AcademicLevel, type Student } from '../api'
 import type { PageProps } from '../App'
 import { ImportButton } from '../app/actions'
 import { Avatar, EmptyState, Field, LevelPill, Modal, Segmented, Spinner, useFeedback } from '../components/ui'
-import { downloadTemplate } from '../lib/files'
+import { downloadRoster, downloadTemplate } from '../lib/files'
 import { formatGrade, levelOf, plural } from '../lib/domain'
 
 type Filter = 'todos' | 'refuerzo' | 'seguimiento' | 'progreso' | 'sin-notas'
@@ -51,6 +51,7 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
       <div className="page-actions">
         <ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} />
         <ImportButton kind="grades" courseId={course?.id ?? null} onDone={workspace.refreshCourse} />
+        <button className="btn btn-ghost" onClick={() => downloadRoster(candidates, course?.name ?? 'curso')} disabled={!candidates.length}><Download size={16} aria-hidden />Exportar</button>
         <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} aria-hidden />Agregar</button>
       </div>
     </header>
