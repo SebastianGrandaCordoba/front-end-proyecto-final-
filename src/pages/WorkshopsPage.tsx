@@ -4,6 +4,7 @@ import { request, type AcademicLevel, type CourseMaterial, type GeneratedWorksho
 import type { PageProps } from '../App'
 import { MAX_MATERIAL_BYTES, MaterialUploadButton } from '../app/actions'
 import type { SupportMode, WorkshopIntent } from '../app/types'
+import Owl from '../components/Owl'
 import { EmptyState, Field, LevelPill, Segmented, Spinner, useFeedback } from '../components/ui'
 import { downloadWorkshopDocument, printWorkshop, workshopAsText } from '../lib/files'
 import { fileSize, firstName, levelLabel, levelOf, plural, relativeDate } from '../lib/domain'
@@ -214,7 +215,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
 
       <div className="builder-result" ref={resultRef} aria-live="polite">
         {generating ? <div className="panel generating">
-          <div className="gen-orb" aria-hidden><Sparkles size={22} /></div>
+          <Owl pose="think" size={132} />
           <h2>{stage}</h2>
           <p className="num">{elapsed} s · suele tardar entre 15 y 40 segundos</p>
           <div className="gen-bar" aria-hidden><span style={{ width: `${Math.min(95, elapsed * 2.2)}%` }} /></div>
