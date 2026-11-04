@@ -27,6 +27,14 @@ El cálculo vive en el backend (módulo `insights` de Spring Boot, arquitectura 
 - **Mensajes de retroalimentación**: `GET /api/courses/{id}/students/{sid}/feedback?tone=`.
 - **Informe del curso en PDF**: se imprime en el navegador con los datos del análisis (`src/lib/report.ts`).
 
+## Experiencia
+
+- **Ilustraciones propias**: el búho de FairTeam está dibujado en SVG (`src/components/Owl.tsx`) en cuatro poses (saluda, lee, piensa, celebra) y aparece en estados vacíos, mientras se genera un taller, en la bienvenida y en el Búho.
+- **Modo oscuro**: claro, oscuro o según el sistema (`src/lib/theme.ts`), elegido en Ajustes.
+- **Bienvenida en cuatro pasos** la primera vez que entra cada docente.
+- **Atajos de teclado**: `Ctrl + K` abre el Búho, `?` muestra la ayuda y `g` + letra salta entre pantallas.
+- **Visualizaciones**: distribución de promedios, mapa de calor estudiante × tema, tendencias por corte y simulador de notas.
+
 ## Desarrollo local
 
 Requiere Node.js 20.19 o posterior y pnpm.
