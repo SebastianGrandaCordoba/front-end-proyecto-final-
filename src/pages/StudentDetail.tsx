@@ -2,12 +2,12 @@ import { ListChecks, MessageSquareText, Sparkles, TrendingDown, TrendingUp } fro
 import type { Grade } from '../api'
 import type { SupportMode } from '../app/types'
 import { Avatar, LevelPill, Modal } from '../components/ui'
-import { formatGrade, plural, round1, studentAdvice, type Candidate, type Subject } from '../lib/domain'
+import { formatGrade, gradeTone, plural, studentAdvice, type Candidate, type Subject } from '../lib/domain'
 import type { Projection, Trend } from '../lib/insights'
 
 export default function StudentDetail({ student, trend, projection, grades, subjects, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
   const names = new Map(subjects.map(subject => [Number(subject.id), subject.name]))
-  const tone = (value: number) => round1(value) < 3 ? 'low' : round1(value) < 4 ? 'medium' : 'high'
+  const tone = gradeTone
   return <Modal title={student.name} description={student.email || undefined} onClose={onClose} size="large">
     <div className="student-detail">
       <div className="student-summary">

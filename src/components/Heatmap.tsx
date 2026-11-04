@@ -1,11 +1,11 @@
 import type { Candidate } from '../lib/domain'
-import { formatGrade, round1 } from '../lib/domain'
+import { formatGrade, gradeTone } from '../lib/domain'
 import type { Trend } from '../lib/insights'
 
 /** Student × subject grid. Each cell is the student's average in that subject, coloured by level. */
 export default function Heatmap({ trends, subjects, onSelect }: { trends: Trend[]; subjects: string[]; onSelect: (student: Candidate) => void }) {
   const rows = trends.filter(t => t.student.hasGrades)
-  const tone = (value: number) => round1(value) < 3 ? 'low' : round1(value) < 4 ? 'medium' : 'high'
+  const tone = gradeTone
   return <div className="heatmap-wrap" role="region" aria-label="Mapa de calor por tema" tabIndex={0}>
     <table className="heatmap">
       <thead><tr><th scope="col">Estudiante</th>{subjects.map(subject => <th key={subject} scope="col">{subject}</th>)}</tr></thead>
