@@ -1,99 +1,90 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Activity, ArrowRight, BookOpenCheck, BrainCircuit, CheckCircle2, LoaderCircle, LockKeyhole, Sparkles } from 'lucide-react'
-import App from './App'
-import LandingPage from './LandingPage'
-import { clearAccessToken, request, saveAccessToken, type AuthResponse, type TeacherProfile } from './api'
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { clearAccessToken, request, saveAccessToken, TOKEN_KEY, warmUpBackend, type AuthResponse, type TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
-import ExperiencePreloader, { useExperiencePreloader } from './ExperiencePreloader'
+import FairTeamOwl from './FairTeamOwl'
+import LandingPage from './LandingPage'
+import { FeedbackProvider, Spinner } from './components/ui'
 
+const App = lazy(() => import('./App'))
 type Mode = 'home' | 'login' | 'register'
 
 export default function AuthGate() {
   const [user, setUser] = useState<TeacherProfile | null>(null)
-  const [checking, setChecking] = useState(true)
-  const [mode, setMode] = useState<Mode>('home')
+  const [checking, setChecking] = useState(() => Boolean(sessionStorage.getItem(TOKEN_KEY)))
+  const [mode, setMode] = useState<Mode>(() => window.location.hash === '#/entrar' ? 'login' : window.location.hash === '#/registro' ? 'register' : 'home')
+
+  useEffect(() => {
+    warmUpBackend()
+    if (!sessionStorage.getItem(TOKEN_KEY)) return
+    void request<TeacherProfile>('/api/auth/me').then(setUser).catch(() => clearAccessToken()).finally(() => setChecking(false))
+  }, [])
+  useEffect(() => { if (!user) import('./App') }, [user]) // prefetch the app while the teacher reads or types
+
+  const logout = () => { clearAccessToken(); setUser(null); setMode('login'); window.location.hash = '' }
+
+  if (checking) return <div className="boot"><FairTeamMark size={44} /><span><Spinner /> Abriendo tu espacio…</span></div>
+  if (user) return <FeedbackProvider><Suspense fallback={<div className="boot"><FairTeamMark size={44} /><span><Spinner /> Abriendo tu espacio…</span></div>}><App user={user} onLogout={logout} /></Suspense></FeedbackProvider>
+  if (mode === 'home') return <LandingPage onLogin={() => setMode('login')} onRegister={() => setMode('register')} />
+  return <AuthScreen mode={mode} setMode={setMode} onAuthenticated={setUser} />
+}
+
+function AuthScreen({ mode, setMode, onAuthenticated }: { mode: 'login' | 'register'; setMode: (mode: Mode) => void; onAuthenticated: (user: TeacherProfile) => void }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [working, setWorking] = useState(false)
-  const [waitingForServer, setWaitingForServer] = useState(false)
+  const [slow, setSlow] = useState(false)
   const [message, setMessage] = useState('')
-  const [authSuccess, setAuthSuccess] = useState(false)
-  const { visible: preloaderVisible, progress: preloaderProgress, exiting: preloaderExiting } = useExperiencePreloader()
-
-  useEffect(() => {
-    const token = sessionStorage.getItem('fairteam.accessToken')
-    if (!token) { setChecking(false); return }
-    void request<TeacherProfile>('/api/auth/me').then(setUser).catch(() => clearAccessToken()).finally(() => setChecking(false))
-  }, [])
+  const isLogin = mode === 'login'
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    setWorking(true)
-    setWaitingForServer(false)
-    setMessage('')
-    const slowRequestTimer = window.setTimeout(() => setWaitingForServer(true), 12_000)
+    setWorking(true); setSlow(false); setMessage('')
+    const timer = window.setTimeout(() => setSlow(true), 6000)
     try {
-      const result = await request<AuthResponse>(mode === 'login' ? '/api/auth/login' : '/api/auth/register', {
+      const result = await request<AuthResponse>(isLogin ? '/api/auth/login' : '/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify(mode === 'login' ? { email, password } : { name, email, password }),
+        body: JSON.stringify(isLogin ? { email: email.trim(), password } : { name: name.trim(), email: email.trim(), password }),
       })
       saveAccessToken(result.accessToken)
-      setAuthSuccess(true)
-      await new Promise(resolve => window.setTimeout(resolve, 320))
-      setUser({ id: result.id, name: result.name, email: result.email, role: result.role })
+      window.location.hash = '#/inicio'
+      onAuthenticated({ id: result.id, name: result.name, email: result.email, role: result.role })
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'No se pudo completar el acceso. Inténtalo de nuevo.')
-    } finally {
-      window.clearTimeout(slowRequestTimer)
-      setWorking(false)
-      setWaitingForServer(false)
-    }
+      setMessage(error instanceof Error ? error.message : 'No se pudo entrar. Inténtalo de nuevo.')
+    } finally { window.clearTimeout(timer); setWorking(false); setSlow(false) }
   }
 
-  const logout = () => { clearAccessToken(); setUser(null); setPassword(''); setMode('login'); setAuthSuccess(false) }
-  const preloader = preloaderVisible ? <ExperiencePreloader progress={preloaderProgress} exiting={preloaderExiting}/> : null
-  if (user) return <><div className="app-route-enter"><App user={user} onLogout={logout} /></div>{preloader}</>
-  if (checking) return <><main className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={25} /> Verificando tu sesión…</div></main>{preloader}</>
-  if (mode === 'home') return <><LandingPage onLogin={() => setMode('login')} onRegister={() => setMode('register')} />{preloader}</>
-
-  return <><main className={`auth-screen teacher-auth-screen${authSuccess ? ' auth-success-exit' : ''}`} onPointerMove={event => {
-    if (event.pointerType === 'touch') return
-    const bounds = event.currentTarget.getBoundingClientRect()
-    const x = (event.clientX - bounds.left) / bounds.width - 0.5
-    const y = (event.clientY - bounds.top) / bounds.height - 0.5
-    event.currentTarget.style.setProperty('--parallax-x', `${x * 28}px`)
-    event.currentTarget.style.setProperty('--parallax-y', `${y * 22}px`)
-  }} onPointerLeave={event => {
-    event.currentTarget.style.setProperty('--parallax-x', '0px')
-    event.currentTarget.style.setProperty('--parallax-y', '0px')
-  }}>
-    <div className="auth-backdrop auth-backdrop-one" /><div className="auth-backdrop auth-backdrop-two" />
-    <div className="auth-frame">
-      <section className="auth-side-copy teacher-auth-story">
-        <div className="auth-side-kicker">FAIRTEAM · ASISTENTE DOCENTE</div>
-        <h2>Más claridad para acompañar cada aprendizaje.</h2>
-        <p>Revisa el progreso del curso, encuentra señales que requieren atención y prepara actividades basadas en el material de clase.</p>
-        <div className="auth-feature-stack"><div><span><Activity size={17} /></span><b>Señales rápidas y explicables</b></div><div><span><BrainCircuit size={17} /></span><b>Refuerzo con IA cuando tú lo pides</b></div><div><span><BookOpenCheck size={17} /></span><b>El docente conserva la decisión</b></div></div>
-        <div className="auth-floating-note"><Sparkles size={15} /> Primero los datos, luego la recomendación.</div>
-      </section>
-      <section className="auth-card teacher-auth-card">
-        <div className="auth-brand"><span className="auth-brand-mark"><FairTeamMark size={42} /></span><span>fair<span>team</span><sup>✳</sup></span></div>
-        <div className="auth-eyebrow"><LockKeyhole size={14} /> ESPACIO DOCENTE</div>
-        <h1>{mode === 'login' ? 'Qué bueno verte.' : 'Crea tu cuenta docente.'}</h1>
-        <p className="auth-copy">{mode === 'login' ? 'Inicia sesión para continuar con el seguimiento de tu curso.' : 'Crea tu espacio docente personal. Tus estudiantes y notas estarán separados de otras cuentas.'}</p>
-        <form className="teacher-auth-form" onSubmit={submit}>
-          {mode === 'register' && <label className="auth-field"><input value={name} onChange={event => setName(event.target.value)} autoComplete="name" required disabled={working} minLength={2} maxLength={120} placeholder=" " /><span>Nombre completo</span></label>}
-          <label className="auth-field"><input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required disabled={working} maxLength={180} placeholder=" " /><span>Correo electrónico</span></label>
-          <label className="auth-field"><input type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required disabled={working} minLength={mode === 'register' ? 10 : 1} maxLength={72} placeholder=" " /><span>Contraseña</span></label>
-          {message && <div className="auth-message" role="alert">{message}</div>}
-          {working && waitingForServer && <div className="auth-wait-note" role="status">Render puede tardar hasta un minuto en despertar. La solicitud sigue activa; si agota el tiempo, podrás volver a intentarlo.</div>}
-          <button className={`google-login teacher-auth-submit${working ? ' is-loading' : ''}`} type="submit" disabled={working}>{working ? authSuccess ? <CheckCircle2 size={18}/> : <LoaderCircle className="spin" size={17} /> : <LockKeyhole size={17} />}{working ? authSuccess ? 'Abriendo tu espacio…' : waitingForServer ? 'Despertando servidor…' : 'Conectando…' : mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}<ArrowRight size={17} /></button>
-        </form>
-        <button className="auth-mode-switch" disabled={working} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setMessage('') }}>{mode === 'login' ? '¿Aún no tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}</button>
-        <button className="auth-home-switch" disabled={working} onClick={() => { setMode('home'); setMessage('') }}>← Volver a conocer FairTeam</button>
-      </section>
-    </div>
-    <div className="auth-copyright">FAIRTEAM <span>·</span> SEGUIMIENTO Y REFUERZO DEL APRENDIZAJE</div>
-  </main>{preloader}</>
+  return <main className="auth">
+    <section className="auth-card" aria-labelledby="auth-title">
+      <button className="link-btn auth-back" onClick={() => setMode('home')}><ArrowLeft size={16} aria-hidden />Volver</button>
+      <div className="auth-brand"><FairTeamMark size={40} /><span className="wordmark" translate="no">FairTeam</span></div>
+      <h1 id="auth-title">{isLogin ? 'Qué bueno verte de nuevo.' : 'Crea tu cuenta docente.'}</h1>
+      <p className="auth-sub">{isLogin ? 'Entra para ver cómo van tus cursos.' : 'Gratis. Tus cursos y estudiantes quedan solo en tu cuenta.'}</p>
+      <form className="form" onSubmit={submit} noValidate={false}>
+        {!isLogin && <label className="field"><span className="field-label">Nombre completo</span><input name="name" value={name} onChange={event => setName(event.target.value)} autoComplete="name" required minLength={2} maxLength={120} disabled={working} placeholder="Ej. Ana María Torres…" /></label>}
+        <label className="field"><span className="field-label">Correo</span><input name="email" type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" required maxLength={180} disabled={working} spellCheck={false} placeholder="tu@universidad.edu.co" /></label>
+        <label className="field"><span className="field-label">Contraseña</span>
+          <span className="password">
+            <input name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={event => setPassword(event.target.value)} autoComplete={isLogin ? 'current-password' : 'new-password'} required minLength={isLogin ? 1 : 10} maxLength={72} disabled={working} />
+            <button type="button" className="icon-btn" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
+          </span>
+          {!isLogin && <span className="field-hint">Mínimo 10 caracteres.</span>}
+        </label>
+        {message && <div className="form-error" role="alert">{message}</div>}
+        {slow && <div className="form-note" role="status">El servidor se está despertando; puede tardar hasta un minuto. No cierres la página.</div>}
+        <button className="btn btn-primary btn-large" disabled={working}>{working && <Spinner />}{working ? (slow ? 'Despertando el servidor…' : 'Entrando…') : isLogin ? 'Entrar' : 'Crear cuenta'}</button>
+      </form>
+      <p className="auth-switch">{isLogin ? '¿Aún no tienes cuenta?' : '¿Ya tienes cuenta?'} <button className="link-btn" disabled={working} onClick={() => { setMode(isLogin ? 'register' : 'login'); setMessage('') }}>{isLogin ? 'Créala aquí' : 'Entra aquí'}</button></p>
+    </section>
+    <aside className="auth-aside">
+      <div className="auth-owl" aria-hidden><FairTeamOwl /></div>
+      <ul className="auth-points">
+        <li><b>Quién necesita apoyo</b><span>Lo calculo con tus notas, al instante.</span></li>
+        <li><b>Talleres desde tu material</b><span>Listos para revisar, imprimir o descargar.</span></li>
+        <li><b>Tú decides</b><span>Nada se asigna ni se envía sin ti.</span></li>
+      </ul>
+    </aside>
+  </main>
 }

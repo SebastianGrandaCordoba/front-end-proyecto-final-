@@ -10,7 +10,12 @@ Aplicación docente para revisar notas y progreso, identificar estudiantes que p
 
 ## Organización y patrones
 
-`src/api.ts` concentra la comunicación HTTP, manejo del token, serialización y traducción de errores: funciona como adaptador/gateway del frontend para que las vistas no dependan de los detalles de `fetch`. `AuthGate` controla el flujo de sesión y delega la experiencia autenticada a `App`. Los tipos compartidos mantienen el contrato de datos explícito. React ya administra componentes y su ciclo de vida; no se añaden clases Singleton, Factory o Builder artificiales a la interfaz.
+- `src/api.ts`: adaptador/gateway HTTP (token, errores traducidos, tiempo límite y `warmUpBackend`, que despierta el backend de Render mientras el docente ve la página de inicio).
+- `src/lib/`: lógica pura sin React. `domain.ts` calcula niveles, promedios y temas más débiles; `assistant.ts` decide qué recomendarle al docente (curso → lista → notas → material → refuerzo) solo con datos reales; `files.ts` genera descargas e impresión.
+- `src/app/`: estado de la sesión (`useWorkspace`, con caché por curso y cargas en paralelo), enrutamiento por hash (`#/estudiantes`, `#/talleres`…) y acciones reutilizables (importar Excel, subir material).
+- `src/pages/`: una pantalla por archivo, cargadas bajo demanda (`React.lazy`).
+- `src/components/ui.tsx`: modal accesible, confirmaciones, avisos y controles compartidos.
+- `src/styles.css`: una sola hoja de estilos con tokens de color, tipografía Instrument Sans/Serif y diseño responsivo.
 
 ## Desarrollo local
 

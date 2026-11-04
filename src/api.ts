@@ -111,3 +111,11 @@ export interface GeneratedWorkshop {
   targetStudentId?: number
   supportType?: 'workshop' | 'quiz'
 }
+
+let warmUpStarted = false
+/** Wakes the Render backend (free plan sleeps after inactivity) before the teacher needs it. */
+export function warmUpBackend() {
+  if (warmUpStarted) return
+  warmUpStarted = true
+  void fetch(`${API_BASE}/`, { mode: 'cors', cache: 'no-store' }).catch(() => { warmUpStarted = false })
+}
