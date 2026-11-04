@@ -221,7 +221,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
           <div className="gen-bar" aria-hidden><span style={{ width: `${Math.min(95, elapsed * 2.2)}%` }} /></div>
           <button className="btn btn-ghost btn-small" onClick={() => abort.current?.abort()}>Cancelar</button>
         </div>
-          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} />
+          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
               : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text="Con objetivos, actividades paso a paso y preguntas con su respuesta. Podrás descargarla para tus estudiantes y una clave solo para ti." /></div>}
       </div>
@@ -229,14 +229,15 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
   </section>
 }
 
-function WorkshopView({ workshop, onCopy, onNew }: { workshop: GeneratedWorkshop; onCopy: () => void; onNew: () => void }) {
+function WorkshopView({ workshop, onCopy, onNew, onEdit }: { workshop: GeneratedWorkshop; onCopy: () => void; onNew: () => void; onEdit: (next: GeneratedWorkshop) => void }) {
   const isQuiz = workshop.supportType === 'quiz'
   const minutes = workshop.activities.reduce((sum, item) => sum + (item.estimatedMinutes || 0), 0)
   return <article className="panel workshop">
     <header className="workshop-head">
       <div className="workshop-meta"><span>{isQuiz ? 'Quiz' : 'Taller'}</span><span>{workshop.subject}</span><span>{levelLabel[levelOf(workshop.targetLevel)]}</span>{!isQuiz && minutes > 0 && <span><Clock3 size={13} aria-hidden /> {minutes} min</span>}</div>
-      <h2>{workshop.title}</h2>
-      <p>{workshop.summary}</p>
+      <h2 className="editable" contentEditable suppressContentEditableWarning spellCheck onBlur={event => { const title = event.currentTarget.textContent?.trim(); if (title && title !== workshop.title) onEdit({ ...workshop, title }) }} aria-label="Título del taller, editable">{workshop.title}</h2>
+      <p className="editable" contentEditable suppressContentEditableWarning spellCheck onBlur={event => { const summary = event.currentTarget.textContent?.trim(); if (summary && summary !== workshop.summary) onEdit({ ...workshop, summary }) }} aria-label="Resumen del taller, editable">{workshop.summary}</p>
+      <small className="edit-hint">Puedes editar el título y el resumen antes de descargar.</small>
     </header>
     <div className="workshop-actions">
       <button className="btn btn-primary" onClick={() => downloadWorkshopDocument(workshop)}><Download size={16} aria-hidden />Para estudiantes</button>

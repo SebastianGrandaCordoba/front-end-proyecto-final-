@@ -795,3 +795,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .chip:disabled { opacity: .45; cursor: not-allowed; }
 .sim-config { grid-template-columns: auto auto 1fr minmax(220px, 1fr); }
 .whatif-pass { color: var(--high); font-weight: 600; }
+.editable { border-radius: 8px; outline: 1px dashed transparent; outline-offset: 4px; transition: outline-color .15s, background-color .15s; }
+.editable:hover { outline-color: var(--control); }
+.editable:focus { outline: 2px solid var(--accent); background: var(--panel); }
+.edit-hint { display: block; margin-top: 8px; color: var(--ink-3); font-size: 12px; }
