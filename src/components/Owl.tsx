@@ -1,5 +1,5 @@
 /** Original FairTeam owl, drawn in code so it stays crisp, light and on-brand. */
-export type OwlPose = 'wave' | 'read' | 'think'
+export type OwlPose = 'wave' | 'read' | 'think' | 'celebrate'
 
 const ink = '#14394a', teal = '#1d7a90', tealDark = '#155b6f', cream = '#fbf8f1', gold = '#e3a848'
 
@@ -20,5 +20,6 @@ export default function Owl({ pose = 'wave', size = 160, className = '' }: { pos
     {pose === 'wave' && <g className="owl-wave"><path d="M146 112c14-6 24-18 26-34 1-6-6-9-9-4-6 10-13 18-24 22" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /><path d="M54 112c-10 4-16 14-16 26 0 6 7 8 10 3 4-7 9-12 16-15" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /></g>}
     {pose === 'read' && <g className="owl-read"><path d="M58 150l42 12 42-12v26l-42 12-42-12v-26Z" fill="#fff" stroke="#cfe0e3" strokeWidth="2.5" strokeLinejoin="round" /><path d="M100 162v26" stroke="#cfe0e3" strokeWidth="2.5" /><path d="M70 160l20 5M70 168l20 5M110 165l20-5M110 173l20-5" stroke="#d9e8ea" strokeWidth="2" strokeLinecap="round" /><path d="M54 126c-6 10-6 22 2 30M146 126c6 10 6 22-2 30" fill="none" stroke={tealDark} strokeWidth="3" strokeLinecap="round" /></g>}
     {pose === 'think' && <g className="owl-think"><circle cx="158" cy="44" r="5" fill="#d6e8eb" /><circle cx="170" cy="28" r="8" fill="#d6e8eb" /><g className="owl-sparkles"><path d="m40 52 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill={gold} /><path d="m160 92 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill={gold} /></g><path d="M146 116c8 4 10 14 4 20-4 4-12 2-14-4" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /></g>}
+    {pose === 'celebrate' && <g className="owl-celebrate"><path d="M52 104c-14-8-20-24-18-40 1-6 9-7 10-1 2 12 8 22 18 28M148 104c14-8 20-24 18-40-1-6-9-7-10-1-2 12-8 22-18 28" fill={teal} stroke={tealDark} strokeWidth="3" strokeLinejoin="round" /><g className="owl-confetti"><rect x="30" y="30" width="6" height="10" rx="2" fill={gold} transform="rotate(-20 33 35)" /><rect x="166" y="40" width="6" height="10" rx="2" fill="#3f9a6e" transform="rotate(25 169 45)" /><rect x="150" y="16" width="5" height="9" rx="2" fill="#d0644d" transform="rotate(-35 152 20)" /><circle cx="46" cy="18" r="3.5" fill="#3f9a6e" /><circle cx="178" cy="72" r="3" fill={gold} /><circle cx="24" cy="70" r="3" fill="#d0644d" /></g></g>}
   </svg>
 }
