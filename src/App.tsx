@@ -109,7 +109,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
         <span>No pudimos conectar con el servidor. Si acaba de despertar, puede tardar hasta un minuto.</span>
         <button className="btn btn-secondary btn-small" onClick={() => { void workspace.loadCourses(); void workspace.loadShared() }}>Reintentar</button>
       </div>}
-      <Suspense fallback={<div className="page-loading"><Spinner size={20} /> Cargando…</div>}>
+      <Suspense fallback={<div className="page-loading" role="status" aria-live="polite"><Spinner size={20} /> Cargando…</div>}>
         {route === 'inicio' && <HomePage {...pageProps} user={user} />}
         {needsCourse && route !== 'inicio' ? <NoCourse onCreate={() => navigate('cursos', { nuevo: '1' })} /> : <>
           {route === 'estudiantes' && <StudentsPage {...pageProps} params={params} />}
