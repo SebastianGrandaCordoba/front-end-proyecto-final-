@@ -43,13 +43,20 @@ export function speak(text: string, { onStart, onEnd }: { onStart?: () => void; 
     const u = new SpeechSynthesisUtterance(part.trim())
     u.lang = voice?.lang ?? 'es-CO'
     if (voice) u.voice = voice
-    u.rate = 1.03
+    u.rate = speechRate()
     u.pitch = 1
     if (index === 0) u.onstart = () => onStart?.()
     if (index === parts.length - 1) { u.onend = () => onEnd?.(); u.onerror = () => onEnd?.() }
     window.speechSynthesis.speak(u)
   })
 }
+
+const RATE_KEY = 'fairteam.buho.rate'
+/** Voice speed chosen in Ajustes (0.8 slow – 1.3 fast). */
+export function speechRate() {
+  try { const value = Number(localStorage.getItem(RATE_KEY)); return value >= 0.7 && value <= 1.4 ? value : 1.03 } catch { return 1.03 }
+}
+export function setSpeechRate(rate: number) { try { localStorage.setItem(RATE_KEY, String(rate)) } catch { /* private mode */ } }
 
 export function stopSpeaking() { if (canSpeak()) window.speechSynthesis.cancel() }
 
