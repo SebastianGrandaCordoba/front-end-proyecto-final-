@@ -7,6 +7,7 @@ import { saveTheme, storedTheme, type ThemePreference } from '../lib/theme'
 import { canSpeak, setSpeechRate, speak, speechRate } from '../lib/speech'
 import { downloadTemplate, downloadText } from '../lib/files'
 import { plural } from '../lib/domain'
+import { DemoButton } from '../components/DemoButton'
 
 export default function SettingsPage({ workspace, user, onLogout }: PageProps & { user: TeacherProfile; onLogout: () => void }) {
   const { notify, confirm } = useFeedback()
@@ -86,6 +87,8 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
         <button className="btn btn-ghost" onClick={() => void downloadTemplate('roster', 'xlsx')}><Download size={16} aria-hidden />Plantilla de lista</button>
         <button className="btn btn-ghost" onClick={() => void downloadTemplate('grades', 'xlsx')}><Download size={16} aria-hidden />Plantilla de notas</button>
       </div>
+      <p className="muted">¿Vas a presentar FairTeam? Carga cuatro cursos ficticios de varios semestres para mostrar todas las funciones.</p>
+      <div className="button-row"><DemoButton onLoaded={workspace.loadCourses} variant="btn-ghost" /></div>
       <button className="btn btn-ghost btn-danger-text" onClick={() => void clear()} disabled={!workshops.length}><Trash2 size={16} aria-hidden />Vaciar biblioteca de este curso</button>
     </section>
   </section>
