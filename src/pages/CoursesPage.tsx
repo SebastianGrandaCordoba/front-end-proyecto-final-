@@ -40,7 +40,7 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
   return <section className="page">
     <header className="page-head">
       <div><h1>Mis cursos</h1><p>Cada curso guarda por separado su lista, sus notas, su material y sus talleres.</p></div>
-      <div className="page-actions"><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button></div>
+      <div className="page-actions"><DemoButton onLoaded={workspace.loadCourses} variant="btn-ghost" /><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button></div>
     </header>
 
     {courses.length ? <ul className="courses">{courses.map(course => <li key={course.id} className={`panel course${active?.id === course.id ? ' is-active' : ''}`}>
