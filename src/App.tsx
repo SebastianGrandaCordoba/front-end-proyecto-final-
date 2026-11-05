@@ -3,6 +3,7 @@ import { FolderOpen, Menu } from 'lucide-react'
 import type { TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
 import { Spinner } from './components/ui'
+import { DemoButton } from './components/DemoButton'
 import { useRouter, type Route } from './app/router'
 import { useWorkspace } from './app/useWorkspace'
 import type { WorkshopIntent } from './app/types'
@@ -115,7 +116,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
       <ErrorBoundary resetKey={route}>
       <Suspense fallback={<div className="page-loading" role="status" aria-live="polite"><Spinner size={20} /> Cargando…</div>}>
         {route === 'inicio' && <HomePage {...pageProps} user={user} />}
-        {needsCourse && route !== 'inicio' ? <NoCourse onCreate={() => navigate('cursos', { nuevo: '1' })} /> : <>
+        {needsCourse && route !== 'inicio' ? <NoCourse onCreate={() => navigate('cursos', { nuevo: '1' })} onDemo={workspace.loadCourses} /> : <>
           {route === 'estudiantes' && <StudentsPage {...pageProps} params={params} />}
           {route === 'seguimiento' && <FollowUpPage {...pageProps} params={params} />}
           {route === 'talleres' && <WorkshopsPage {...pageProps} intent={intent} clearIntent={() => setIntent(null)} params={params} />}
@@ -135,12 +136,12 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   </div>
 }
 
-function NoCourse({ onCreate }: { onCreate: () => void }) {
+function NoCourse({ onCreate, onDemo }: { onCreate: () => void; onDemo: () => Promise<void> }) {
   return <section className="page"><div className="empty empty-page">
     <span className="empty-icon" aria-hidden><FolderOpen size={22} /></span>
     <strong>Primero crea un curso</strong>
     <p>Tus estudiantes, notas y materiales se guardan dentro de cada curso.</p>
-    <div className="empty-action"><button className="btn btn-primary" onClick={onCreate}>Crear curso</button></div>
+    <div className="empty-action button-row"><button className="btn btn-primary" onClick={onCreate}>Crear curso</button><DemoButton onLoaded={onDemo} /></div>
   </div></section>
 }
 

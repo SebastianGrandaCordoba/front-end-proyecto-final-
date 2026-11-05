@@ -5,6 +5,7 @@ import type { PageProps } from '../App'
 import { EmptyState, Spinner, useFeedback } from '../components/ui'
 import { CourseForm } from './courses/CourseForm'
 import { CourseStats } from './courses/CourseStats'
+import { DemoButton } from '../components/DemoButton'
 
 export default function CoursesPage({ workspace, navigate, params }: PageProps & { params: URLSearchParams }) {
   const { courses, course: active, setCourseId, setCourses } = workspace
@@ -50,7 +51,7 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
       <p>{course.description || 'Sin descripción.'}</p>
       {overview.get(course.id) && <CourseStats data={overview.get(course.id)!} />}
       <button className="btn btn-secondary" onClick={() => { setCourseId(course.id); navigate('inicio') }}>{active?.id === course.id ? 'Ir al inicio' : 'Abrir curso'}<ArrowRight size={16} aria-hidden /></button>
-    </li>)}</ul> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas." action={<button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button>} /></div>}
+    </li>)}</ul> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas. ¿Quieres explorar primero? Carga cursos de demostración." action={<div className="button-row"><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button><DemoButton onLoaded={workspace.loadCourses} /></div>} /></div>}
 
     {editing && <CourseForm course={editing} onClose={() => setEditing(null)} onCreated={saved => { setCourses(courses.map(c => c.id === saved.id ? saved : c)); setEditing(null); notify('Curso actualizado.') }} />}
     {creating && <CourseForm onClose={() => { setCreating(false); if (params.get('nuevo')) navigate('cursos') }} onCreated={course => { setCourses([course, ...courses]); setCourseId(course.id); setCreating(false); notify(`Creaste ${course.name}. Ahora carga la lista de estudiantes.`); navigate('inicio') }} />}
