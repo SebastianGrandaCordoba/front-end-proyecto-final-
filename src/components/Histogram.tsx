@@ -6,7 +6,7 @@ export default function Histogram({ bands }: { bands: GradeBand[] }) {
   const total = bands.reduce((s, b) => s + b.students, 0)
   return <figure className="histogram" aria-label={`Distribución de promedios: ${bands.map(b => `${b.label}: ${b.students}`).join(', ')}`}>
     <div className="histogram-bars">
-      {bands.map(band => <div key={band.label} className="histogram-col">
+      {bands.map((band, index) => <div key={band.label} className="histogram-col" style={{ '--i': index } as React.CSSProperties}>
         <span className="num">{band.students || ''}</span>
         <i className={band.to <= 3 ? 'bar-low' : band.to <= 4 ? 'bar-medium' : 'bar-high'} style={{ height: `${band.students / max * 100}%` }} />
         <small>{band.label}</small>

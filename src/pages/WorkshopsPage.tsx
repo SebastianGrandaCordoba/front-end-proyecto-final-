@@ -234,7 +234,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
           <Owl pose="think" size={132} />
           <h2>{stage}</h2>
           <p className="num">{elapsed} s · suele tardar entre 15 y 40 segundos</p>
-          <div className="gen-bar" aria-hidden><span style={{ width: `${Math.min(95, elapsed * 2.2)}%` }} /></div>
+          <div className="gen-bar" aria-hidden><span style={{ transform: `scaleX(${Math.min(95, elapsed * 2.2) / 100})` }} /></div>
           <button className="btn btn-ghost btn-small" onClick={() => abort.current?.abort()}>Cancelar</button>
         </div>
           : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
