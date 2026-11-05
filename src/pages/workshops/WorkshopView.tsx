@@ -1,4 +1,6 @@
 import { Clock3, Copy, Download, FileText, KeyRound, Printer } from 'lucide-react'
+import { RichText } from '../../components/RichText'
+import { ACTIVITY_STYLES } from '../../lib/activityStyles'
 import { type GeneratedWorkshop } from '../../api'
 import { downloadWorkshopDocument, printWorkshop } from '../../lib/files'
 import { levelLabel, levelOf } from '../../lib/domain'
@@ -11,6 +13,8 @@ export function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz }: { work
       <div className="workshop-meta"><span>{isQuiz ? 'Quiz' : 'Taller'}</span><span>{workshop.subject}</span><span>{levelLabel[levelOf(workshop.targetLevel)]}</span>{!isQuiz && minutes > 0 && <span><Clock3 size={13} aria-hidden /> {minutes} min</span>}</div>
       <h2 className="editable" contentEditable suppressContentEditableWarning spellCheck onBlur={event => { const title = event.currentTarget.textContent?.trim(); if (title && title !== workshop.title) onEdit({ ...workshop, title }) }} aria-label="Título del taller, editable">{workshop.title}</h2>
       <p className="editable" contentEditable suppressContentEditableWarning spellCheck onBlur={event => { const summary = event.currentTarget.textContent?.trim(); if (summary && summary !== workshop.summary) onEdit({ ...workshop, summary }) }} aria-label="Resumen del taller, editable">{workshop.summary}</p>
+      {workshop.activityStyles?.some(id => id !== 'GUIDED') && <ul className="style-tags" aria-label="Tipo de trabajo">
+        {workshop.activityStyles.map(id => <li key={id}>{ACTIVITY_STYLES.find(style => style.id === id)?.label ?? id}</li>)}</ul>}
       <small className="edit-hint">Puedes editar el título y el resumen antes de descargar.</small>
     </header>
     <div className="workshop-actions">
@@ -26,7 +30,7 @@ export function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz }: { work
     {!isQuiz && workshop.activities.length > 0 && <section className="w-section"><h3>Actividades</h3>
       <ol className="activities">{workshop.activities.map((activity, index) => <li key={index}>
         <div className="activity-head"><b>{activity.title}</b><span className="num">{activity.estimatedMinutes} min</span></div>
-        <p>{activity.instructions}</p>
+        <RichText text={activity.instructions} />
       </li>)}</ol></section>}
     <section className="w-section"><h3>{isQuiz ? 'Preguntas' : 'Comprobación'}</h3>
       <ol className="questions">{workshop.assessment.map((item, index) => <li key={index}>

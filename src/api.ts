@@ -110,6 +110,8 @@ export interface GeneratedWorkshop {
   /** Local account/course metadata; never included in the Gemini request. */
   targetStudentId?: number
   supportType?: 'workshop' | 'quiz'
+  /** Kinds of work requested (CODE, DEPLOY…); kept locally to label the saved proposal. */
+  activityStyles?: string[]
 }
 
 let warmUpStarted = false

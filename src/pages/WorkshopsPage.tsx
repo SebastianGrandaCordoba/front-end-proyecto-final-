@@ -9,6 +9,8 @@ import { EmptyState, Field, LevelPill, Segmented, Spinner, useFeedback } from '.
 import { workshopAsText } from '../lib/files'
 import { fileSize, firstName, levelLabel, plural, relativeDate } from '../lib/domain'
 import { WorkshopView } from './workshops/WorkshopView'
+import { StylePicker } from './workshops/StylePicker'
+import { goalFor, isExtended, type ActivityStyleId } from '../lib/activityStyles'
 import { Library } from './workshops/Library'
 
 type Tab = 'crear' | 'biblioteca'
@@ -26,6 +28,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
   const viewTitle = params.get('ver')
   const [tab, setTab] = useState<Tab>('crear')
   const [mode, setMode] = useState<SupportMode>(intent?.mode ?? 'workshop')
+  const [styles, setStyles] = useState<ActivityStyleId[]>(['GUIDED'])
   const [level, setLevel] = useState<AcademicLevel>(intent?.level ?? (summary.low ? 'LOW' : 'MEDIUM'))
   const [target, setTarget] = useState(intent?.student ?? null)
   const [topic, setTopic] = useState(intent?.topic ?? '')
@@ -111,7 +114,8 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
     const student = options.student ?? target
     if (!ids.length) { setError('Elige al menos un material o sube uno nuevo.'); return }
     const topicText = topic.trim() || (useMode === 'quiz' ? 'conceptos clave del material' : 'conceptos clave del material de clase')
-    const goal = objective.trim() || (useMode === 'quiz'
+    const workStyles = useMode === 'quiz' ? [] : styles
+    const goal = objective.trim() || (useMode !== 'quiz' && goalFor(workStyles, topicText)) || (useMode === 'quiz'
       ? `Crea un quiz corto de comprobación: exactamente 3 preguntas claras sobre ${topicText}, para nivel ${levelLabel[useLevel].toLowerCase()}, con opciones, respuesta correcta y explicación breve. Evalúa comprensión y aplicación, no memoria.`
       : useLevel === 'LOW' ? `Comprender ${topicText} con ejemplos guiados y demostrarlo en una comprobación breve.`
         : useLevel === 'MEDIUM' ? `Consolidar ${topicText} y aplicarlo en ejercicios de dificultad creciente.`
@@ -128,6 +132,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
     form.append('learningObjective', goal.slice(0, 1000))
     form.append('learningContext', context.slice(0, 2500))
     form.append('generationType', useMode === 'quiz' ? 'QUIZ' : 'WORKSHOP')
+    if (workStyles.length) form.append('activityStyles', workStyles.join(','))
     if (ids.length > 1) ids.forEach(id => form.append('materialIds', String(id)))
     const path = ids.length === 1 ? `/api/courses/${course.id}/materials/${ids[0]}/generate-workshop` : `/api/courses/${course.id}/materials/generate-workshop`
 
@@ -141,7 +146,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
         ...response,
         ...(useMode === 'quiz' ? { title: `Quiz · ${topic.trim() || response.subject} · ${firstName(student.name)}` } : { title: `${response.title} · ${firstName(student.name)}` }),
         targetStudentId: student.id } : response
-      const saved = workspace.saveWorkshop({ ...named, supportType: useMode })
+      const saved = workspace.saveWorkshop({ ...named, supportType: useMode, activityStyles: workStyles })
       setResult(saved)
       clearIntent()
       notify(useMode === 'quiz' ? 'Quiz listo. Revísalo antes de usarlo.' : 'Taller listo. Revísalo antes de usarlo.')
@@ -172,7 +177,10 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
 
         <fieldset className="step"><legend><span className="step-n">1</span>Qué quieres crear</legend>
           <Segmented label="Tipo" value={mode} onChange={setMode} options={[{ value: 'workshop', label: 'Taller de práctica' }, { value: 'quiz', label: 'Quiz de 3 preguntas' }]} />
-          <p className="step-hint">{mode === 'quiz' ? 'Preguntas de opción múltiple con clave para ti. Ideal para comprobar si un tema quedó claro.' : 'Objetivos, tres actividades guiadas y una comprobación final. Ideal para repasar un tema.'}</p>
+          <p className="step-hint">{mode === 'quiz' ? 'Preguntas de opción múltiple con clave para ti. Ideal para comprobar si un tema quedó claro.'
+            : isExtended(styles) ? 'Un reto por etapas: empieza en clase y se termina fuera de ella, con entregables que puedes revisar (repositorio, pruebas o URL).'
+              : 'Objetivos, tres actividades guiadas y una comprobación final. Ideal para repasar un tema.'}</p>
+          {mode === 'workshop' && <StylePicker value={styles} onChange={setStyles} disabled={generating} />}
         </fieldset>
 
         <fieldset className="step"><legend><span className="step-n">2</span>Para qué nivel</legend>
