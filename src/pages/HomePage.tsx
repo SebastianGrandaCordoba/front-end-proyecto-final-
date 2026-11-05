@@ -6,8 +6,9 @@ import Owl from '../components/Owl'
 import Histogram from '../components/Histogram'
 import { ImportButton, MaterialUploadButton } from '../app/actions'
 import { headline, recommendations, setupSteps, type Recommendation } from '../lib/assistant'
-import { firstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
+import { teacherFirstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
 import { Avatar, EmptyState } from '../components/ui'
+import { DemoButton } from '../components/DemoButton'
 
 export default function HomePage({ workspace, navigate, startWorkshop, review, assistant, user }: PageProps & { user: TeacherProfile }) {
   const { course, courses, candidates, summary, insights, materials, workshops, courseState, coursesState } = workspace
@@ -36,7 +37,10 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
     if (rec.action.kind === 'import-roster') return <ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant={variant}>{rec.cta}</ImportButton>
     if (rec.action.kind === 'import-grades') return <ImportButton kind="grades" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant={variant}>{rec.cta}</ImportButton>
     if (rec.action.kind === 'upload-material') return <MaterialUploadButton courseId={course?.id ?? null} onUploaded={items => workspace.updateMaterials(list => [...items, ...list])} variant={variant}>{rec.cta}</MaterialUploadButton>
-    return <button className={`btn btn-${variant}`} onClick={() => runAction(rec)}>{rec.cta}<ArrowRight size={16} aria-hidden /></button>
+    const button = <button className={`btn btn-${variant}`} onClick={() => runAction(rec)}>{rec.cta}<ArrowRight size={16} aria-hidden /></button>
+    // A brand-new account can explore everything with demo courses before creating its own.
+    if (rec.action.kind === 'create-course' && !courses.length) return <div className="button-row">{button}<DemoButton onLoaded={workspace.loadCourses} /></div>
+    return button
   }
 
   const [lead, ...rest] = recs
@@ -44,7 +48,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
   return <section className="page page-home">
     <header className="greeting">
       <Owl pose={!loading && summary.gradeCount > 0 && summary.low === 0 ? 'celebrate' : 'wave'} size={150} className="greeting-owl" />
-      <h1>{greetingFor()}, {firstName(user.name)}.</h1>
+      <h1>{greetingFor()}, {teacherFirstName(user.name)}.</h1>
       <p>{loading ? 'Revisando tu curso…' : headline(input)} <span className="greeting-date">· {todayLabel()}</span></p>
       <div className="greeting-actions">
         <button className="btn btn-primary" onClick={assistant.brief} disabled={loading}><Play size={16} aria-hidden />Escuchar el resumen</button>
