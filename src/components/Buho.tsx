@@ -44,7 +44,9 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   useEffect(() => { counter.current = Math.max(counter.current, ...messages.map(m => m.id), 0) }, [messages])
 
   const say = useCallback((text: string, force = false) => {
-    if (!(voiceOn || force) || !canSpeak()) { setStatus('idle'); return }
+    // The answer is already on screen: leave "thinking" now, even if the voice never starts (no voices installed).
+    setStatus('idle')
+    if (!(voiceOn || force) || !canSpeak()) return
     speak(text, { onStart: () => setStatus('speaking'), onEnd: () => setStatus(current => current === 'speaking' ? 'idle' : current) })
   }, [voiceOn])
 
