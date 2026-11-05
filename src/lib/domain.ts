@@ -46,6 +46,16 @@ export function firstName(name?: string | null) {
   return (name || '').trim().split(/\s+/)[0] || 'profe'
 }
 
+const TITLES = new Set(['prof', 'profe', 'profesor', 'profesora', 'dr', 'dra', 'doctor', 'doctora', 'ing', 'ingeniero', 'ingeniera', 'mg', 'msc', 'lic', 'phd', 'sr', 'sra'])
+/** Teacher's first name without titles: "Prof. Carolina Méndez" → "Carolina". Same rule as the backend briefing. */
+export function teacherFirstName(name?: string | null) {
+  for (const word of (name || '').trim().split(/\s+/)) {
+    const bare = word.replace(/[.,]+$/, '')
+    if (bare && !TITLES.has(bare.toLowerCase())) return bare
+  }
+  return 'profe'
+}
+
 export function greetingFor(date = new Date()) {
   const hour = date.getHours()
   return hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
