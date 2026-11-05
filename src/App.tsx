@@ -128,7 +128,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
       </ErrorBoundary>
     </main>
 
-    {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} courseAverage={workspace.summary.average} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
+    {reviewing && <StudentDetail student={reviewing} trend={workspace.trends.find(t => t.student.id === reviewing.id) ?? null} projection={workspace.projections.get(reviewing.id) ?? null} grades={workspace.grades.filter(grade => Number(grade.studentId) === Number(reviewing.id))} subjects={workspace.subjects} courseAverage={workspace.summary.average} courseId={workspace.course?.id ?? null} onClose={() => setReviewing(null)} onMessage={() => { setMessageFor(reviewing); setReviewing(null) }} onStart={mode => startWorkshop({ mode, level: reviewing.level, student: reviewing, autoStart: true })} />}
     {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
     {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
     {showWelcome && <Welcome onClose={closeWelcome} />}

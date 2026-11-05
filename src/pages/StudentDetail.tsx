@@ -1,11 +1,14 @@
-import { ListChecks, MessageSquareText, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
+import { CalendarCheck, ListChecks, MessageSquareText, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
+import { useAttendanceSummary } from '../app/useAttendanceSummary'
+import { SupportLog } from './students/SupportLog'
 import type { Grade } from '../api'
 import type { SupportMode } from '../app/types'
 import { Avatar, LevelPill, Modal } from '../components/ui'
 import { formatGrade, gradeTone, plural, studentAdvice, type Candidate, type Subject } from '../lib/domain'
 import type { Projection, Trend } from '../lib/insights'
 
-export default function StudentDetail({ student, trend, projection, grades, subjects, courseAverage, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; courseAverage?: number | null; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
+export default function StudentDetail({ student, trend, projection, grades, subjects, courseAverage, courseId, onClose, onStart, onMessage }: { student: Candidate; trend: Trend | null; projection: Projection | null; grades: Grade[]; subjects: Subject[]; courseAverage?: number | null; courseId: number | null; onClose: () => void; onStart: (mode: SupportMode) => void; onMessage: () => void }) {
+  const attendance = useAttendanceSummary(courseId).summary.get(student.id)
   const names = new Map(subjects.map(subject => [Number(subject.id), subject.name]))
   const tone = gradeTone
   return <Modal title={student.name} description={student.email || undefined} onClose={onClose} size="large">
@@ -15,6 +18,7 @@ export default function StudentDetail({ student, trend, projection, grades, subj
         <div><b className="num">{student.hasGrades ? formatGrade(student.average) : '—'}</b><small>{student.hasGrades ? `promedio en ${plural(student.gradeCount, 'nota', 'notas')}${courseAverage != null ? ` · curso ${formatGrade(courseAverage)}` : ''}` : 'sin notas cargadas'}</small></div>
         {trend?.direction === 'down' && <span className="trend trend-down"><TrendingDown size={15} aria-hidden />Viene bajando</span>}
         {trend?.direction === 'up' && <span className="trend trend-up"><TrendingUp size={15} aria-hidden />Viene mejorando</span>}
+        {attendance && <span className={`attendance-chip${attendance.alert ? ' is-alert' : ''}`} title={`${attendance.absent} faltas en ${attendance.sessions} clases`}><CalendarCheck size={15} aria-hidden />{attendance.percent} % asistencia</span>}
         <LevelPill level={student.level} hasGrades={student.hasGrades} />
       </div>
 
@@ -32,7 +36,8 @@ export default function StudentDetail({ student, trend, projection, grades, subj
         </section>}
       </div>}
 
-      <div className="advice"><h3>Mi recomendación</h3><p>{studentAdvice(student)}{trend?.weakest && student.level !== 'HIGH' ? ` Empieza por ${trend.weakest.name}.` : ''}</p></div>
+      <div className="advice"><h3>Mi recomendación</h3><p>{studentAdvice(student)}{trend?.weakest && student.level !== 'HIGH' ? ` Empieza por ${trend.weakest.name}.` : ''}{attendance?.alert ? ` Además falta seguido (${attendance.percent} % de asistencia): pregúntale qué le está pasando antes de hablar de notas.` : ''}</p></div>
+      {courseId && <SupportLog courseId={courseId} studentId={student.id} studentName={student.name} />}
       {grades.length > 0 && <details className="grade-list"><summary>Ver las {grades.length} notas</summary><table>
         <thead><tr><th scope="col">Tema</th><th scope="col">Periodo</th><th scope="col" className="num">Nota</th></tr></thead>
         <tbody>{grades.map((grade, index) => { const mark = Number(grade.grade); return <tr key={grade.id ?? index}>
