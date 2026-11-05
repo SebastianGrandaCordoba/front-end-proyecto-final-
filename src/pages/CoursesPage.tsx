@@ -6,6 +6,7 @@ import { EmptyState, Spinner, useFeedback } from '../components/ui'
 import { CourseForm } from './courses/CourseForm'
 import { CourseStats } from './courses/CourseStats'
 import { DemoButton } from '../components/DemoButton'
+import { groupBySemester } from '../lib/semesters'
 
 export default function CoursesPage({ workspace, navigate, params }: PageProps & { params: URLSearchParams }) {
   const { courses, course: active, setCourseId, setCourses } = workspace
@@ -43,7 +44,9 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
       <div className="page-actions"><DemoButton onLoaded={workspace.loadCourses} variant="btn-ghost" /><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button></div>
     </header>
 
-    {courses.length ? <ul className="courses">{courses.map(course => <li key={course.id} className={`panel course${active?.id === course.id ? ' is-active' : ''}`}>
+    {courses.length ? <div className="semesters">{groupBySemester(courses).map(group => <section key={group.period || 'none'} className="semester">
+      <h2 className={`semester-title${group.current ? ' is-current' : ''}`}>{group.label}<span className="seg-count">{group.courses.length}</span></h2>
+      <ul className="courses">{group.courses.map(course => <li key={course.id} className={`panel course${active?.id === course.id ? ' is-active' : ''}`}>
       <div className="course-top"><FolderOpen size={18} aria-hidden /><span className="muted">{course.period || 'Sin periodo'}</span>{active?.id === course.id && <span className="pill pill-active">Abierto</span>}
         <button className="icon-btn push" onClick={() => setEditing(course)} aria-label={`Editar ${course.name}`}><Pencil size={16} /></button>
         <button className="icon-btn icon-danger" onClick={() => void remove(course)} disabled={deleting === course.id} aria-label={`Eliminar ${course.name}`}>{deleting === course.id ? <Spinner /> : <Trash2 size={16} />}</button></div>
@@ -51,7 +54,8 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
       <p>{course.description || 'Sin descripción.'}</p>
       {overview.get(course.id) && <CourseStats data={overview.get(course.id)!} />}
       <button className="btn btn-secondary" onClick={() => { setCourseId(course.id); navigate('inicio') }}>{active?.id === course.id ? 'Ir al inicio' : 'Abrir curso'}<ArrowRight size={16} aria-hidden /></button>
-    </li>)}</ul> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas. ¿Quieres explorar primero? Carga cursos de demostración." action={<div className="button-row"><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button><DemoButton onLoaded={workspace.loadCourses} /></div>} /></div>}
+    </li>)}</ul>
+    </section>)}</div> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas. ¿Quieres explorar primero? Carga cursos de demostración." action={<div className="button-row"><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button><DemoButton onLoaded={workspace.loadCourses} /></div>} /></div>}
 
     {editing && <CourseForm course={editing} onClose={() => setEditing(null)} onCreated={saved => { setCourses(courses.map(c => c.id === saved.id ? saved : c)); setEditing(null); notify('Curso actualizado.') }} />}
     {creating && <CourseForm onClose={() => { setCreating(false); if (params.get('nuevo')) navigate('cursos') }} onCreated={course => { setCourses([course, ...courses]); setCourseId(course.id); setCreating(false); notify(`Creaste ${course.name}. Ahora carga la lista de estudiantes.`); navigate('inicio') }} />}
