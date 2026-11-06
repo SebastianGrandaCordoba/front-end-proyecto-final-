@@ -1,5 +1,4 @@
 import type { GeneratedWorkshop } from '../api'
-import { createSpreadsheetTemplate } from '../spreadsheet'
 import { formatGrade, levelLabel, levelOf, type Candidate } from './domain'
 
 export function downloadBlob(filename: string, blob: Blob) {
@@ -23,8 +22,8 @@ export async function downloadTemplate(kind: 'roster' | 'grades', format: 'xlsx'
     const header = kind === 'roster' ? 'name,email,academicLevel' : 'studentName,studentEmail,subject,grade,period'
     return downloadText(`${base}.csv`, `﻿${header}\r\n`, 'text/csv;charset=utf-8')
   }
-  const bytes = await createSpreadsheetTemplate(kind)
-  downloadBlob(`${base}.xlsx`, new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+  const templates = await import('./templates')
+  await (kind === 'roster' ? templates.downloadRosterTemplate() : templates.downloadGradesTemplate())
 }
 
 export function learningReportCsv(students: Candidate[]) {
