@@ -1,3 +1,4 @@
+import { splitFences } from '../components/RichText'
 import type { GeneratedWorkshop } from '../api'
 import { formatGrade, levelLabel, levelOf, type Candidate } from './domain'
 
@@ -59,40 +60,67 @@ export function workshopAsText(workshop: GeneratedWorkshop) {
     ...workshop.learningObjectives.map(item => `• ${item}`),
     '',
     'ACTIVIDADES',
-    ...workshop.activities.map((item, index) => `${index + 1}. ${item.title} (${item.estimatedMinutes} min)\n${item.instructions}\n`),
+    ...(workshop.studentIntro ? ['ANTES DE EMPEZAR', workshop.studentIntro, ''] : []),
+    ...workshop.activities.map((item, index) => [`${index + 1}. ${item.title} (${item.estimatedMinutes} min)`, item.goal, item.instructions,
+      item.hints?.length ? `Pistas:\n${item.hints.map(hint => `   - ${hint}`).join('\n')}` : '', item.deliverable ? `Entrega: ${item.deliverable}` : '', ''].filter(Boolean).join('\n') + '\n'),
     'EVALUACIÓN',
     ...workshop.assessment.map((item, index) => `${index + 1}. ${item.question}\n${item.options.map(option => `   - ${option}`).join('\n')}\n   Respuesta: ${item.correctAnswer}. ${item.explanation}\n`),
+    ...(workshop.teacherNotes?.length ? ['NOTAS PARA EL DOCENTE', ...workshop.teacherNotes.map(note => `• ${note}`), ''] : []),
     `Material consultado: ${workshop.sourceReferences.join(', ') || 'no especificado'}`,
   ].join('\n')
 }
 
-/** A standalone, printable HTML sheet. Students' copy never includes the answer key. */
-export function downloadWorkshopDocument(workshop: GeneratedWorkshop, includeAnswerKey = false) {
-  const escape = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character)
-  const objectives = workshop.learningObjectives.map(item => `<li>${escape(item)}</li>`).join('')
-  const activities = workshop.activities.map((item, index) => `<article><h3><span>${index + 1}</span>${escape(item.title)}<small>${item.estimatedMinutes} min</small></h3><p>${escape(item.instructions)}</p></article>`).join('')
-  const questions = workshop.assessment.map((item, index) => `<article class="question"><h3><span>${index + 1}</span>${escape(item.question)}</h3><ol type="a">${item.options.map(option => `<li>${escape(option)}</li>`).join('')}</ol>${includeAnswerKey ? `<div class="key"><b>Respuesta:</b> ${escape(item.correctAnswer)}. ${escape(item.explanation)}</div>` : '<div class="answer-line">Respuesta: ______________________</div>'}</article>`).join('')
-  const sources = workshop.sourceReferences.map(escape).join(' · ') || 'No especificado'
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character)
+
+/** Text from the AI as HTML: paragraphs keep their line breaks and ``` blocks become code. */
+function richHtml(text: string) {
+  return splitFences(text).map(part => part.kind === 'code'
+    ? `<pre><code>${escapeHtml(part.value)}</code></pre>`
+    : `<p>${escapeHtml(part.value)}</p>`).join('')
+}
+
+/** A standalone, printable HTML sheet. Students' copy never includes the answer key nor the teacher's notes. */
+export function workshopHtml(workshop: GeneratedWorkshop, includeAnswerKey = false) {
+  const escape = escapeHtml
   const isQuiz = workshop.supportType === 'quiz'
-  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(workshop.title)}</title><style>
+  const objectives = workshop.learningObjectives.map(item => `<li>${escape(item)}</li>`).join('')
+  const activities = workshop.activities.map((item, index) => `<article><h3><span>${index + 1}</span>${escape(item.title)}<small>${item.estimatedMinutes} min</small></h3>
+${item.goal ? `<p class="goal">${escape(item.goal)}</p>` : ''}<div class="body">${richHtml(item.instructions)}</div>
+${item.hints?.length ? `<details class="hints"${includeAnswerKey ? ' open' : ''}><summary>Pistas si te atascas</summary><ol>${item.hints.map(hint => `<li>${escape(hint)}</li>`).join('')}</ol></details>` : ''}
+${item.deliverable ? `<p class="deliverable"><b>Entrega:</b> ${escape(item.deliverable)}</p>` : ''}</article>`).join('')
+  const questions = workshop.assessment.map((item, index) => `<article class="question"><h3><span>${index + 1}</span>${escape(item.question)}</h3>${item.options.length ? `<ol type="a">${item.options.map(option => `<li>${escape(option)}</li>`).join('')}</ol>` : ''}${includeAnswerKey ? `<div class="key"><b>Respuesta:</b> ${escape(item.correctAnswer)}. ${escape(item.explanation)}</div>` : `<div class="answer-line">${item.options.length ? 'Respuesta: ______________________' : 'Respuesta:<br><br><br>'}</div>`}</article>`).join('')
+  const notes = includeAnswerKey && workshop.teacherNotes?.length ? `<section class="notes"><h2>Notas para el docente</h2><ul>${workshop.teacherNotes.map(note => `<li>${escape(note)}</li>`).join('')}</ul></section>` : ''
+  const sources = workshop.sourceReferences.map(escape).join(' · ') || 'No especificado'
+  const kind = isQuiz ? 'Quiz' : 'Taller'
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(workshop.title)}</title><style>
 :root{font-family:"Instrument Sans",Inter,Arial,sans-serif;color:#15232b;background:#f4f5f2}body{margin:0;padding:32px 16px}
 .sheet{max-width:780px;margin:auto;padding:48px 52px;background:#fff;border:1px solid #e4e7e6;border-radius:14px}
 .brand{color:#17708a;font-size:13px;font-weight:600}h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:36px;line-height:1.1;margin:14px 0 8px}
 .meta{color:#55636b;font-size:14px}.fields{display:flex;gap:24px;margin:22px 0;font-size:14px;color:#55636b}.fields span{flex:1;border-bottom:1px solid #cfd5d4;padding-bottom:4px}
 .summary{padding:14px 16px;background:#f2f7f8;border-radius:10px;line-height:1.6;margin:20px 0}h2{font-size:16px;margin:28px 0 10px}
-li,p{line-height:1.6}article{padding:14px 0;border-top:1px solid #eef0ef;break-inside:avoid}h3{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:0 0 6px}
-h3 span{color:#17708a;font-variant-numeric:tabular-nums}h3 small{margin-left:auto;color:#55636b;font-weight:500}article p{margin:4px 0 0 22px;white-space:pre-line}
+.intro{padding:14px 16px;border-left:3px solid #17708a;background:#fbfcfb;line-height:1.65}
+li,p{line-height:1.6}article{padding:16px 0;border-top:1px solid #eef0ef;break-inside:avoid}h3{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:0 0 6px}
+h3 span{color:#17708a;font-variant-numeric:tabular-nums}h3 small{margin-left:auto;color:#55636b;font-weight:500}.body,.goal,.deliverable,.hints{margin-left:22px}
+.body p{margin:4px 0;white-space:pre-line}.goal{margin-top:0;color:#55636b;font-style:italic}
+pre{margin:8px 0;padding:12px 14px;border-radius:8px;background:#15232b;color:#eef3f2;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
+.hints{margin-top:8px;font-size:14px;color:#3b4a52}.hints summary{cursor:pointer;font-weight:600;color:#17708a}.deliverable{margin-top:8px;padding:8px 12px;border-radius:8px;background:#f2f7f8;font-size:14px}
 ol{margin:6px 0 0 22px}.key{margin:10px 0 0 22px;padding:10px 12px;border-radius:8px;background:#f4f5f2;font-size:14px}.answer-line{margin:12px 0 0 22px;color:#55636b;font-size:14px}
+.notes{margin-top:28px;padding:14px 18px;border-radius:10px;background:#fbf1da}.notes h2{margin-top:0}
 footer{margin-top:28px;padding-top:12px;border-top:1px solid #e4e7e6;color:#55636b;font-size:12px}
-@media print{body{padding:0;background:#fff}.sheet{border:0;padding:16mm;max-width:none}}
-</style><body><main class="sheet"><div class="brand">FairTeam · ${isQuiz ? 'Quiz' : 'Taller'}${includeAnswerKey ? ' · Clave docente' : ''}</div><h1>${escape(workshop.title)}</h1>
+@media print{body{padding:0;background:#fff}.sheet{border:0;padding:16mm;max-width:none}.hints{display:block}}
+</style><body><main class="sheet"><div class="brand">FairTeam · ${kind}${includeAnswerKey ? ' · Clave docente' : ''}</div><h1>${escape(workshop.title)}</h1>
 <div class="meta">${escape(workshop.subject)} · ${escape(levelLabel[levelOf(workshop.targetLevel)])}</div>
 ${includeAnswerKey ? '' : '<div class="fields"><span>Nombre:</span><span>Fecha:</span></div>'}
-<p class="summary">${escape(workshop.summary)}</p><h2>Lo que vas a aprender</h2><ul>${objectives}</ul>
-${activities && !isQuiz ? `<h2>Actividades</h2>${activities}` : ''}<h2>${isQuiz ? 'Preguntas' : 'Comprueba lo aprendido'}</h2>${questions}
-<footer>Material consultado: ${sources}</footer></main></body></html>`
+<p class="summary">${escape(workshop.summary)}</p>
+${workshop.studentIntro ? `<h2>Antes de empezar</h2><div class="intro">${richHtml(workshop.studentIntro)}</div>` : ''}
+<h2>Lo que vas a aprender</h2><ul>${objectives}</ul>
+${activities && !isQuiz ? `<h2>Actividades</h2>${activities}` : ''}${questions ? `<h2>${isQuiz ? 'Preguntas' : 'Comprueba lo aprendido'}</h2>${questions}` : ''}
+${notes}<footer>Material consultado: ${sources}</footer></main></body></html>`
+}
+
+export function downloadWorkshopDocument(workshop: GeneratedWorkshop, includeAnswerKey = false) {
   const name = slugify(workshop.title) || 'actividad-fairteam'
-  downloadText(`${name}${includeAnswerKey ? '-clave-docente' : ''}.html`, html, 'text/html;charset=utf-8')
+  downloadText(`${name}${includeAnswerKey ? '-clave-docente' : ''}.html`, workshopHtml(workshop, includeAnswerKey), 'text/html;charset=utf-8')
 }
 
 export function printWorkshop(workshop: GeneratedWorkshop) {
@@ -101,12 +129,8 @@ export function printWorkshop(workshop: GeneratedWorkshop) {
   document.body.appendChild(frame)
   const doc = frame.contentDocument
   if (!doc) { frame.remove(); return }
-  const escape = (value: string) => value.replace(/[&<>]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[character] || character)
   doc.open()
-  doc.write(`<!doctype html><html lang="es"><meta charset="utf-8"><title>${escape(workshop.title)}</title><style>body{font-family:Arial,sans-serif;color:#15232b;margin:16mm;line-height:1.55}h1{font-size:24px}h2{font-size:15px;margin-top:22px}p{white-space:pre-line}</style>
-<h1>${escape(workshop.title)}</h1><p>${escape(workshop.summary)}</p><h2>Objetivos</h2><ul>${workshop.learningObjectives.map(item => `<li>${escape(item)}</li>`).join('')}</ul>
-${workshop.supportType === 'quiz' ? '' : `<h2>Actividades</h2>${workshop.activities.map((item, i) => `<p><b>${i + 1}. ${escape(item.title)}</b> (${item.estimatedMinutes} min)<br>${escape(item.instructions)}</p>`).join('')}`}
-<h2>Preguntas</h2>${workshop.assessment.map((item, i) => `<p><b>${i + 1}. ${escape(item.question)}</b><br>${item.options.map(option => `○ ${escape(option)}`).join('<br>')}</p>`).join('')}`)
+  doc.write(workshopHtml(workshop))
   doc.close()
   frame.contentWindow?.focus()
   frame.contentWindow?.print()
