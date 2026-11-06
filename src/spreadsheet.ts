@@ -36,7 +36,7 @@ export async function normalizeSpreadsheetRows(rows: unknown[][], kind: ImportKi
   const required = kind === 'roster' ? ['name'] : ['grade', 'period']
   const hasStudentId = kind === 'roster'
     ? outputHeaders.includes('name')
-    : outputHeaders.some(header => ['studentName', 'studentEmail', 'studentId'].includes(header))
+    : outputHeaders.some(header => STUDENT_COLUMNS.has(header))
   if (required.some(header => !outputHeaders.includes(header))
       || (kind === 'grades' && !outputHeaders.some(header => ['subject', 'subjectId'].includes(header)))
       || !hasStudentId) {
@@ -53,7 +53,8 @@ export async function normalizeSpreadsheetRows(rows: unknown[][], kind: ImportKi
       const rawGrade = String(normalized[gradeIndex] ?? '').trim().replace(',', '.')
       const grade = Number(rawGrade)
       if (!Number.isFinite(grade) || grade < 0 || grade > 5) {
-        throw new Error('Hay una nota vacía o fuera del rango de 0 a 5. Corrige el Excel y vuelve a importarlo.')
+        const who = String(normalized[outputHeaders.indexOf('studentName')] ?? '').trim()
+        throw new Error(`La nota "${rawGrade || 'vacía'}"${who ? ` de ${who}` : ''} no está entre 0 y 5. Corrige el Excel y vuelve a importarlo.`)
       }
       normalized[gradeIndex] = grade.toFixed(2)
     }
@@ -63,25 +64,53 @@ export async function normalizeSpreadsheetRows(rows: unknown[][], kind: ImportKi
   return `\uFEFF${csv}`
 }
 
+const IGNORED_SHEETS = new Set(['instrucciones', 'instructions', 'ejemplo'])
+const STUDENT_COLUMNS = new Set(['studentName', 'studentEmail', 'studentId'])
+
+/**
+ * Grid layout used by the templates: students in rows, one column per topic, the corte is the sheet name.
+ * Returns null when the sheet is in the classic "one grade per row" layout.
+ */
+export function gridToGradeRows(rows: unknown[][], period: string): unknown[][] | null {
+  if (rows.length < 1) return null
+  const headers = rows[0].map(value => String(value ?? '').trim())
+  const mapped = headers.map(header => headerAliases.grades[normalizeHeader(header)] || '')
+  if (mapped.includes('grade') || !mapped.some(h => STUDENT_COLUMNS.has(h))) return null
+  const topicColumns = headers.map((header, i) => ({ header, i })).filter(({ header, i }) => header && !mapped[i])
+  if (!topicColumns.length) return null
+  const nameAt = mapped.indexOf('studentName')
+  const emailAt = mapped.indexOf('studentEmail')
+  const out: unknown[][] = [['studentName', 'studentEmail', 'subject', 'grade', 'period']]
+  for (const row of rows.slice(1)) {
+    const name = nameAt >= 0 ? String(row[nameAt] ?? '').trim() : ''
+    const email = emailAt >= 0 ? String(row[emailAt] ?? '').trim() : ''
+    if (!name && !email) continue
+    for (const { header, i } of topicColumns) {
+      const raw = String(row[i] ?? '').trim()
+      if (raw !== '') out.push([name, email, header, raw, period])
+    }
+  }
+  return out
+}
+
 export async function spreadsheetFileAsCsv(file: File, kind: ImportKind): Promise<File> {
   const XLSX = await import('xlsx')
   const isCsv = file.name.toLowerCase().endsWith('.csv')
   const source: string | ArrayBuffer = isCsv ? await file.text() : await file.arrayBuffer()
   const workbook = XLSX.read(source, { type: isCsv ? 'string' : 'array', cellDates: false })
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-  if (!firstSheet) throw new Error('El libro de Excel no contiene hojas.')
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, { header: 1, defval: '', raw: false })
+  const names = workbook.SheetNames.filter(name => !IGNORED_SHEETS.has(name.trim().toLowerCase()))
+  if (!names.length) throw new Error('El libro de Excel no contiene hojas.')
+  const read = (name: string) => XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name], { header: 1, defval: '', raw: false })
+  let rows: unknown[][]
+  if (kind === 'grades') {
+    // Each grid sheet is a corte; classic sheets are used as they are. All of them go in one import.
+    const grids = names.map(name => gridToGradeRows(read(name), name.trim()))
+    rows = grids.every(grid => grid === null) ? read(names[0])
+      : [['studentName', 'studentEmail', 'subject', 'grade', 'period'], ...grids.flatMap(grid => grid?.slice(1) ?? [])]
+  } else rows = read(names[0])
   const csv = await normalizeSpreadsheetRows(rows, kind)
   const safeName = file.name.replace(/\.(csv|xlsx|xls)$/i, '')
   return new File([csv], `${safeName}.csv`, { type: 'text/csv;charset=utf-8' })
 }
 
-export async function createSpreadsheetTemplate(kind: ImportKind): Promise<ArrayBuffer> {
-  const XLSX = await import('xlsx')
-  const rows = kind === 'roster'
-    ? [['name', 'email', 'academicLevel'], ['María Pérez', 'maria@example.edu', 'MEDIUM']]
-    : [['studentName', 'studentEmail', 'subject', 'grade', 'period'], ['María Pérez', 'maria@example.edu', 'Programación', 2.8, '2026-2']]
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), kind === 'roster' ? 'Estudiantes' : 'Notas')
-  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
-}
+
