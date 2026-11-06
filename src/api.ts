@@ -64,6 +64,8 @@ export interface Course {
   period?: string | null
   description?: string | null
   createdAt?: string
+  /** Highest grade of the course scale: 5, 10, 20, 100… Grades still travel on 0–5. */
+  maxGrade?: number
 }
 export interface CourseMaterial {
   id: number

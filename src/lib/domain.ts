@@ -6,10 +6,11 @@ export type SubjectInsight = { id: number; name: string; average: number; count:
 
 export const levelLabel: Record<AcademicLevel, string> = { LOW: 'Necesita refuerzo', MEDIUM: 'En seguimiento', HIGH: 'Buen progreso' }
 export const levelShort: Record<AcademicLevel, string> = { LOW: 'Refuerzo', MEDIUM: 'Seguimiento', HIGH: 'Buen progreso' }
+/** Read at render time, so the cut points are written in the open course's scale (3,0/5 = 60/100). */
 export const levelRule: Record<AcademicLevel, string> = {
-  LOW: 'Promedio menor a 3,0',
-  MEDIUM: 'Promedio de 3,0 a menos de 4,0',
-  HIGH: 'Promedio de 4,0 o más',
+  get LOW() { return `Promedio menor a ${formatGrade(3)}` },
+  get MEDIUM() { return `Promedio de ${formatGrade(3)} a menos de ${formatGrade(4)}` },
+  get HIGH() { return `Promedio de ${formatGrade(4)} o más` },
 }
 
 export function levelOf(value?: string | null): AcademicLevel {
@@ -33,7 +34,20 @@ export function levelFromAverage(average: number): AcademicLevel {
 }
 
 const number1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-export const formatGrade = (value: number) => number1.format(value)
+const upTo1 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 1 })
+
+/*
+ * Grades travel from the backend on 0–5 whatever scale the course uses; each course can be graded
+ * on 5, 10, 20, 100… The open course sets the scale and every screen shows grades in it.
+ */
+let scaleMax = 5
+export function setGradeScale(max: number | null | undefined) { scaleMax = max && max > 0 ? Number(max) : 5 }
+export const gradeScale = () => scaleMax
+/** A grade on 0–5 in the course scale (4,0 → 80 when the course is graded over 100). */
+export const toCourseScale = (value: number) => value * scaleMax / 5
+/** A value that is already in the course scale: one decimal on small scales, no forced decimals over 20. */
+export const formatScaled = (value: number, max = scaleMax) => (max > 20 ? upTo1 : number1).format(value)
+export const formatGrade = (value: number) => formatScaled(toCourseScale(value))
 export const formatInt = (value: number) => new Intl.NumberFormat('es-CO').format(value)
 export function plural(count: number, one: string, many: string) { return `${formatInt(count)} ${count === 1 ? one : many}` }
 

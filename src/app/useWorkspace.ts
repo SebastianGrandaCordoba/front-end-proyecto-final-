@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Course, type CourseMaterial, type GeneratedWorkshop, type Grade, type Project, type Student, type Team, type TeacherProfile } from '../api'
-import { buildCandidates, summarize, type Subject } from '../lib/domain'
+import { buildCandidates, setGradeScale, summarize, type Subject } from '../lib/domain'
 import { adaptInsights, type ApiInsights, type Projection, type Trend } from '../lib/insights'
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
@@ -137,6 +137,8 @@ export function useWorkspace(user: TeacherProfile) {
   const briefing = reading?.briefing ?? ''
   const distribution = reading?.distribution ?? []
   const course = courses.find(item => item.id === courseId) ?? null
+  // Every screen formats grades with the open course's scale (0–5, 0–10, 0–100…).
+  setGradeScale(course?.maxGrade)
 
   const saveScheme = useCallback(async (weights: number[]) => {
     if (!courseId) return
