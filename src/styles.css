@@ -922,3 +922,46 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .semester { display: grid; gap: 12px; }
 .semester-title { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font: 500 15px/1.3 var(--sans); }
 .semester-title.is-current { color: var(--ink); font: 400 26px/1.1 var(--serif); }
+
+/* Grade editor: a corte as a spreadsheet */
+.grade-editor { display: grid; gap: 12px; }
+.grade-editor-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.period-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel-2); flex-wrap: wrap; }
+.period-tabs button { min-height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-weight: 500; transition: background-color .15s, color .15s; }
+.period-tabs button.is-on { background: var(--sheet); color: var(--ink); box-shadow: 0 1px 2px rgb(20 35 42 / 10%), 0 0 0 1px var(--line); }
+.period-tabs .period-new { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-ink); }
+.grade-editor-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.topic-form { display: flex; gap: 6px; align-items: center; }
+.topic-form input { min-height: 34px; width: 240px; }
+.sheet-scroll { max-height: min(68vh, 760px); overflow: auto; border: 1px solid var(--line); border-radius: var(--r-panel); background: var(--sheet); }
+.grade-sheet { border-collapse: separate; border-spacing: 0; min-width: 100%; font-variant-numeric: tabular-nums; }
+.grade-sheet.is-loading { opacity: .55; transition: opacity .15s; }
+.grade-sheet th, .grade-sheet td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+.grade-sheet thead th { position: sticky; top: 0; z-index: 2; padding: 10px 12px; background: var(--panel); text-align: center; vertical-align: bottom; font-size: 13px; font-weight: 600; min-width: 112px; }
+.grade-sheet thead th span { display: block; max-width: 180px; margin: 0 auto; line-height: 1.25; }
+.grade-sheet thead th small { display: block; margin-top: 2px; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+.grade-sheet .sheet-name { position: sticky; left: 0; z-index: 1; min-width: 220px; max-width: 280px; padding: 0 14px; background: var(--sheet); text-align: left; font-weight: 400; }
+.grade-sheet thead .sheet-name { z-index: 3; background: var(--panel); text-align: left; }
+.grade-sheet .sheet-name b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 14px; }
+.grade-sheet td { padding: 0; }
+.grade-sheet td input:not([type=checkbox]) { display: block; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: 0; background: transparent; text-align: center; font-size: 15px; box-shadow: none; transition: background-color .12s; }
+.grade-sheet td input:not([type=checkbox]):focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.grade-sheet td.is-edited { background: #fff7e0; }
+.grade-sheet td.is-low input { color: var(--low); font-weight: 600; }
+.grade-sheet td.is-invalid { background: var(--low-bg); box-shadow: inset 0 0 0 2px var(--low); }
+.grade-sheet .sheet-avg { min-width: 96px; padding: 0 12px; background: var(--panel); text-align: center; font-weight: 600; }
+.grade-sheet td.sheet-avg.is-low { color: var(--low); }
+.grade-sheet tbody tr:hover .sheet-name, .grade-sheet tbody tr:focus-within .sheet-name { background: var(--panel); }
+.sheet-help { color: var(--ink-3); font-size: 13px; }
+.sheet-help kbd { padding: 1px 6px; border: 1px solid var(--control); border-bottom-width: 2px; border-radius: 5px; background: var(--sheet); font: 500 12px/1.4 var(--sans); }
+.btn-ghost-inverse { background: transparent; color: var(--on-inverse); border-color: rgb(255 255 255 / 25%); }
+.grade-editor-skeleton { display: flex; align-items: center; gap: 10px; padding: 48px; color: var(--ink-2); justify-content: center; }
+
+/* Quick add */
+.quick-add textarea { width: 100%; min-height: 168px; resize: vertical; font-size: 15px; line-height: 1.6; }
+.quick-count { margin-right: auto; font-size: 14px; }
+.quick-skipped { margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: var(--medium-bg); color: var(--ink-2); font-size: 14px; }
+.quick-skipped ul { margin-top: 4px; padding-left: 18px; list-style: disc; }
+
+/* Keep notifications above a visible save bar instead of covering it */
+body:has(.save-bar.is-visible) .toast-region { bottom: 92px; }
