@@ -1,5 +1,5 @@
 import type { Course, CourseMaterial, GeneratedWorkshop } from '../api'
-import { plural, type Candidate, type CourseSummary, type SubjectInsight } from './domain'
+import { formatGrade, plural, type Candidate, type CourseSummary, type SubjectInsight } from './domain'
 
 /** Every action the assistant can recommend maps to one concrete control in the app. */
 export type AssistantAction =
@@ -52,7 +52,7 @@ export function headline({ course, summary, weakest }: AssistantInput): string {
     const subject = weakest && weakest.average < 3.5 ? ` El tema con promedio más bajo es ${weakest.name}.` : ''
     return `${plural(summary.low, 'estudiante necesita', 'estudiantes necesitan')} refuerzo en ${course.name}.${subject}`
   }
-  return `${course.name} va bien: nadie está por debajo de 3,0.`
+  return `${course.name} va bien: nadie está por debajo de ${formatGrade(3)}.`
 }
 
 /** Ordered list of what the teacher should do next, built only from real course data. */

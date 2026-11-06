@@ -30,7 +30,7 @@ export function learningReportCsv(students: Candidate[]) {
   const columns = ['Estudiante', 'Correo', 'Promedio', 'Cantidad de notas', 'Estado', 'Observación']
   const rows = students.map(student => {
     const status = !student.hasGrades ? 'Sin notas' : levelLabel[student.level]
-    const reason = !student.hasGrades ? 'No tiene notas cargadas' : student.level === 'LOW' ? `Promedio menor a 3,0 en ${student.gradeCount} nota(s)` : student.level === 'MEDIUM' ? `Promedio entre 3,0 y menos de 4,0 en ${student.gradeCount} nota(s)` : `Promedio de 4,0 o más en ${student.gradeCount} nota(s)`
+    const reason = !student.hasGrades ? 'No tiene notas cargadas' : student.level === 'LOW' ? `Promedio menor a ${formatGrade(3)} en ${student.gradeCount} nota(s)` : student.level === 'MEDIUM' ? `Promedio entre 3,0 y menos de 4,0 en ${student.gradeCount} nota(s)` : `Promedio de 4,0 o más en ${student.gradeCount} nota(s)`
     return [student.name, student.email || '', student.hasGrades ? formatGrade(student.average) : '', String(student.gradeCount), status, reason]
   })
   return toCsv([columns, ...rows])

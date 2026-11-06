@@ -100,7 +100,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
               <span className="person-grade num">{formatGrade(student.average)}</span>
               <span className="person-cta">Ver recomendación</span>
             </button>
-          </li>)}</ul> : <EmptyState title={summary.gradeCount ? 'Nadie está por debajo de 3,0' : 'Aún no hay notas'} text={summary.gradeCount ? 'Cuando alguien baje de 3,0 aparecerá aquí con una recomendación.' : 'Carga las notas y te mostraré aquí quién necesita apoyo.'} />}
+          </li>)}</ul> : <EmptyState title={summary.gradeCount ? `Nadie está por debajo de ${formatGrade(3)}` : 'Aún no hay notas'} text={summary.gradeCount ? 'Cuando alguien baje de 3,0 aparecerá aquí con una recomendación.' : 'Carga las notas y te mostraré aquí quién necesita apoyo.'} />}
         </section>
 
         <section className="panel" aria-labelledby="levels-title">

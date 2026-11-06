@@ -49,7 +49,7 @@ export function Simulator({ workspace, review }: { workspace: PageProps['workspa
         <input id="whatif" type="range" min={0} max={5} step={0.1} value={whatIf} onChange={event => setWhatIf(Number(event.target.value))} className="range" />
       </div>
     </div>
-    <p className="explainer">{[counts.impossible ? `${plural(counts.impossible, 'estudiante ya no alcanza', 'estudiantes ya no alcanzan')} el 3,0.` : '', counts.hard ? `${plural(counts.hard, 'estudiante necesita', 'estudiantes necesitan')} más de 3,5 en lo que falta.` : '', !counts.impossible && !counts.hard ? 'Con las notas actuales, todos pueden aprobar sin necesitar más de 3,5 en lo que falta.' : ''].filter(Boolean).join(' ')} Para aprobar se necesita 3,0.</p>
+    <p className="explainer">{[counts.impossible ? `${plural(counts.impossible, 'estudiante ya no alcanza', 'estudiantes ya no alcanzan')} el ${formatGrade(3)}.` : '', counts.hard ? `${plural(counts.hard, 'estudiante necesita', 'estudiantes necesitan')} más de ${formatGrade(3.5)} en lo que falta.` : '', !counts.impossible && !counts.hard ? `Con las notas actuales, todos pueden aprobar sin necesitar más de ${formatGrade(3.5)} en lo que falta.` : ''].filter(Boolean).join(' ')} Para aprobar se necesita {formatGrade(3)}.</p>
     <label className="toggle"><input type="checkbox" checked={onlyRisk} onChange={event => setOnlyRisk(event.target.checked)} /> Ver solo estudiantes en riesgo</label>
     <div className="table-card"><table className="table">
       <caption className="visually-hidden">Nota necesaria para aprobar y nota final simulada de cada estudiante</caption>
