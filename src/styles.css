@@ -957,6 +957,55 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .btn-ghost-inverse { background: transparent; color: var(--on-inverse); border-color: rgb(255 255 255 / 25%); }
 .grade-editor-skeleton { display: flex; align-items: center; gap: 10px; padding: 48px; color: var(--ink-2); justify-content: center; }
 
+/* Grade book: column headers with percentage, scale, weight bar, inline add row, final grades */
+.period-tabs .period-final { display: inline-flex; align-items: center; gap: 5px; margin-left: 4px; border-left: 1px solid var(--line) !important; border-radius: 0 8px 8px 0; }
+.period-tabs .period-final.is-on { border-radius: 8px; }
+.grade-sheet thead th .col-head { position: relative; display: grid; justify-items: center; gap: 4px; }
+.col-name { display: inline-flex; align-items: center; gap: 4px; max-width: 180px; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; font-weight: 600; line-height: 1.25; cursor: pointer; }
+.col-name span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: center; }
+.col-name svg { flex: none; color: var(--ink-3); opacity: 0; transition: opacity .12s; }
+.col-name:hover, .col-name:focus-visible, .col-name[aria-expanded=true] { background: var(--panel-2); }
+.col-name:hover svg, .col-name:focus-visible svg, .col-name[aria-expanded=true] svg { opacity: 1; }
+.col-rename { width: 160px; min-height: 30px !important; font-size: 13px; text-align: center; }
+.col-weight { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px 0 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--sheet); color: var(--ink-3); font-size: 12px; font-weight: 500; transition: border-color .12s, box-shadow .12s; }
+.col-weight:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.col-weight.is-invalid { border-color: var(--low); background: var(--low-bg); }
+.grade-sheet thead .col-weight input { width: 44px; min-height: 24px; padding: 0 2px; border: 0; background: transparent; box-shadow: none; color: var(--ink); font: 600 13px/1 var(--sans); font-variant-numeric: tabular-nums; text-align: right; }
+.grade-sheet thead .col-weight input:focus { outline: none; }
+.grade-sheet thead .col-weight input::placeholder { color: var(--ink-3); font-weight: 400; }
+.col-menu { position: absolute; top: calc(100% + 6px); left: 50%; z-index: 10; display: grid; min-width: 210px; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--sheet); box-shadow: var(--shadow-float); transform: translateX(-50%); text-align: left; animation: menu-in .14s var(--ease-out); }
+.col-menu button { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--ink); font: 500 13.5px/1 var(--sans); text-align: left; }
+.col-menu button:hover:not(:disabled) { background: var(--panel-2); }
+.col-menu button:disabled { color: var(--ink-3); opacity: .6; }
+.col-menu button.is-danger { color: var(--low); }
+@keyframes menu-in { from { opacity: 0; transform: translate(-50%, -4px); } }
+.grade-sheet thead .sheet-name small { display: block; margin-top: 2px; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+.weight-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 14px; border-radius: 10px; background: var(--panel-2); color: var(--ink-2); font-size: 13.5px; }
+.weight-bar.is-complete { background: var(--high-bg); color: var(--ink); }
+.weight-bar.is-incomplete, .weight-bar.is-off { background: var(--medium-bg); color: var(--ink); }
+.weight-bar .weight-actions { display: flex; gap: 14px; margin-left: auto; font-size: 13px; }
+.sheet-notice { padding: 10px 14px; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; background: var(--accent-soft); color: var(--ink); font-size: 14px; }
+.scale-picker { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 4px 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--sheet); color: var(--ink-2); font-size: 13px; }
+.scale-picker label { font-weight: 500; }
+.scale-picker select { min-height: 30px; padding: 0 26px 0 6px; border: 0; background-color: transparent; box-shadow: none; font-weight: 600; color: var(--ink); }
+.scale-custom { display: inline-flex; align-items: center; gap: 4px; }
+.scale-custom input { width: 64px; min-height: 28px; padding: 0 6px; font-weight: 600; }
+.grade-sheet .add-row th, .grade-sheet .add-row td { border-bottom: 0; background: var(--panel); }
+.grade-sheet .add-row form { display: flex; align-items: center; gap: 8px; color: var(--ink-3); }
+.grade-sheet .add-row input { flex: 1; min-height: 40px; padding: 0; border: 0; background: transparent; box-shadow: none; font-size: 14px; }
+.grade-sheet .add-row input:focus { outline: none; }
+.grade-sheet .add-row:focus-within th { box-shadow: inset 3px 0 0 var(--accent); }
+.grade-sheet .add-row-hint { padding: 0 14px; color: var(--ink-3); font-size: 13px; }
+.final-grades { display: grid; gap: 12px; }
+.final-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.final-head p { max-width: 68ch; color: var(--ink-2); font-size: 14px; }
+.final-sheet td.final-cell { min-width: 112px; height: 44px; text-align: center; font-size: 15px; }
+.final-sheet td.final-cell.is-low, .final-sheet td.sheet-avg.is-low { color: var(--low); font-weight: 600; }
+.final-sheet .sheet-name { padding-top: 8px; padding-bottom: 8px; }
+.final-sheet .row-note { display: block; overflow: hidden; max-width: 260px; color: var(--ink-3); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.final-sheet .trend-mark { display: block; color: var(--ink-3); font-size: 11px; font-weight: 400; }
+.weight-warning { color: var(--low); font-size: 13.5px; font-weight: 500; }
+
 /* Quick add */
 .quick-add textarea { width: 100%; min-height: 168px; resize: vertical; font-size: 15px; line-height: 1.6; }
 .quick-count { margin-right: auto; font-size: 14px; }
