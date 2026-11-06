@@ -97,21 +97,37 @@ export interface Team {
   score?: number
   explanation?: string
 }
-export interface WorkshopActivity { title: string; instructions: string; estimatedMinutes: number }
+export interface WorkshopActivity {
+  title: string
+  /** "Al terminar podrás…" — older saved workshops do not have it. */
+  goal?: string
+  instructions: string
+  /** Graded hints for students who get stuck. */
+  hints?: string[]
+  /** What the student hands in. */
+  deliverable?: string
+  estimatedMinutes: number
+}
 export interface WorkshopQuestion { question: string; options: string[]; correctAnswer: string; explanation: string }
 export interface GeneratedWorkshop {
   title: string
   subject: string
   targetLevel: string
   summary: string
+  /** "Antes de empezar": the key idea with an example, for students. */
+  studentIntro?: string
   learningObjectives: string[]
   activities: WorkshopActivity[]
   assessment: WorkshopQuestion[]
   sourceReferences: string[]
+  /** Only for the teacher: preparation, common mistakes, how to close. Never in the students' copy. */
+  teacherNotes?: string[]
+  /** The teacher's own instructions, kept to regenerate or adjust the workshop. */
+  teacherPrompt?: string
   savedAt?: string
   /** Local account/course metadata; never included in the Gemini request. */
   targetStudentId?: number
-  supportType?: 'workshop' | 'quiz'
+  supportType?: 'workshop' | 'quiz' | 'custom'
   /** Kinds of work requested (CODE, DEPLOY…); kept locally to label the saved proposal. */
   activityStyles?: string[]
 }
