@@ -6,7 +6,9 @@
  */
 import type { Workbook, Worksheet } from 'exceljs'
 import { request } from '../api'
+import { gradeScale } from './domain'
 import { slugify } from './files'
+import { passingFor, plainNumber } from './gradeSheet'
 
 export const INSTRUCTIONS_SHEET = 'Instrucciones'
 const INK = 'FF14232A'
@@ -19,7 +21,8 @@ const MAX_ROWS = 300
 interface SheetData {
   period: string
   periods: string[]
-  subjects: { id: number; name: string }[]
+  columns: { id: number; name: string; weight: number | null }[]
+  maxGrade: number
   students: { id: number; name: string; email?: string | null }[]
   cells: { studentId: number; subjectId: number; grade: number }[]
 }
@@ -44,8 +47,8 @@ function styleHeader(sheet: Worksheet, columns: number) {
   sheet.views = [{ state: 'frozen', xSplit: 1, ySplit: 1 }]
 }
 
-/** Grades 0–5 with a clear message, and grades under 3,0 painted like the app paints them. */
-function gradeRules(sheet: Worksheet, firstCol: number, lastCol: number, lastRow: number) {
+/** Grades from 0 to the course maximum with a clear message, and failing grades painted like the app paints them. */
+function gradeRules(sheet: Worksheet, firstCol: number, lastCol: number, lastRow: number, max: number) {
   if (lastCol < firstCol) return
   const from = sheet.getColumn(firstCol).letter
   const to = sheet.getColumn(lastCol).letter
@@ -54,17 +57,17 @@ function gradeRules(sheet: Worksheet, firstCol: number, lastCol: number, lastRow
     for (let c = firstCol; c <= lastCol; c++) {
       const cell = sheet.getRow(r).getCell(c)
       cell.dataValidation = {
-        type: 'decimal', operator: 'between', formulae: [0, 5], allowBlank: true, showErrorMessage: true,
-        errorStyle: 'stop', errorTitle: 'Nota fuera de rango', error: 'Escribe una nota entre 0 y 5, por ejemplo 3,5.',
+        type: 'decimal', operator: 'between', formulae: [0, max], allowBlank: true, showErrorMessage: true,
+        errorStyle: 'stop', errorTitle: 'Nota fuera de rango', error: `Escribe una nota entre 0 y ${plainNumber(max)}, por ejemplo ${plainNumber(max * 0.7)}.`,
         showInputMessage: false,
       }
-      cell.numFmt = '0.0#'
+      cell.numFmt = max > 20 ? '0.##' : '0.0#'
       cell.alignment = { horizontal: 'center' }
     }
   }
   sheet.addConditionalFormatting({
     ref: range,
-    rules: [{ type: 'cellIs', operator: 'lessThan', formulae: [3], priority: 1,
+    rules: [{ type: 'cellIs', operator: 'lessThan', formulae: [passingFor(max)], priority: 1,
       style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: LOW_FILL } }, font: { color: { argb: LOW_TEXT }, bold: true } } }],
   })
 }
@@ -95,7 +98,7 @@ function instructions(workbook: Workbook, title: string, steps: string[], exampl
   return sheet
 }
 
-function gradeSheet(workbook: Workbook, name: string, topics: string[], students: { name: string; email?: string | null }[], value?: (row: number, col: number) => number | undefined) {
+function gradeSheet(workbook: Workbook, name: string, topics: string[], students: { name: string; email?: string | null }[], max: number, value?: (row: number, col: number) => number | undefined) {
   const sheet = workbook.addWorksheet(name.slice(0, 31))
   sheet.columns = [
     { header: 'Estudiante', key: 'name', width: 34 },
@@ -108,7 +111,7 @@ function gradeSheet(workbook: Workbook, name: string, topics: string[], students
     row.getCell(2).font = { color: { argb: 'FF4B6168' } }
   })
   styleHeader(sheet, 2 + topics.length)
-  gradeRules(sheet, 3, 2 + topics.length, Math.max(students.length + 1, MAX_ROWS))
+  gradeRules(sheet, 3, 2 + topics.length, Math.max(students.length + 1, MAX_ROWS), max)
   return sheet
 }
 
@@ -121,12 +124,13 @@ async function save(workbook: Workbook, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-const GRADE_STEPS = [
+const gradeSteps = (max: number) => [
   'Cada hoja es un corte. Cambia el nombre de la pestaña si tu corte se llama distinto (por ejemplo "Parcial final").',
   'En la columna Estudiante escribe el nombre tal como está en FairTeam. El correo es opcional, pero ayuda cuando hay nombres repetidos.',
   'Cada columna desde la C es un tema o actividad. Cambia "Tema 1", "Tema 2"… por los tuyos y agrega las columnas que necesites.',
-  'Escribe notas de 0 a 5. Puedes usar coma o punto (3,5 o 3.5). Deja la celda vacía si aún no tienes esa nota.',
-  'Para otro corte, duplica una hoja y cámbiale el nombre. Las notas bajo 3,0 se pintan solas para que las veas.',
+  `Escribe notas de 0 a ${plainNumber(max)}. Puedes usar coma o punto (${plainNumber(max * 0.7)} o ${String(Math.round(max * 70) / 100)}). Deja la celda vacía si aún no tienes esa nota.`,
+  `Para otro corte, duplica una hoja y cámbiale el nombre. Las notas bajo ${plainNumber(passingFor(max))} se pintan solas para que las veas.`,
+  'El porcentaje de cada columna y el peso de cada corte se ponen en FairTeam, en Estudiantes y notas → Notas.',
   'En FairTeam ve a Estudiantes y notas → Importar notas y elige este archivo. Esta hoja de instrucciones se ignora.',
 ]
 
@@ -149,11 +153,12 @@ export async function downloadRosterTemplate() {
 /** Empty grade template in the grid layout. */
 export async function downloadGradesTemplate() {
   const workbook = await newWorkbook()
-  gradeSheet(workbook, 'Corte 1', ['Tema 1', 'Tema 2', 'Tema 3'], [])
-  instructions(workbook, 'Cómo llenar las notas', GRADE_STEPS, [
+  const max = gradeScale()
+  gradeSheet(workbook, 'Corte 1', ['Tema 1', 'Tema 2', 'Tema 3'], [], max)
+  instructions(workbook, 'Cómo llenar las notas', gradeSteps(max), [
     ['Estudiante', 'Correo', 'Parcial 1', 'Taller Observer', 'Proyecto'],
-    ['Laura Méndez Ríos', 'laura.mendez@universidad.edu.co', '3,8', '4,2', '4,0'],
-    ['Camilo Rojas Torres', '', '2,6', '3,1', ''],
+    ['Laura Méndez Ríos', 'laura.mendez@universidad.edu.co', ...[3.8, 4.2, 4].map(v => plainNumber(v / 5 * max))],
+    ['Camilo Rojas Torres', '', ...[2.6, 3.1].map(v => plainNumber(v / 5 * max)), ''],
   ])
   await save(workbook, 'plantilla-notas-fairteam.xlsx')
 }
@@ -167,15 +172,18 @@ export async function downloadCourseGradeWorkbook(courseId: number, courseName: 
   const periods = first.periods.length ? first.periods : [first.period]
   const sheets = await Promise.all(periods.map(period => period === first.period ? first
     : request<SheetData>(`/api/courses/${courseId}/grade-sheet?period=${encodeURIComponent(period)}`)))
-  const topics = first.subjects.length ? first.subjects : [{ id: -1, name: 'Tema 1' }]
+  const max = first.maxGrade
+  const fallback = sheets.find(data => data.columns.length)?.columns ?? [{ id: -1, name: 'Tema 1', weight: null }]
   const workbook = await newWorkbook()
   for (const data of sheets) {
+    const topics = data.columns.length ? data.columns : fallback
     const grades = new Map(data.cells.map(cell => [`${cell.studentId}:${cell.subjectId}`, Number(cell.grade)]))
-    gradeSheet(workbook, data.period, topics.map(t => t.name), data.students,
+    gradeSheet(workbook, data.period, topics.map(t => t.name), data.students, max,
       (r, c) => grades.get(`${data.students[r].id}:${topics[c].id}`))
   }
+  const last = sheets[sheets.length - 1]
   const next = periods.map(p => Number(/(\d+)\D*$/.exec(p)?.[1])).filter(Number.isFinite)
-  gradeSheet(workbook, `Corte ${next.length ? Math.max(...next) + 1 : 1}`, topics.map(t => t.name), first.students)
-  instructions(workbook, `Notas de ${courseName}`, GRADE_STEPS)
+  gradeSheet(workbook, `Corte ${next.length ? Math.max(...next) + 1 : 1}`, (last.columns.length ? last.columns : fallback).map(t => t.name), first.students, max)
+  instructions(workbook, `Notas de ${courseName} (de 0 a ${plainNumber(max)})`, gradeSteps(max))
   await save(workbook, `notas-${slugify(courseName) || 'curso'}.xlsx`)
 }

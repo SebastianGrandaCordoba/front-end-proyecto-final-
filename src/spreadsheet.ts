@@ -1,3 +1,5 @@
+import { gradeScale } from './lib/domain'
+
 export type ImportKind = 'roster' | 'grades'
 
 const headerAliases: Record<ImportKind, Record<string, string>> = {
@@ -52,9 +54,11 @@ export async function normalizeSpreadsheetRows(rows: unknown[][], kind: ImportKi
     if (kind === 'grades' && gradeIndex >= 0) {
       const rawGrade = String(normalized[gradeIndex] ?? '').trim().replace(',', '.')
       const grade = Number(rawGrade)
-      if (!Number.isFinite(grade) || grade < 0 || grade > 5) {
+      // The file is written in the course scale (0–5, 0–10, 0–100…); the backend converts it.
+      const max = gradeScale()
+      if (!Number.isFinite(grade) || grade < 0 || grade > max) {
         const who = String(normalized[outputHeaders.indexOf('studentName')] ?? '').trim()
-        throw new Error(`La nota "${rawGrade || 'vacía'}"${who ? ` de ${who}` : ''} no está entre 0 y 5. Corrige el Excel y vuelve a importarlo.`)
+        throw new Error(`La nota "${rawGrade || 'vacía'}"${who ? ` de ${who}` : ''} no está entre 0 y ${String(max).replace('.', ',')}. Corrige el Excel y vuelve a importarlo.`)
       }
       normalized[gradeIndex] = grade.toFixed(2)
     }
