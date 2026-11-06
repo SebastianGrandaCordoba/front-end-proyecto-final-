@@ -47,7 +47,7 @@ export default function StudentDetail({ student, trend, projection, grades, subj
       <p className="privacy-note">Al generar, la IA recibe el material y el nivel; nunca el nombre ni las notas del estudiante.</p>
       <div className="modal-actions">
         <button className="btn btn-ghost" onClick={onMessage}><MessageSquareText size={16} aria-hidden />Escribirle</button>
-        <button className="btn btn-secondary" onClick={() => onStart('quiz')}><ListChecks size={16} aria-hidden />Quiz de 3 preguntas</button>
+        <button className="btn btn-secondary" onClick={() => onStart('quiz')}><ListChecks size={16} aria-hidden />Quiz rápido</button>
         <button className="btn btn-primary" onClick={() => onStart('workshop')}><Sparkles size={16} aria-hidden />Taller de apoyo</button>
       </div>
     </div>

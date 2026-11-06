@@ -124,7 +124,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
           <header className="panel-head"><h2 id="recent-title">Talleres recientes</h2>{workshops.length > 0 && <span className="count">{workshops.length}</span>}<a className="link" href="#/talleres">Crear uno</a></header>
           {workshops.length ? <ul className="files">{workshops.slice(0, 4).map(item => <li key={`${item.title}-${item.savedAt}`}>
             <button className="file-row" onClick={() => navigate('talleres', { ver: item.title })}>
-              <BookOpen size={17} aria-hidden /><span><b>{item.title}</b><small>{item.supportType === 'quiz' ? 'Quiz' : 'Taller'} · <LevelText level={item.targetLevel} /> · {relativeDate(item.savedAt)}</small></span>
+              <BookOpen size={17} aria-hidden /><span><b>{item.title}</b><small>{item.supportType === 'quiz' ? 'Quiz' : item.supportType === 'custom' ? 'A tu medida' : 'Taller'} · <LevelText level={item.targetLevel} /> · {relativeDate(item.savedAt)}</small></span>
             </button></li>)}</ul> : <EmptyState title="Aún no has creado talleres" text="Elige un material y un tema; el taller queda listo para revisar y descargar." />}
         </section>
 
