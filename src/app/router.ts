@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type Route = 'inicio' | 'estudiantes' | 'seguimiento' | 'talleres' | 'equipos' | 'cursos' | 'ajustes'
-const routes: Route[] = ['inicio', 'estudiantes', 'seguimiento', 'talleres', 'equipos', 'cursos', 'ajustes']
+export type Route = 'inicio' | 'estudiantes' | 'seguimiento' | 'talleres' | 'rubricas' | 'equipos' | 'cursos' | 'ajustes'
+const routes: Route[] = ['inicio', 'estudiantes', 'seguimiento', 'talleres', 'rubricas', 'equipos', 'cursos', 'ajustes']
 
 export type Location = { route: Route; params: URLSearchParams }
 

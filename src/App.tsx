@@ -24,11 +24,12 @@ const StudentsPage = lazy(() => import('./pages/StudentsPage'))
 const FollowUpPage = lazy(() => import('./pages/FollowUpPage'))
 const WorkshopsPage = lazy(() => import('./pages/WorkshopsPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
+const RubricsPage = lazy(() => import('./pages/RubricsPage'))
 const CoursesPage = lazy(() => import('./pages/CoursesPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 const titles: Record<Route, string> = {
-  inicio: 'Inicio', estudiantes: 'Estudiantes y notas', seguimiento: 'Seguimiento', talleres: 'Talleres y quizzes', equipos: 'Equipos', cursos: 'Mis cursos', ajustes: 'Ajustes',
+  inicio: 'Inicio', estudiantes: 'Estudiantes y notas', seguimiento: 'Seguimiento', talleres: 'Talleres y quizzes', rubricas: 'Rúbricas', equipos: 'Equipos', cursos: 'Mis cursos', ajustes: 'Ajustes',
 }
 
 export default function App({ user, onLogout }: { user: TeacherProfile; onLogout: () => void }) {
@@ -58,7 +59,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   // "?" shows the shortcuts; "g" then a letter jumps to a screen. Ignored while typing.
   useEffect(() => {
     let pendingG = 0
-    const goto: Record<string, Route> = { i: 'inicio', e: 'estudiantes', s: 'seguimiento', t: 'talleres', q: 'equipos', c: 'cursos' }
+    const goto: Record<string, Route> = { i: 'inicio', e: 'estudiantes', s: 'seguimiento', t: 'talleres', r: 'rubricas', q: 'equipos', c: 'cursos' }
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.closest?.('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return
@@ -120,6 +121,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
           {route === 'estudiantes' && <StudentsPage {...pageProps} params={params} />}
           {route === 'seguimiento' && <FollowUpPage {...pageProps} params={params} />}
           {route === 'talleres' && <WorkshopsPage {...pageProps} intent={intent} clearIntent={() => setIntent(null)} params={params} />}
+          {route === 'rubricas' && <RubricsPage {...pageProps} params={params} />}
           {route === 'equipos' && <TeamsPage {...pageProps} />}
         </>}
         {route === 'cursos' && <CoursesPage {...pageProps} params={params} />}

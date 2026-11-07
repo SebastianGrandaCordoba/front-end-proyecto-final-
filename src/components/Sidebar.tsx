@@ -1,4 +1,4 @@
-import { BookOpenCheck, ChevronsUpDown, FolderOpen, Home, LogOut, Settings, Users, UsersRound, Activity, X } from 'lucide-react'
+import { BookOpenCheck, ChevronsUpDown, ClipboardCheck, FolderOpen, Home, LogOut, Settings, Users, UsersRound, Activity, X } from 'lucide-react'
 import type { Course, TeacherProfile } from '../api'
 import FairTeamMark from '../FairTeamMark'
 import type { Navigate, Route } from '../app/router'
@@ -8,6 +8,7 @@ export const nav: { route: Route; label: string; icon: typeof Home; needsCourse?
   { route: 'estudiantes', label: 'Estudiantes y notas', icon: Users, needsCourse: true },
   { route: 'seguimiento', label: 'Seguimiento', icon: Activity, needsCourse: true },
   { route: 'talleres', label: 'Talleres y quizzes', icon: BookOpenCheck, needsCourse: true },
+  { route: 'rubricas', label: 'Rúbricas', icon: ClipboardCheck, needsCourse: true },
   { route: 'equipos', label: 'Equipos', icon: UsersRound, needsCourse: true },
 ]
 
