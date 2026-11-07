@@ -1,9 +1,12 @@
-import { BookOpen, Clock3, Copy, Download, FileText, KeyRound, Lightbulb, NotebookPen, PackageCheck, Printer, Target } from 'lucide-react'
+import { BookOpen, ClipboardCheck, Clock3, Copy, Download, FileText, KeyRound, Layers, Lightbulb, NotebookPen, PackageCheck, Printer, Target } from 'lucide-react'
 import { RichText } from '../../components/RichText'
 import { ACTIVITY_STYLES } from '../../lib/activityStyles'
 import { type GeneratedWorkshop } from '../../api'
 import { downloadWorkshopDocument, printWorkshop } from '../../lib/files'
 import { levelLabel, levelOf } from '../../lib/domain'
+import type { AcademicLevel } from '../../api'
+
+const variantLabel: Record<AcademicLevel, string> = { LOW: 'Refuerzo', MEDIUM: 'Seguimiento', HIGH: 'Reto' }
 
 const kindLabel = { workshop: 'Taller', quiz: 'Quiz', custom: 'A tu medida' } as const
 
@@ -11,13 +14,15 @@ const kindLabel = { workshop: 'Taller', quiz: 'Quiz', custom: 'A tu medida' } as
  * The generated activity as the teacher reviews it: what students read first, each activity with its
  * purpose, steps, hints and deliverable, the questions with their key and the notes only the teacher sees.
  */
-export function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz, onAdjust }: {
+export function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz, onAdjust, onVariant, onRubric }: {
   workshop: GeneratedWorkshop
   onCopy: () => void
   onNew: () => void
   onEdit: (next: GeneratedWorkshop) => void
   onQuiz?: () => void
   onAdjust?: () => void
+  onVariant?: (level: AcademicLevel) => void
+  onRubric?: () => void
 }) {
   const type = workshop.supportType ?? 'workshop'
   const isQuiz = type === 'quiz'
@@ -41,6 +46,12 @@ export function WorkshopView({ workshop, onCopy, onNew, onEdit, onQuiz, onAdjust
       {!isQuiz && onQuiz && <button className="btn btn-ghost btn-small" onClick={onQuiz}>Hacer un quiz del tema</button>}
       <button className="btn btn-ghost btn-small" onClick={onNew}>Crear otra</button>
     </div>
+    {(onVariant || onRubric) && <div className="workshop-next" aria-label="Siguientes pasos">
+      {onVariant && <div className="variant-row"><Layers size={15} aria-hidden /><span>Misma actividad para otro nivel:</span>
+        {(['LOW', 'MEDIUM', 'HIGH'] as const).filter(level => level !== levelOf(workshop.targetLevel)).map(level =>
+          <button key={level} className="chip" onClick={() => onVariant(level)}>{variantLabel[level]}</button>)}</div>}
+      {onRubric && !isQuiz && <button className="btn btn-secondary btn-small" onClick={onRubric}><ClipboardCheck size={15} aria-hidden />Crear rúbrica para calificarlo</button>}
+    </div>}
 
     {workshop.studentIntro && <section className="w-section w-intro"><h3><BookOpen size={16} aria-hidden />Antes de empezar</h3><RichText text={workshop.studentIntro} /></section>}
 

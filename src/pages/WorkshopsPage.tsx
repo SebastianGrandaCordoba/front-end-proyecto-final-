@@ -25,7 +25,7 @@ const stages = [
   { at: 60, text: 'Ya casi. Los talleres largos tardan un poco más…' },
 ]
 
-export default function WorkshopsPage({ workspace, intent, clearIntent, params }: PageProps & { intent: WorkshopIntent | null; clearIntent: () => void; params: URLSearchParams }) {
+export default function WorkshopsPage({ workspace, navigate, intent, clearIntent, params }: PageProps & { intent: WorkshopIntent | null; clearIntent: () => void; params: URLSearchParams }) {
   const { course, materials, summary, insights, workshops } = workspace
   const { notify, confirm } = useFeedback()
   const viewTitle = params.get('ver')
@@ -111,7 +111,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
     } catch (err) { notify(err instanceof Error ? err.message : 'No se pudo quitar el material.', 'error') }
   }
 
-  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student'] } = {}) {
+  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop } = {}) {
     if (!course) return
     const ids = options.materialIds ?? selected
     const useMode = options.mode ?? mode
@@ -140,7 +140,12 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
     form.append('learningContext', context.slice(0, 2500))
     form.append('generationType', custom ? 'CUSTOM' : useMode === 'quiz' ? 'QUIZ' : 'WORKSHOP')
     if (workStyles.length) form.append('activityStyles', workStyles.join(','))
-    const instructions = (custom ? prompt : extra).trim()
+    const variant = options.variantOf
+    // A level variant keeps the topic and structure of the original and only moves the difficulty.
+    const instructions = [
+      variant?.teacherPrompt ?? (custom ? prompt : extra),
+      variant ? `Es una versión de nivel ${levelLabel[useLevel].toLowerCase()} del trabajo "${variant.title}": conserva el tema, el tipo de actividades y la duración; cambia solo la dificultad, el apoyo y los ejemplos.` : '',
+    ].map(text => text.trim()).filter(Boolean).join('\n\n')
     if (instructions) form.append('teacherPrompt', instructions.slice(0, 2000))
     if (ids.length > 1) ids.forEach(id => form.append('materialIds', String(id)))
     // One material, several, or none at all for a request written by the teacher.
@@ -155,7 +160,7 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
       const named = student ? {
         ...response,
         ...(useMode === 'quiz' ? { title: `Quiz · ${topic.trim() || response.subject} · ${firstName(student.name)}` } : { title: `${response.title} · ${firstName(student.name)}` }),
-        targetStudentId: student.id } : response
+        targetStudentId: student.id } : variant ? { ...response, title: `${response.title} · ${({ LOW: 'Refuerzo', MEDIUM: 'Seguimiento', HIGH: 'Reto' } as const)[useLevel]}` } : response
       const saved = workspace.saveWorkshop({ ...named, supportType: useMode, activityStyles: workStyles, ...(instructions ? { teacherPrompt: instructions } : {}) })
       setResult(saved)
       clearIntent()
@@ -256,6 +261,8 @@ export default function WorkshopsPage({ workspace, intent, clearIntent, params }
           <button className="btn btn-ghost btn-small" onClick={() => abort.current?.abort()}>Cancelar</button>
         </div>
           : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+            onVariant={next => void generate({ mode: result.supportType ?? 'workshop', level: next, variantOf: result })}
+            onRubric={() => navigate('rubricas', { taller: result.title })}
             onAdjust={() => { if (result.teacherPrompt) { if (result.supportType === 'custom') setPrompt(result.teacherPrompt); else setExtra(result.teacherPrompt) } setMode(result.supportType ?? 'workshop'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
               : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text={mode === 'custom' ? 'Escribe lo que necesitas como se lo dirías a un colega: tema, cuántas actividades, cuánto tiempo y qué entregan. Yo lo armo con pistas, entregas y clave de respuestas.' : 'Con una explicación para empezar, actividades paso a paso con pistas y entregas, y preguntas con su respuesta. Podrás descargar la hoja para estudiantes y una clave solo para ti.'} /></div>}
