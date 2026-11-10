@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, Check, ChevronDown, ChevronUp, Compass, Minus, SkipForward, X } from 'lucide-react'
 import type { Navigate, Route } from '../app/router'
 import Owl from './Owl'
+import { request } from '../api'
 import {
   GUIDE, GUIDE_EVENT, GUIDE_OPEN_EVENT, currentStep, findTarget, initialGuide, markDone, readGuide, writeGuide,
   type GuideState, type GuideStep, type GuideStepId,
@@ -20,7 +21,37 @@ export default function Guide({ userId, route, params, navigate, signals, onQuic
 }) {
   const key = `fairteam.guide.${userId}`
   const [state, setState] = useState<GuideState>(() => readGuide(key) ?? initialGuide)
-  const [welcome, setWelcome] = useState(() => readGuide(key) === null)
+  const [welcome, setWelcome] = useState(false)
+  // The account keeps the progress (any device); this browser's copy is only a fallback when the server is unreachable.
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    let alive = true
+    setLoaded(false)
+    void (async () => {
+      const local = readGuide(key)
+      try {
+        const saved = await request<Partial<GuideState> | undefined>('/api/me/guide')
+        if (!alive) return
+        if (saved) { setState({ ...initialGuide, ...saved }); setWelcome(false) }
+        else if (local) { setState(local); setWelcome(false); void request('/api/me/guide', { method: 'PUT', body: JSON.stringify(local) }).catch(() => {}) }
+        else { setState(initialGuide); setWelcome(true) }
+      } catch {
+        if (!alive) return
+        setState(local ?? initialGuide); setWelcome(local === null)
+      }
+      setLoaded(true)
+    })()
+    return () => { alive = false }
+  }, [key])
+  // Every change goes to this browser at once and to the account a moment later.
+  const firstSave = useRef(true)
+  useEffect(() => {
+    if (!loaded) return
+    if (firstSave.current) { firstSave.current = false; return }
+    writeGuide(key, state)
+    const timer = window.setTimeout(() => { void request('/api/me/guide', { method: 'PUT', body: JSON.stringify(state) }).catch(() => {}) }, 500)
+    return () => window.clearTimeout(timer)
+  }, [state, loaded, key])
   const [showAll, setShowAll] = useState(false)
   const [focus, setFocus] = useState<GuideStepId | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
@@ -132,7 +163,7 @@ export default function Guide({ userId, route, params, navigate, signals, onQuic
     return () => window.removeEventListener('keydown', onKey)
   }, [welcome, later])
 
-  if (!state.open) return null
+  if (!loaded || !state.open) return null
 
   if (welcome) {
     return <div className="guide guide-welcome" role="dialog" aria-labelledby="guide-welcome-title">
