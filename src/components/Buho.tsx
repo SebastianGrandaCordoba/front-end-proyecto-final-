@@ -53,6 +53,11 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   /** Asks the backend (insights assistant). Returns null when the course or the server is not available. */
   const fetchReply = useCallback(async (question: string): Promise<BuhoReply | null> => {
     const { courseId, candidates } = contextRef.current
+    // "¿Cómo se usa?", "muéstrame el tutorial": the guided tour answers better than words.
+    if (/tutorial|recorrido|c[oó]mo (se )?usa|c[oó]mo funciona (la|esta) (app|plataforma)|ens[eé]ñame a usar/i.test(question)) {
+      window.setTimeout(() => window.dispatchEvent(new Event('fairteam:tour')), 600)
+      return { text: 'Te abro el recorrido guiado: te muestro cada sección en la pantalla real. Puedes volver a verlo cuando quieras desde Ajustes.' }
+    }
     if (!courseId) return { text: 'Primero crea o elige un curso y te ayudo con todo lo demás.', actions: [{ kind: 'navigate', label: 'Mis cursos', route: 'cursos' }] }
     try {
       const api = await request<ApiReply>(`/api/courses/${courseId}/assistant`, { method: 'POST', body: JSON.stringify({ question }) })
