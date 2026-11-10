@@ -4,7 +4,7 @@ import { API_BASE, request, type TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import { Segmented, Spinner, useFeedback } from '../components/ui'
 import { saveTheme, storedTheme, type ThemePreference } from '../lib/theme'
-import { canSpeak, setSpeechRate, speak, speechRate } from '../lib/speech'
+import { canSpeak, naturalVoice, setNaturalVoice, setSpeechRate, speak, speechRate } from '../lib/speech'
 import { downloadTemplate, downloadText } from '../lib/files'
 import { plural } from '../lib/domain'
 import { DemoButton } from '../components/DemoButton'
@@ -15,6 +15,7 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
   const [checking, setChecking] = useState(false)
   const [theme, setTheme] = useState<ThemePreference>(storedTheme)
   const [rate, setRate] = useState(speechRate)
+  const [natural, setNatural] = useState(naturalVoice)
   const { course, students, grades, projects, teams, workshops } = workspace
 
   const check = async () => {
@@ -64,6 +65,11 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
 
     {canSpeak() && <section className="panel settings">
       <h2>Voz del Búho</h2>
+      <div className="segmented" role="radiogroup" aria-label="Tipo de voz">
+        <button type="button" role="radio" aria-checked={natural} className={natural ? 'is-on' : ''} onClick={() => { setNatural(true); setNaturalVoice(true) }}>Natural</button>
+        <button type="button" role="radio" aria-checked={!natural} className={!natural ? 'is-on' : ''} onClick={() => { setNatural(false); setNaturalVoice(false) }}>Del navegador</button>
+      </div>
+      <p className="muted">{natural ? 'Voz cálida en español latino hecha con IA. Si no está disponible, uso la del navegador.' : 'La voz que trae tu navegador: funciona sin conexión con la IA, pero suena más robótica.'}</p>
       <label className="field">
         <span className="field-label">Velocidad <span className="muted num">{rate.toFixed(2).replace('.', ',')}×</span></span>
         <input type="range" className="range" min={0.8} max={1.3} step={0.05} value={rate} onChange={event => { const value = Number(event.target.value); setRate(value); setSpeechRate(value) }} />
