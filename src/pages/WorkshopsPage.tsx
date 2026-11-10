@@ -10,7 +10,7 @@ import { workshopAsText } from '../lib/files'
 import { fileSize, firstName, levelLabel, plural, relativeDate } from '../lib/domain'
 import { WorkshopView } from './workshops/WorkshopView'
 import { StylePicker } from './workshops/StylePicker'
-import { ACTIVITY_STYLES, goalFor, isExtended, type ActivityStyleId } from '../lib/activityStyles'
+import { ACTIVITY_STYLES, AREA_EXAMPLES, detectArea, goalFor, isExtended, stylesFor, type AcademicArea, type ActivityStyleId } from '../lib/activityStyles'
 import { Library } from './workshops/Library'
 import { KindPicker } from './workshops/KindPicker'
 import { MIN_PROMPT, PromptBox } from './workshops/PromptBox'
@@ -32,6 +32,16 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
   const [tab, setTab] = useState<Tab>('crear')
   const [mode, setMode] = useState<SupportMode>(intent?.mode ?? 'workshop')
   const [styles, setStyles] = useState<ActivityStyleId[]>(['GUIDED'])
+  // The kinds of work offered depend on the subject: a philosophy course never sees "deploy an app".
+  const detectedArea = useMemo(() => detectArea(course?.name, course?.description, ...insights.map(subject => subject.name)), [course?.name, course?.description, insights])
+  const areaKey = `fairteam.area.${course?.id ?? 'none'}`
+  const [area, setAreaState] = useState<AcademicArea>(() => (localStorage.getItem(areaKey) as AcademicArea | null) ?? detectedArea)
+  useEffect(() => { setAreaState((localStorage.getItem(areaKey) as AcademicArea | null) ?? detectedArea) }, [areaKey, detectedArea])
+  const setArea = (next: AcademicArea) => {
+    localStorage.setItem(areaKey, next); setAreaState(next)
+    const allowed = new Set(stylesFor(next).map(style => style.id))
+    setStyles(current => { const kept = current.filter(id => allowed.has(id)); return kept.length ? kept : ['GUIDED'] })
+  }
   const [level, setLevel] = useState<AcademicLevel>(intent?.level ?? (summary.low ? 'LOW' : 'MEDIUM'))
   const [target, setTarget] = useState(intent?.student ?? null)
   const [topic, setTopic] = useState(intent?.topic ?? '')
@@ -81,13 +91,25 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
   }, [generating])
   useEffect(() => () => abort.current?.abort(), [])
 
-  // From a student's card: reuse a saved proposal or generate right away with the newest material.
+  useEffect(() => { if (intent?.autoStart) autoStarted.current = false }, [intent])
+  // From Búho or a student's card: do the work right away. With material it uses the newest file; without
+  // material it writes the activity from the topic, so the teacher never lands on a form that waits for a click.
   useEffect(() => {
-    if (!intent?.autoStart || !intent.student || autoStarted.current || materials == null) return
+    if (!intent?.autoStart || autoStarted.current || materials == null) return
     autoStarted.current = true
-    const saved = workshops.find(item => item.targetStudentId === intent.student!.id && item.supportType === intent.mode)
-    if (saved) { setResult(saved); notify('Ya tenías una propuesta para este estudiante. Puedes revisarla o crear otra.', 'info'); return }
-    if (sortedMaterials.length) void generate({ materialIds: [sortedMaterials[0].id], mode: intent.mode, level: intent.level, student: intent.student })
+    if (intent.student) {
+      const saved = workshops.find(item => item.targetStudentId === intent.student!.id && item.supportType === intent.mode)
+      if (saved) { setResult(saved); notify('Ya tenías una propuesta para este estudiante. Puedes revisarla o crear otra.', 'info'); return }
+    }
+    const subject = intent.topic?.trim() || topicIdeas[0]?.name || ''
+    if (sortedMaterials.length) {
+      void generate({ materialIds: [sortedMaterials[0].id], mode: intent.mode, level: intent.level, student: intent.student, topic: subject })
+    } else {
+      const what = intent.mode === 'quiz' ? 'Un quiz de 6 preguntas' : 'Un taller de práctica con 3 actividades graduadas'
+      const about = subject ? ` sobre ${subject}` : ` sobre ${course?.name ?? 'el tema de la clase'}`
+      setMode('custom'); setPrompt(`${what}${about}, con ejemplos resueltos, pistas y clave de respuestas.`)
+      void generate({ mode: 'custom', level: intent.level, student: intent.student, topic: subject, prompt: `${what}${about}, con ejemplos resueltos, pistas y clave de respuestas.`, materialIds: [] })
+    }
   }, [intent, materials])
 
   const toggle = (material: CourseMaterial) => {
@@ -111,16 +133,17 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     } catch (err) { notify(err instanceof Error ? err.message : 'No se pudo quitar el material.', 'error') }
   }
 
-  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop } = {}) {
+  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop; topic?: string; prompt?: string } = {}) {
     if (!course) return
     const ids = options.materialIds ?? selected
     const useMode = options.mode ?? mode
     const useLevel = options.level ?? level
     const student = options.student ?? target
     const custom = useMode === 'custom'
+    const customPrompt = options.prompt ?? prompt
     if (!ids.length && !custom) { setError('Elige al menos un material o sube uno nuevo.'); return }
-    if (custom && prompt.trim().length < MIN_PROMPT) { setError('Cuéntame en una o dos frases qué taller quieres.'); return }
-    const topicText = topic.trim() || (useMode === 'quiz' ? 'conceptos clave del material' : 'conceptos clave del material de clase')
+    if (custom && customPrompt.trim().length < MIN_PROMPT) { setError('Cuéntame en una o dos frases qué taller quieres.'); return }
+    const topicText = (options.topic ?? topic).trim() || (useMode === 'quiz' ? 'conceptos clave del material' : 'conceptos clave del material de clase')
     const workStyles = useMode === 'workshop' ? styles : []
     const goal = custom ? objective.trim() : objective.trim() || (useMode === 'workshop' && goalFor(workStyles, topicText)) || (useMode === 'quiz'
       ? `Comprobar si ${topicText} quedó claro, con preguntas de comprensión y aplicación para nivel ${levelLabel[useLevel].toLowerCase()}.`
@@ -143,7 +166,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     const variant = options.variantOf
     // A level variant keeps the topic and structure of the original and only moves the difficulty.
     const instructions = [
-      variant?.teacherPrompt ?? (custom ? prompt : extra),
+      variant?.teacherPrompt ?? (custom ? customPrompt : extra),
       variant ? `Es una versión de nivel ${levelLabel[useLevel].toLowerCase()} del trabajo "${variant.title}": conserva el tema, el tipo de actividades y la duración; cambia solo la dificultad, el apoyo y los ejemplos.` : '',
     ].map(text => text.trim()).filter(Boolean).join('\n\n')
     if (instructions) form.append('teacherPrompt', instructions.slice(0, 2000))
@@ -161,7 +184,8 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
         ...response,
         ...(useMode === 'quiz' ? { title: `Quiz · ${topic.trim() || response.subject} · ${firstName(student.name)}` } : { title: `${response.title} · ${firstName(student.name)}` }),
         targetStudentId: student.id } : variant ? { ...response, title: `${response.title} · ${({ LOW: 'Refuerzo', MEDIUM: 'Seguimiento', HIGH: 'Reto' } as const)[useLevel]}` } : response
-      const saved = workspace.saveWorkshop({ ...named, supportType: useMode, activityStyles: workStyles, ...(instructions ? { teacherPrompt: instructions } : {}) })
+      const topicName = (options.topic ?? topic).trim() || (custom ? null : topicIdeas[0]?.name ?? null)
+      const saved = await workspace.saveWorkshop({ ...named, topic: topicName, supportType: useMode, activityStyles: workStyles, ...(instructions ? { teacherPrompt: instructions } : {}) })
       setResult(saved)
       clearIntent()
       notify(useMode === 'quiz' ? 'Quiz listo. Revísalo antes de usarlo.' : 'Listo. Revísalo antes de usarlo.')
@@ -185,7 +209,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     </header>
 
     {tab === 'biblioteca' ? <Library items={workshops} onOpen={item => { setResult(item); setTab('crear') }} onRemove={async item => {
-      if (await confirm({ title: '¿Borrar esta propuesta?', body: `“${item.title}” se quitará de tu biblioteca en este navegador.`, confirm: 'Borrar', danger: true })) { workspace.removeWorkshop(item.title); if (result?.title === item.title) setResult(null) }
+      if (await confirm({ title: '¿Borrar esta propuesta?', body: `“${item.title}” se quitará de tu biblioteca.${item.rubricCount ? ' Sus rúbricas se conservan.' : ''}`, confirm: 'Borrar', danger: true })) { try { await workspace.removeWorkshop(item); if (result?.id === item.id) setResult(null) } catch (err) { notify(err instanceof Error ? err.message : 'No se pudo borrar.', 'error') } }
     }} /> : <div className="builder">
       <form className="builder-form panel" onSubmit={submit} aria-label="Crear actividad">
         {target && <div className="target-chip"><span>Para <b>{target.name}</b> · <LevelPill level={target.level} hasGrades={target.hasGrades} /></span><button type="button" className="icon-btn" onClick={() => { setTarget(null); clearIntent() }} aria-label="Quitar estudiante"><X size={15} /></button></div>}
@@ -195,17 +219,17 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
         </fieldset>
 
         {mode === 'custom' ? <fieldset className="step"><legend><span className="step-n">2</span>Cuéntame cómo lo quieres</legend>
-          <PromptBox value={prompt} onChange={setPrompt} topic={topic || topicIdeas[0]?.name || ''} disabled={generating} />
+          <PromptBox value={prompt} onChange={setPrompt} topic={topic || topicIdeas[0]?.name || ''} disabled={generating} area={area} />
         </fieldset>
         : <fieldset className="step"><legend><span className="step-n">2</span>¿Sobre qué tema?</legend>
-          <input value={topic} onChange={event => setTopic(event.target.value)} maxLength={120} placeholder="Ej. ciclos for, derivadas, patrón Observer…" autoComplete="off" aria-label="Tema" />
+          <input value={topic} onChange={event => setTopic(event.target.value)} maxLength={120} placeholder={AREA_EXAMPLES[area].topic} autoComplete="off" aria-label="Tema" />
           {topicIdeas.length > 0 && !topic && <div className="ideas"><span>Según las notas, cuestan más:</span>{topicIdeas.map(idea => <button type="button" key={idea.id} className="chip" onClick={() => setTopic(idea.name)}>{idea.name}</button>)}</div>}
-          <Field label="¿Algo más que deba tener?" optional hint="Ej.: usa ejemplos de fútbol, que trabajen en parejas, incluye un ejercicio en Python.">
+          <Field label="¿Algo más que deba tener?" optional hint={AREA_EXAMPLES[area].extra}>
             <textarea rows={2} maxLength={2000} value={extra} onChange={event => setExtra(event.target.value)} placeholder="Escribe aquí tus indicaciones para la IA" />
           </Field>
           {mode === 'workshop' && <details className="more" open={styles.some(id => id !== 'GUIDED')}>
             <summary>Tipo de trabajo: <b>{styles.map(id => ACTIVITY_STYLES.find(style => style.id === id)?.label).join(', ')}</b> <ChevronDown size={15} aria-hidden /></summary>
-            <StylePicker value={styles} onChange={setStyles} disabled={generating} />
+            <StylePicker value={styles} onChange={setStyles} disabled={generating} area={area} onArea={setArea} />
             <p className="step-hint">{isExtended(styles) ? 'Un reto por etapas: empieza en clase y se termina fuera de ella, con entregables que puedes revisar.' : 'Práctica guiada para una clase.'}</p>
           </details>}
         </fieldset>}
@@ -260,9 +284,9 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
           <div className="gen-bar" aria-hidden><span style={{ transform: `scaleX(${Math.min(95, elapsed * 1.8) / 100})` }} /></div>
           <button className="btn btn-ghost btn-small" onClick={() => abort.current?.abort()}>Cancelar</button>
         </div>
-          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { workspace.removeWorkshop(result.title); setResult(workspace.saveWorkshop(next)) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { void workspace.saveWorkshop({ ...next, id: result.id }).then(setResult).catch(err => notify(err instanceof Error ? err.message : 'No se pudo guardar el cambio.', 'error')) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
             onVariant={next => void generate({ mode: result.supportType ?? 'workshop', level: next, variantOf: result })}
-            onRubric={() => navigate('rubricas', { taller: result.title })}
+            onRubric={() => navigate('rubricas', { taller: String(result.id ?? result.title) })}
             onAdjust={() => { if (result.teacherPrompt) { if (result.supportType === 'custom') setPrompt(result.teacherPrompt); else setExtra(result.teacherPrompt) } setMode(result.supportType ?? 'workshop'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
               : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text={mode === 'custom' ? 'Escribe lo que necesitas como se lo dirías a un colega: tema, cuántas actividades, cuánto tiempo y qué entregan. Yo lo armo con pistas, entregas y clave de respuestas.' : 'Con una explicación para empezar, actividades paso a paso con pistas y entregas, y preguntas con su respuesta. Podrás descargar la hoja para estudiantes y una clave solo para ti.'} /></div>}
