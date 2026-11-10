@@ -137,8 +137,8 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
   </section>
 }
 
-function LevelText({ level }: { level: string }) {
-  const value = level.toUpperCase()
+function LevelText({ level }: { level?: string | null }) {
+  const value = (level ?? '').toUpperCase()
   return <>{value.startsWith('L') || value.startsWith('B') ? 'refuerzo' : value.startsWith('H') || value.startsWith('A') ? 'avanzado' : 'seguimiento'}</>
 }
 

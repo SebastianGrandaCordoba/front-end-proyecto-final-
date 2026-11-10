@@ -2,14 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { request, type Course, type CourseMaterial, type GeneratedWorkshop, type Grade, type Project, type Student, type Team, type TeacherProfile } from '../api'
 import { buildCandidates, setGradeScale, summarize, type Subject } from '../lib/domain'
 import { adaptInsights, type ApiInsights, type Projection, type Trend } from '../lib/insights'
+import { fromActivity, toActivity, type ActivityView } from '../lib/activities'
 
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 function readJson<T>(key: string, fallback: T): T {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback } catch { return fallback }
-}
-function writeJson(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage full or blocked: keep working in memory */ }
 }
 
 /** All course data in one place, loaded in parallel and cached per course for instant switching. */
@@ -33,15 +31,27 @@ export function useWorkspace(user: TeacherProfile) {
   const [analysis, setAnalysis] = useState<ApiInsights | null>(null)
   const [analysisState, setAnalysisState] = useState<LoadState>('idle')
 
-  const workshopKey = `fairteam.workshops.${user.id}.${courseId ?? 'none'}`
-  const [workshops, setWorkshops] = useState<GeneratedWorkshop[]>(() => readJson(workshopKey, []))
-  const loadedWorkshopKey = useRef(workshopKey)
-  useEffect(() => {
-    const legacy = readJson<GeneratedWorkshop[] | null>(`fairteam.workshops.${user.id}`, null)
-    setWorkshops(readJson(workshopKey, legacy ?? []))
-    loadedWorkshopKey.current = workshopKey
-  }, [workshopKey, user.id])
-  useEffect(() => { if (loadedWorkshopKey.current === workshopKey) writeJson(workshopKey, workshops) }, [workshops, workshopKey])
+  // Saved workshops and quizzes live on the server (course_activities) so the grade book, rubrics and Búho
+  // see the same list on any device. Ones saved in this browser by older versions are uploaded once.
+  const [workshops, setWorkshops] = useState<GeneratedWorkshop[]>([])
+  const loadWorkshops = useCallback(async (id: number | null) => {
+    if (!id) { setWorkshops([]); return }
+    try {
+      let items = (await request<ActivityView[]>(`/api/courses/${id}/activities`)).map(fromActivity)
+      const legacyKey = `fairteam.workshops.${user.id}.${id}`
+      const legacy = readJson<GeneratedWorkshop[]>(legacyKey, [])
+      if (legacy.length) {
+        const known = new Set(items.map(item => item.title))
+        for (const item of legacy.filter(w => !known.has(w.title)).reverse()) {
+          try { items = [fromActivity(await request<ActivityView>(`/api/courses/${id}/activities`, { method: 'POST', body: JSON.stringify(toActivity(item)) })), ...items] }
+          catch { /* keep going: one bad item should not block the rest */ }
+        }
+        localStorage.removeItem(legacyKey)
+      }
+      setWorkshops(items)
+    } catch { setWorkshops([]) }
+  }, [user.id])
+  useEffect(() => { void loadWorkshops(courseId) }, [courseId, loadWorkshops])
 
   const setCourseId = useCallback((id: number | null) => {
     setCourseIdState(id)
@@ -116,13 +126,21 @@ export function useWorkspace(user: TeacherProfile) {
     })
   }, [courseId])
 
-  const saveWorkshop = useCallback((workshop: GeneratedWorkshop) => {
-    const stamped = { ...workshop, savedAt: new Date().toISOString() }
-    setWorkshops(list => [stamped, ...list.filter(item => item.title !== workshop.title)].slice(0, 30))
-    return stamped
-  }, [])
-  const removeWorkshop = useCallback((title: string) => setWorkshops(list => list.filter(item => item.title !== title)), [])
-  const clearWorkshops = useCallback(() => setWorkshops([]), [])
+  /** Saves (or updates, when it has an id) and returns the stored version with its id. */
+  const saveWorkshop = useCallback(async (workshop: GeneratedWorkshop) => {
+    if (!courseId) throw new Error('Elige un curso primero.')
+    const path = workshop.id ? `/api/courses/${courseId}/activities/${workshop.id}` : `/api/courses/${courseId}/activities`
+    const saved = fromActivity(await request<ActivityView>(path, { method: workshop.id ? 'PUT' : 'POST', body: JSON.stringify(toActivity(workshop)) }))
+    setWorkshops(list => [saved, ...list.filter(item => item.id !== saved.id)])
+    return saved
+  }, [courseId])
+  const removeWorkshop = useCallback(async (workshop: GeneratedWorkshop) => {
+    if (courseId && workshop.id) await request(`/api/courses/${courseId}/activities/${workshop.id}`, { method: 'DELETE' })
+    setWorkshops(list => list.filter(item => item !== workshop && (!workshop.id || item.id !== workshop.id)))
+  }, [courseId])
+  const clearWorkshops = useCallback(async () => {
+    for (const item of workshops) await removeWorkshop(item)
+  }, [workshops, removeWorkshop])
 
   const roster = useMemo(() => buildCandidates(students, grades), [students, grades])
   // Backend reading when available; until it arrives the tables use a plain local average.
@@ -154,7 +172,7 @@ export function useWorkspace(user: TeacherProfile) {
     trends, projections, sim, saveScheme, briefing, analysisState, distribution,
     materials, updateMaterials,
     projects, teams,
-    workshops, saveWorkshop, removeWorkshop, clearWorkshops,
+    workshops, saveWorkshop, removeWorkshop, clearWorkshops, loadWorkshops,
     refreshCourse, refreshAll, loadShared,
   }
 }

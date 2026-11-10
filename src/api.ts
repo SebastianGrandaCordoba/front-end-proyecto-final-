@@ -110,6 +110,12 @@ export interface WorkshopActivity {
 }
 export interface WorkshopQuestion { question: string; options: string[]; correctAnswer: string; explanation: string }
 export interface GeneratedWorkshop {
+  /** Id on the server (course_activities); missing only while it is being saved. */
+  id?: number
+  /** The topic of the course it belongs to: ties it to its grade book column and its rubrics. */
+  topic?: string | null
+  /** How many rubrics evaluate it. */
+  rubricCount?: number
   title: string
   subject: string
   targetLevel: string
