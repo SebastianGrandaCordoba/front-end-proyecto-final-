@@ -393,15 +393,23 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .workshop-actions .push { margin-left: auto; }
 
 /* Workshop builder: kind cards and the custom prompt */
-.kind-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.kind-card { display: grid; gap: 4px; align-content: start; padding: 14px 12px; border: 1px solid var(--control); border-radius: 14px; background: var(--sheet); text-align: left; transition: border-color .15s, background-color .15s, transform .12s var(--ease-out), box-shadow .15s; }
-.kind-card b { font-size: 15px; font-weight: 600; }
-.kind-card small { color: var(--ink-3); font-size: 12.5px; line-height: 1.35; }
-.kind-icon { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 4px; border-radius: 10px; background: var(--panel-2); color: var(--ink-2); transition: background-color .15s, color .15s; }
+/* The three choices are rows (icon, name, one line) in a narrow form and three cards when there is room. */
+.builder-form { container-type: inline-size; }
+.kind-picker { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.kind-card { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 12px; row-gap: 2px; align-items: center; min-height: 64px; padding: 12px 14px; border: 1px solid var(--control); border-radius: 14px; background: var(--sheet); text-align: left; transition: border-color .15s, background-color .15s, transform .12s var(--ease-out), box-shadow .15s; }
+.kind-card b { font-size: 15px; font-weight: 600; line-height: 1.2; }
+.kind-card small { grid-column: 2; color: var(--ink-3); font-size: 13px; line-height: 1.35; }
+.kind-icon { grid-row: span 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; background: var(--panel-2); color: var(--ink-2); transition: background-color .15s, color .15s; }
 .kind-card.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
 .kind-card.is-on .kind-icon { background: var(--accent); color: var(--on-accent); }
-.kind-card:active:not(:disabled) { transform: scale(.98); }
+.kind-card:active:not(:disabled) { transform: scale(.985); }
 @media (hover: hover) and (pointer: fine) { .kind-card:hover:not(.is-on) { border-color: var(--accent); } }
+@container (min-width: 560px) {
+  .kind-picker { grid-template-columns: repeat(3, 1fr); }
+  .kind-card { grid-template-columns: 1fr; grid-template-rows: auto; align-content: start; row-gap: 4px; min-height: 132px; }
+  .kind-card small { grid-column: 1; }
+  .kind-icon { grid-row: auto; margin-bottom: 6px; }
+}
 .prompt-box { display: grid; gap: 8px; }
 .prompt-box textarea { width: 100%; min-height: 150px; resize: vertical; font-size: 15px; line-height: 1.55; }
 .prompt-foot { display: flex; justify-content: flex-end; }
@@ -410,7 +418,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .prompt-ideas > span { display: inline-flex; align-items: center; gap: 4px; width: 100%; }
 .step legend .optional { margin-left: 6px; padding: 1px 8px; border-radius: 99px; background: var(--panel-2); color: var(--ink-3); font-size: 12px; font-weight: 500; }
 .more summary b { margin-left: 4px; color: var(--ink); font-weight: 500; }
-@media (max-width: 520px) { .kind-picker { grid-template-columns: 1fr; } .kind-card { grid-template-columns: auto 1fr; column-gap: 12px; } .kind-icon { grid-row: span 2; margin: 0; } }
+
 .questions { display: grid; gap: 14px; counter-reset: q; }
 .questions > li { counter-increment: q; }
 .questions > li > b { display: block; font-weight: 500; }
@@ -931,7 +939,7 @@ kbd { padding: 2px 7px; border: 1px solid var(--control); border-bottom-width: 2
 .roll-option.opt-absent.is-on { background: var(--low); color: #fff; }
 .roll-option.opt-late.is-on { background: var(--medium-dot); color: #2b1d02; }
 .roll-option.opt-excused.is-on { background: var(--accent); color: #fff; }
-.save-bar { position: sticky; bottom: 12px; display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--inverse); color: var(--on-inverse); box-shadow: var(--shadow-float); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s var(--ease-out), transform .2s var(--ease-out); }
+.save-bar { position: sticky; bottom: 12px; z-index: 20; display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 10px 10px 16px; border-radius: 14px; background: var(--inverse); color: var(--on-inverse); box-shadow: var(--shadow-float); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s var(--ease-out), transform .2s var(--ease-out); }
 .save-bar.is-visible { opacity: 1; transform: none; pointer-events: auto; }
 @media (max-width: 720px) {
   .roll-row { grid-template-columns: auto minmax(0, 1fr); }
@@ -1154,3 +1162,55 @@ body:has(.save-bar.is-visible) .toast-region { bottom: 92px; }
 .rubric-editor .sheet-scroll { max-height: none; }
 .rubric-table tbody th textarea, .rubric-table tbody th input { font-weight: 400; }
 .rubric-table tbody th .crit-name { font-weight: 600; }
+
+/* Grade book: drag handle and dragged column */
+.col-title { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; }
+.col-grip { display: grid; place-items: center; width: 18px; height: 26px; border-radius: 6px; color: var(--ink-3); cursor: grab; touch-action: none; opacity: .35; transition: opacity .12s, background-color .12s; }
+.grade-sheet th:hover .col-grip, .col-grip:active { opacity: 1; }
+.col-grip:hover { background: var(--panel-2); }
+.grade-sheet th.is-dragging { z-index: 4; cursor: grabbing; }
+.grade-sheet th.is-dragging, .grade-sheet td.is-dragging { position: relative; background: var(--accent-soft) !important; box-shadow: 0 0 0 1px var(--accent), var(--shadow-float); }
+body:has(.grade-sheet th.is-dragging) { cursor: grabbing; user-select: none; }
+
+/* Everything about a topic */
+.topic-panel { display: grid; gap: 22px; }
+.topic-panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.topic-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.topic-columns { display: flex; gap: 8px; flex-wrap: wrap; }
+.topic-columns li { display: grid; min-width: 110px; padding: 10px 14px; border-radius: 12px; background: var(--panel); }
+.topic-columns span { color: var(--ink-3); font-size: 12.5px; }
+.topic-columns b { font-size: 22px; line-height: 1.2; }
+.topic-columns b.is-low { color: var(--low); }
+.topic-columns small { color: var(--ink-3); font-size: 12px; }
+.topic-list { display: grid; gap: 6px; }
+.topic-list li { display: flex; align-items: center; gap: 8px; }
+.topic-item { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--panel); color: var(--ink); text-align: left; }
+.topic-item:hover { background: var(--panel-2); }
+.topic-item svg { flex: none; color: var(--accent); }
+.topic-item span { display: grid; min-width: 0; }
+.topic-item b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topic-item small { color: var(--ink-3); font-size: 12.5px; }
+.topic-list .chip { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+
+/* Rubrics: linked activity and the end of the grading */
+.rubric-heading { display: grid; gap: 2px; }
+.rubric-heading small { color: var(--ink-3); font-size: 13px; }
+.attached-activity { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-ink); }
+.attached-activity div { display: grid; }
+.attached-activity small { color: var(--ink-2); font-size: 13px; }
+.grader-done { place-items: center; align-content: center; min-height: 360px; padding: 32px; border-radius: 16px; background: var(--sheet); box-shadow: 0 0 0 1px var(--line); text-align: center; animation: rise .35s var(--ease-out); }
+.grader-done svg { color: var(--accent); }
+.grader-done p { max-width: 46ch; color: var(--ink-2); }
+.grader-foot { align-items: center; gap: 10px; flex-wrap: wrap; }
+.grader-foot .push { margin-left: auto; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .grader-done { animation: none; } }
+.style-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.area-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 13px; }
+.area-picker select { min-height: 32px; padding: 0 28px 0 10px; font-size: 13px; }
+/* The builder stacks when its page gets narrow (small screens or with Búho open beside it). */
+.page:has(> .builder) { container-type: inline-size; }
+@container (max-width: 880px) {
+  .builder { grid-template-columns: 1fr; }
+  .builder-form { position: static; }
+}
