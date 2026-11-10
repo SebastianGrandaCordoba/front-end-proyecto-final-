@@ -49,7 +49,11 @@ export function useWorkspace(user: TeacherProfile) {
         localStorage.removeItem(legacyKey)
       }
       setWorkshops(items)
-    } catch { setWorkshops([]) }
+    } catch {
+      // Server unreachable (or still on a version without activities): show what this browser kept so the
+      // teacher does not see an empty list; the copy stays until a later load can upload it.
+      setWorkshops(readJson<GeneratedWorkshop[]>(`fairteam.workshops.${user.id}.${id}`, []))
+    }
   }, [user.id])
   useEffect(() => { void loadWorkshops(courseId) }, [courseId, loadWorkshops])
 
