@@ -1231,3 +1231,10 @@ body:has(.grade-sheet th.is-dragging) { cursor: grabbing; user-select: none; }
 @keyframes fade-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-card { transition: none; animation: none; } }
 .publish-warning { padding: 10px 12px; border-radius: 10px; background: var(--medium-bg); color: var(--ink); font-size: 13.5px; }
+/* Home: the setup checklist moves above the suggestions when the page is narrow (small screen or Búho open). */
+.page:has(> .assistant) { container-type: inline-size; }
+@container (max-width: 820px) {
+  .assistant.has-setup { grid-template-columns: 1fr; }
+  .assistant.has-setup .assistant-side { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+@container (max-width: 520px) { .assistant.has-setup .assistant-side { grid-template-columns: 1fr; } }
