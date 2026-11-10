@@ -3,8 +3,8 @@ import { request } from '../api'
 /** What each level says is observed in the work, from Excelente to Insuficiente. */
 export interface RubricLevels { excellent: string; good: string; basic: string; insufficient: string }
 export interface RubricCriterion { id?: number | null; name: string; description: string; weight: number; levels: RubricLevels }
-export interface RubricDraft { title: string; description: string; criteria: RubricCriterion[] }
-export interface RubricSummary { id: number; title: string; criteria: number; scored: number; students: number; period: string | null; columnName: string | null; updatedAt: string }
+export interface RubricDraft { title: string; description: string; criteria: RubricCriterion[]; activityId?: number | null }
+export interface RubricSummary { id: number; title: string; criteria: number; scored: number; students: number; period: string | null; columnName: string | null; updatedAt: string; activityId: number | null; activityTitle: string | null }
 export interface RubricResult { studentId: number; levels: Record<string, number>; comment: string | null; grade: number | null }
 export interface RubricDetail extends RubricDraft {
   id: number
@@ -15,6 +15,9 @@ export interface RubricDetail extends RubricDraft {
   levelGrades: number[]
   period: string | null
   columnName: string | null
+  activityId: number | null
+  activityTitle: string | null
+  activityTopic: string | null
 }
 
 export const LEVELS = [
@@ -76,7 +79,7 @@ const base = (courseId: number) => `/api/courses/${courseId}/rubrics`
 export const rubricApi = {
   list: (courseId: number) => request<RubricSummary[]>(base(courseId)),
   get: (courseId: number, id: number) => request<RubricDetail>(`${base(courseId)}/${id}`),
-  generate: (courseId: number, body: { activity: string; criteriaCount: number; teacherPrompt?: string }) =>
+  generate: (courseId: number, body: { activity: string; criteriaCount: number; teacherPrompt?: string; activityId?: number }) =>
     request<RubricDraft>(`${base(courseId)}/generate`, { method: 'POST', body: JSON.stringify(body) }),
   create: (courseId: number, draft: RubricDraft) => request<RubricDetail>(base(courseId), { method: 'POST', body: JSON.stringify(draft) }),
   update: (courseId: number, id: number, draft: RubricDraft) => request<RubricDetail>(`${base(courseId)}/${id}`, { method: 'PUT', body: JSON.stringify(draft) }),

@@ -95,7 +95,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
   if (!course) return null
 
   if (view.kind === 'new') return <section className="page">{head}
-    <NewRubric courseId={courseId} workshops={workshops} initialWorkshop={fromWorkshop ? workshops.find(w => w.title === fromWorkshop) : null}
+    <NewRubric courseId={courseId} workshops={workshops} initialWorkshop={fromWorkshop ? workshops.find(w => String(w.id) === fromWorkshop || w.title === fromWorkshop) : null}
       onBack={() => { setView({ kind: 'list' }); navigate('rubricas') }}
       onDraft={next => { setDraft(next); setDirty(true); setView({ kind: 'draft', draft: next }) }} />
   </section>
@@ -115,7 +115,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
       <div className="panel rubric-panel">
         <div className="rubric-bar">
           <button className="link-btn back-link" onClick={() => void back()}><ArrowLeft size={15} aria-hidden />Rúbricas</button>
-          <h2>{detail.title}</h2>
+          <div className="rubric-heading"><h2>{detail.title}</h2>{detail.activityTitle && <small>Evalúa: <button className="link-btn" onClick={() => navigate('talleres', { ver: detail.activityTitle! })}>{detail.activityTitle}</button></small>}</div>
           <div className="period-tabs" role="tablist" aria-label="Vista">
             <button role="tab" aria-selected={tab === 'evaluar'} className={tab === 'evaluar' ? 'is-on' : ''} onClick={async () => { if (dirty && !await confirm({ title: 'Tienes cambios sin guardar', body: 'Guarda la rúbrica antes de evaluar para usar los cambios.', confirm: 'Descartar cambios', danger: true })) return; setDraft(detail); setDirty(false); setTab('evaluar') }}>Evaluar</button>
             <button role="tab" aria-selected={tab === 'rubrica'} className={tab === 'rubrica' ? 'is-on' : ''} onClick={() => setTab('rubrica')}>Rúbrica</button>
@@ -144,7 +144,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
           <button className="rubric-card" onClick={() => open(item.id)}>
             <span className="rubric-card-icon"><ClipboardCheck size={20} aria-hidden /></span>
             <span className="rubric-card-main"><b>{item.title}</b>
-              <small>{item.criteria} criterios · {item.columnName ? `en ${item.period}, columna ${item.columnName}` : 'sin llevar al libro'} · {relativeDate(item.updatedAt)}</small></span>
+              <small>{item.activityTitle ? `Evalúa: ${item.activityTitle} · ` : ''}{item.criteria} criterios · {item.columnName ? `en ${item.period}, columna ${item.columnName}` : 'sin llevar al libro'} · {relativeDate(item.updatedAt)}</small></span>
             <span className="rubric-card-progress"><span className="num">{item.scored}/{item.students}</span><small>evaluados</small>
               <span className="gen-bar" aria-hidden><span style={{ transform: `scaleX(${item.students ? item.scored / item.students : 0})` }} /></span></span>
           </button>
