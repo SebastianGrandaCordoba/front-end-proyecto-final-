@@ -98,7 +98,7 @@ input:disabled, select:disabled, textarea:disabled { background: var(--panel); c
 .form { display: grid; gap: 16px; }
 .field { display: grid; gap: 6px; }
 .field-label { display: flex; align-items: baseline; gap: 8px; font-size: 14px; font-weight: 500; }
-.field-optional { color: var(--ink-3); font-size: 13px; font-weight: 400; }
+.field-optional { margin-left: 8px; color: var(--ink-3); font-size: 13px; font-weight: 400; }
 .field-hint { color: var(--ink-3); font-size: 13px; }
 .form-error { padding: 12px 14px; border-radius: var(--r-control); background: var(--low-bg); color: var(--low); font-size: 14px; }
 .form-note { padding: 12px 14px; border-radius: var(--r-control); background: var(--medium-bg); color: var(--medium); font-size: 14px; }
@@ -329,7 +329,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .materials, .pick-list { display: grid; gap: 6px; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; padding: 1px; }
 .materials li { display: flex; align-items: center; gap: 4px; border-radius: 12px; background: var(--sheet); box-shadow: 0 0 0 1px var(--line); transition: box-shadow .15s; }
 .materials li.is-on { box-shadow: 0 0 0 1.5px var(--accent); }
-.material, .pick { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 10px 12px; cursor: pointer; }
+.material, .pick { position: relative; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 10px 12px; cursor: pointer; }
 .material input, .pick input { position: absolute; opacity: 0; pointer-events: none; }
 .material:has(input:focus-visible), .pick:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
 .check { display: grid; place-items: center; width: 20px; height: 20px; flex: none; border: 1.5px solid var(--control); border-radius: 6px; background: var(--sheet); color: #fff; transition: background-color .12s, border-color .12s; }
@@ -1238,3 +1238,21 @@ body:has(.grade-sheet th.is-dragging) { cursor: grabbing; user-select: none; }
   .assistant.has-setup .assistant-side { grid-template-columns: 1fr 1fr; align-items: start; }
 }
 @container (max-width: 520px) { .assistant.has-setup .assistant-side { grid-template-columns: 1fr; } }
+
+/* Page tabs scroll sideways on a phone instead of pushing the page wider. */
+@media (max-width: 640px) {
+  .tabs { display: flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: 0 0 auto; padding: 0 12px; }
+}
+
+/* Phone: the student's full name wraps instead of collapsing to "A…"; the email hides to make room. */
+@media (max-width: 520px) {
+  .table .person-cell { gap: 8px; }
+  .table td:first-child { min-width: 128px; }
+  .table .person-cell .avatar { display: none; }
+  .table .person-cell b { white-space: normal; overflow-wrap: break-word; }
+  .table .person-cell small { display: none; }
+  .table td, .table th { padding-left: 8px; padding-right: 8px; }
+  .table .row-actions { gap: 0; }
+}
