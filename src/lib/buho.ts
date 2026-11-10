@@ -16,6 +16,7 @@ export type BuhoAction =
   | { kind: 'report'; label: string }
   | { kind: 'briefing'; label: string }
   | { kind: 'course'; label: string; courseId: number }
+  | { kind: 'guide'; label: string }
 
 export type BuhoItem = { student: Candidate; value: string; note: string; tone: 'low' | 'medium' | 'high' | 'none' }
 export type ApiAction = { kind: string; label: string; params: Record<string, string> }
@@ -25,6 +26,7 @@ export type ApiReply = { text: string; intent: string; items: { studentId: numbe
 
 export const examples = [
   '¿Cómo va el curso?',
+  '¿Cómo pongo porcentajes a las notas?',
   '¿Quién necesita refuerzo en Funciones?',
   '¿Quién viene bajando?',
   '¿Qué nota necesita Valentina para pasar?',
@@ -48,6 +50,7 @@ function adaptAction(action: ApiAction, students: Map<number, Candidate>): BuhoA
     case 'report': return { kind: 'report', label: action.label }
     case 'briefing': return { kind: 'briefing', label: action.label }
     case 'course': return p.courseId ? { kind: 'course', label: action.label, courseId: Number(p.courseId) } : null
+    case 'guide': return { kind: 'guide', label: action.label }
     default: return null
   }
 }

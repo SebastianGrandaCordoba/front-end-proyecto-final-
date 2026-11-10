@@ -49,6 +49,8 @@ function AuthScreen({ mode, setMode, onAuthenticated }: { mode: 'login' | 'regis
         body: JSON.stringify(isLogin ? { email: email.trim(), password } : { name: name.trim(), email: email.trim(), password }),
       })
       saveAccessToken(result.accessToken)
+      // Every new account starts with "Primeros pasos", even if this browser kept an old guide for that id.
+      if (!isLogin) { try { localStorage.removeItem(`fairteam.guide.${result.id}`) } catch { /* private mode */ } }
       window.location.hash = '#/inicio'
       onAuthenticated({ id: result.id, name: result.name, email: result.email, role: result.role })
     } catch (error) {

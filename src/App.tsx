@@ -19,7 +19,8 @@ import ErrorBoundary from './components/ErrorBoundary'
 import OfflineBanner from './components/OfflineBanner'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
-import { guideDone } from './lib/guide'
+import { guideDone, openGuide, spotlight } from './lib/guide'
+import Spotlight from './components/Spotlight'
 import Guide from './components/Guide'
 
 const StudentsPage = lazy(() => import('./pages/StudentsPage'))
@@ -106,7 +107,14 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const runAction = useCallback((action: BuhoAction) => {
     if (window.matchMedia('(max-width: 860px)').matches && action.kind !== 'briefing') setBuhoOpen(false)
     switch (action.kind) {
-      case 'navigate': return navigate(action.route, action.params)
+      case 'navigate': {
+        // "Llévame": open the page and ring the control Búho explained.
+        const { resaltar, ...rest } = action.params ?? {}
+        navigate(action.route, Object.keys(rest).length ? rest : undefined)
+        if (resaltar) spotlight(resaltar)
+        return
+      }
+      case 'guide': return openGuide()
       // Búho's buttons do the work ("Preparar refuerzo" creates it); they never leave a form waiting for a click.
       case 'workshop': return startWorkshop({ mode: action.mode, level: action.level, topic: action.topic, student: action.student, autoStart: true, prompt: action.prompt })
       case 'rubric': return void rubricFromLatest(action.topic, action.target, action.activityId, action.prompt)
@@ -159,6 +167,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
     {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
     {showWelcome && <Tour navigate={navigate} onClose={closeWelcome} />}
+    <Spotlight />
     {!showWelcome && <Guide userId={user.id} route={route} params={params} navigate={navigate} onQuickTour={() => setShowWelcome(true)}
       signals={{ courses: courses.length, students: workspace.students.length, columns: workspace.insights.length > 0, workshops: workspace.workshops.length, hasCourse: !!course }} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />

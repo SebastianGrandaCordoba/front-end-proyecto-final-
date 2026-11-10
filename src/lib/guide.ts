@@ -90,3 +90,38 @@ export function findTarget(targets: GuideTarget[]): HTMLElement | null {
   }
   return null
 }
+
+/** Controls Búho can point at after "Llévame" (keys come from the backend's AppManual). */
+export const SPOTS: Record<string, GuideTarget[]> = {
+  'crear-curso': [{ selector: 'button', text: 'Crear curso' }],
+  curso: [{ selector: '.course-picker' }],
+  demo: [{ selector: 'button', text: 'Cargar cursos de demostración' }],
+  'agregar-estudiantes': [{ selector: 'button', text: 'Agregar estudiantes' }],
+  'importar-lista': [{ selector: 'button', text: 'Importar lista' }],
+  'importar-notas': [{ selector: 'button', text: 'Importar notas' }],
+  columna: [{ selector: 'button', text: 'Columna' }],
+  porcentajes: [{ selector: 'button', text: 'Poner porcentajes' }, { selector: '.col-weight' }],
+  definitiva: [{ selector: '[role="tab"]', text: 'Definitiva' }],
+  escala: [{ selector: '.scale-picker' }],
+  excel: [{ selector: 'button', text: 'Excel del curso' }],
+  asistencia: [{ selector: 'button', text: 'Todos presentes' }],
+  crear: [{ selector: '.kind-picker' }],
+  material: [{ selector: 'button', text: 'Subir material' }, { selector: '.materials' }],
+  guardados: [{ selector: '[role="tab"]', text: 'Guardados' }],
+  'nueva-rubrica': [{ selector: 'button', text: 'Nueva rúbrica' }, { selector: 'button', text: 'Crear mi primera rúbrica' }],
+  evaluar: [{ selector: '[role="tab"]', text: 'Evaluar' }, { selector: '.rubric-card' }],
+  'al-libro': [{ selector: 'button', text: 'al libro' }, { selector: '.rubric-card' }],
+  proyecto: [{ selector: 'button', text: 'Nuevo proyecto' }],
+  informe: [{ selector: 'button', text: 'Informe PDF' }],
+  buho: [{ selector: '[data-tour="buho"]' }, { selector: '.buho-mobile' }],
+  apariencia: [{ selector: '.panel.settings', text: 'Apariencia' }],
+  voz: [{ selector: '.panel.settings', text: 'Voz del Búho' }],
+  respaldo: [{ selector: 'button', text: 'Descargar respaldo' }],
+  'cerrar-sesion': [{ selector: 'button', text: 'Cerrar sesión' }],
+  'primeros-pasos': [{ selector: 'button', text: 'Primeros pasos' }],
+}
+
+export const SPOT_EVENT = 'fairteam:spot'
+
+/** Rings a control for a few seconds (after Búho opens its page). */
+export function spotlight(key: string) { window.dispatchEvent(new CustomEvent<string>(SPOT_EVENT, { detail: key })) }
