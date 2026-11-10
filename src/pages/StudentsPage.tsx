@@ -16,7 +16,7 @@ import { useAttendanceSummary } from '../app/useAttendanceSummary'
 type Filter = 'todos' | 'refuerzo' | 'seguimiento' | 'progreso' | 'sin-notas'
 type Sort = 'nombre' | 'promedio'
 
-export default function StudentsPage({ workspace, review, params }: PageProps & { params: URLSearchParams }) {
+export default function StudentsPage({ workspace, review, params, navigate, startWorkshop }: PageProps & { params: URLSearchParams }) {
   const { course, candidates, summary, courseState } = workspace
   const { notify, confirm } = useFeedback()
   const initial = (params.get('filtro') as Filter) || 'todos'
@@ -75,7 +75,7 @@ export default function StudentsPage({ workspace, review, params }: PageProps & 
     </header>
 
     {view === 'notas' && course ? <GradeEditor courseId={course.id} courseName={course.name} onSaved={() => void workspace.refreshCourse()} onScaleChanged={() => void workspace.loadCourses().then(workspace.refreshCourse)} onQuickAdd={() => setQuickAdd(true)}
-      trends={workspace.trends} projections={workspace.projections} sim={workspace.sim} saveScheme={workspace.saveScheme} />
+      trends={workspace.trends} projections={workspace.projections} sim={workspace.sim} saveScheme={workspace.saveScheme} navigate={navigate} startWorkshop={startWorkshop} />
     : view === 'asistencia' && course ? <AttendanceSheet courseId={course.id} students={candidates} summary={attendance.summary} onSaved={() => void attendance.reload()} /> : <>
 
     <details className="help">

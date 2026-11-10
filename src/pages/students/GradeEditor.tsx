@@ -6,6 +6,10 @@ import { formatScaled } from '../../lib/domain'
 import type { Projection, Sim, Trend } from '../../lib/insights'
 import { cellKey, evenWeights, fillMissingWeights, scaleWeightsTo100, formatCell, nextPeriodName, parseGrade, pasteBlock, plainNumber, rowAverage, weightedAverage, type CellKey } from '../../lib/gradeSheet'
 import { ColumnHeader } from './ColumnHeader'
+import { TopicPanel } from './TopicPanel'
+import { useColumnDrag } from './useColumnDrag'
+import type { Navigate } from '../../app/router'
+import type { WorkshopIntent } from '../../app/types'
 import { FinalGrades } from './FinalGrades'
 import { ScalePicker } from './ScalePicker'
 import { useGradeSheet } from './useGradeSheet'
@@ -22,6 +26,8 @@ interface Props {
   projections: Map<number, Projection>
   sim: Sim
   saveScheme: (weights: number[]) => Promise<void>
+  navigate: Navigate
+  startWorkshop: (intent: WorkshopIntent) => void
 }
 
 /**
@@ -29,7 +35,7 @@ interface Props {
  * percentage) and a "Definitiva" tab that weighs the cortes. Typing never saves on its own: changes are
  * collected, checked as you type and saved together, so a slip of the keyboard is easy to undo.
  */
-export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQuickAdd, trends, projections, sim, saveScheme }: Props) {
+export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQuickAdd, trends, projections, sim, saveScheme, navigate, startWorkshop }: Props) {
   const { notify, confirm } = useFeedback()
   const onError = useCallback((message: string) => notify(message, 'error'), [notify])
   const book = useGradeSheet(courseId, onError)
@@ -113,12 +119,14 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
     catch (error) { onError(error instanceof Error ? error.message : 'No se pudo eliminar la columna.') }
   }
 
-  const moveColumn = (index: number, step: -1 | 1) => book.editColumns(list => {
+  const moveColumn = useCallback((from: number, to: number) => book.editColumns(list => {
     const next = [...list]
-    const [item] = next.splice(index, 1)
-    next.splice(index + step, 0, item)
+    const [item] = next.splice(from, 1)
+    next.splice(to, 0, item)
     return next
-  })
+  }), [book])
+  const drag = useColumnDrag(table, columns.map(c => c.id), moveColumn)
+  const [topicOf, setTopicOf] = useState<{ id: number; name: string } | null>(null)
   const setWeight = (index: number, text: string) => book.editColumns(list => list.map((c, i) => i === index ? { ...c, weight: text } : c))
   const spreadEvenly = () => { const even = evenWeights(columns.length); book.editColumns(list => list.map((c, i) => ({ ...c, weight: plainNumber(even[i]) }))) }
   const fillMissing = () => { const filled = fillMissingWeights(weights); book.editColumns(list => list.map((c, i) => ({ ...c, weight: plainNumber(filled[i]) }))) }
@@ -244,11 +252,11 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
         <table ref={table} className={`grade-sheet${book.loading ? ' is-loading' : ''}`} aria-label={`Notas de ${period}`}>
           <thead><tr>
             <th scope="col" className="sheet-name">Estudiante<small>{students.length} en la lista · sobre {plainNumber(max)}</small></th>
-            {columns.map((column, index) => <th key={column.id} scope="col">
+            {columns.map((column, index) => <th key={column.id} scope="col" data-colid={column.id} className={drag.dragging === column.id ? 'is-dragging' : ''}>
               <ColumnHeader name={column.name} weight={column.weight} weightInvalid={book.badWeights.includes(column.id)} average={columnAverage(column.id)} max={max}
-                first={index === 0} last={index === columns.length - 1}
+                onGrab={drag.onPointerDown(column.id)} onTopic={book.serverColumns.has(column.id) ? () => setTopicOf({ id: column.id, name: column.name }) : undefined}
                 onWeight={text => setWeight(index, text)} onRename={name => void renameColumn(index, name)}
-                onMove={step => moveColumn(index, step)} onDelete={() => void deleteColumn(index)} />
+                onDelete={() => void deleteColumn(index)} />
             </th>)}
             <th scope="col" className="sheet-avg">Nota del corte<small>{weighted ? 'ponderada' : 'promedio'}</small></th>
           </tr></thead>
@@ -262,7 +270,7 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
                 const parsed = parseGrade(text, max)
                 const edited = drafts.has(key) && (parsed.ok ? parsed.value !== (original.get(key) ?? null) : true)
                 const low = parsed.ok && parsed.value != null && parsed.value < passing
-                return <td key={column.id} className={`${edited ? 'is-edited' : ''}${invalidSet.has(key) ? ' is-invalid' : ''}${low ? ' is-low' : ''}`}>
+                return <td key={column.id} data-colid={column.id} className={`${edited ? 'is-edited' : ''}${invalidSet.has(key) ? ' is-invalid' : ''}${low ? ' is-low' : ''}${drag.dragging === column.id ? ' is-dragging' : ''}`}>
                   <input value={text} inputMode="decimal" data-row={row} data-col={col} autoComplete="off" spellCheck={false}
                     aria-label={`${student.name}, ${column.name}`} aria-invalid={invalidSet.has(key)} title={parsed.ok ? undefined : parsed.error}
                     onChange={event => { const value = event.target.value; setDrafts(current => new Map(current).set(key, value)) }}
@@ -285,8 +293,13 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
           </tbody>
         </table>
       </div>
-      <p className="sheet-help">Escribe la nota (de 0 a {plainNumber(max)}) y pulsa <kbd>Enter</kbd> para bajar. Las flechas mueven entre celdas, <kbd>Esc</kbd> deshace la celda y puedes <b>pegar una columna o un bloque copiado de Excel</b>. Toca el nombre de una columna para renombrarla, moverla o eliminarla.</p>
+      <p className="sheet-help">Escribe la nota (de 0 a {plainNumber(max)}) y pulsa <kbd>Enter</kbd> para bajar. Las flechas mueven entre celdas, <kbd>Esc</kbd> deshace la celda y puedes <b>pegar una columna o un bloque copiado de Excel</b>. Arrastra una columna por su asa para cambiarla de lugar; toca su nombre para ver todo del tema, renombrarla o eliminarla.</p>
     </>}
+
+    {topicOf && <TopicPanel courseId={courseId} subjectId={topicOf.id} name={topicOf.name} onClose={() => setTopicOf(null)}
+      onOpenActivity={title => navigate('talleres', { ver: title })} onOpenRubric={id => navigate('rubricas', { id: String(id) })}
+      onCreate={mode => startWorkshop({ mode, level: 'MEDIUM', topic: topicOf.name, autoStart: true })}
+      onCreateRubric={activityId => navigate('rubricas', activityId ? { taller: String(activityId) } : undefined)} />}
 
     <div className={`save-bar${book.pending || book.invalid.length ? ' is-visible' : ''}`}>
       <span>{book.blocker ?? (book.changes.length
