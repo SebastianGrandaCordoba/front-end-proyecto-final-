@@ -73,3 +73,17 @@ describe('cells', () => {
     expect(formatCell(4, 5)).toBe('4,0')
   })
 })
+
+describe('academic area', () => {
+  it('reads the subject from the course name', async () => {
+    const { detectArea, stylesFor } = await import('../activityStyles')
+    expect(detectArea('Álgebra Lineal — Grupo 2')).toBe('math')
+    expect(detectArea('Filosofía Moderna')).toBe('humanities')
+    expect(detectArea('Inglés B1')).toBe('languages')
+    expect(detectArea('Patrones de Diseño — Grupo 61')).toBe('programming')
+    expect(detectArea('Química orgánica')).toBe('science')
+    expect(detectArea('Seminario de grado')).toBe('general')
+    expect(stylesFor('humanities').map(s => s.id)).not.toContain('CODE')
+    expect(stylesFor('programming').map(s => s.id)).toContain('DEPLOY')
+  })
+})
