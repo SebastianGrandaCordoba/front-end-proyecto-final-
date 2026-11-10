@@ -105,10 +105,10 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     if (sortedMaterials.length) {
       void generate({ materialIds: [sortedMaterials[0].id], mode: intent.mode, level: intent.level, student: intent.student, topic: subject })
     } else {
-      const what = intent.mode === 'quiz' ? 'Un quiz de 6 preguntas' : 'Un taller de práctica con 3 actividades graduadas'
-      const about = subject ? ` sobre ${subject}` : ` sobre ${course?.name ?? 'el tema de la clase'}`
-      setMode('custom'); setPrompt(`${what}${about}, con ejemplos resueltos, pistas y clave de respuestas.`)
-      void generate({ mode: 'custom', level: intent.level, student: intent.student, topic: subject, prompt: `${what}${about}, con ejemplos resueltos, pistas y clave de respuestas.`, materialIds: [] })
+      // No material: written from the topic (the one that costs the course the most if none was named).
+      const about = subject || course?.name || 'el tema de la clase'
+      setTopic(about); setSelected([])
+      void generate({ materialIds: [], mode: intent.mode, level: intent.level, student: intent.student, topic: about })
     }
   }, [intent, materials])
 
@@ -141,7 +141,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     const student = options.student ?? target
     const custom = useMode === 'custom'
     const customPrompt = options.prompt ?? prompt
-    if (!ids.length && !custom) { setError('Elige al menos un material o sube uno nuevo.'); return }
+    if (!ids.length && !custom && !(options.topic ?? topic).trim()) { setError('Elige un material o escribe el tema: sin material, lo armo a partir del tema.'); return }
     if (custom && customPrompt.trim().length < MIN_PROMPT) { setError('Cuéntame en una o dos frases qué taller quieres.'); return }
     const topicText = (options.topic ?? topic).trim() || (useMode === 'quiz' ? 'conceptos clave del material' : 'conceptos clave del material de clase')
     const workStyles = useMode === 'workshop' ? styles : []
@@ -242,8 +242,8 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
           ]} />
         </fieldset>
 
-        <fieldset className="step"><legend><span className="step-n">4</span>{mode === 'custom' ? <>Material del curso <span className="optional">opcional</span></> : 'Con qué material'}</legend>
-          {mode === 'custom' && <p className="step-hint">{selected.length ? 'Usaré el material marcado como fuente.' : 'Sin material, lo armo con conocimiento general del tema. Marca un archivo si quieres que me base en él.'}</p>}
+        <fieldset className="step"><legend><span className="step-n">4</span>Material del curso <span className="optional">opcional</span></legend>
+          <p className="step-hint">{selected.length ? 'Usaré el material marcado como fuente; de un libro largo tomo las páginas del tema.' : 'Sin material, lo armo con conocimiento general del tema. Marca un archivo si quieres que me base en él.'}</p>
           {materials == null ? <div className="mini-loading"><Spinner /> Cargando material…</div>
             : sortedMaterials.length ? <ul className="materials" aria-label="Material del curso">{sortedMaterials.map(material => {
               const on = selected.includes(material.id)
@@ -256,7 +256,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
                 </label>
                 <button type="button" className="icon-btn icon-danger" onClick={() => void removeMaterial(material)} aria-label={`Quitar ${material.fileName}`}><Trash2 size={15} /></button>
               </li>
-            })}</ul> : mode !== 'custom' && <p className="step-hint">Este curso aún no tiene material. Sube un PDF, Word o TXT del tema.</p>}
+            })}</ul> : null}
           <div className="step-row">
             <MaterialUploadButton courseId={course?.id ?? null} variant="ghost" onUploaded={items => { workspace.updateMaterials(list => [...items, ...list]); setSelected(items.slice(0, 6).map(item => item.id)) }}>Subir material nuevo</MaterialUploadButton>
             {selected.length > 0 && <small className="muted">{plural(selected.length, 'seleccionado', 'seleccionados')} · {fileSize(selectedSize)} de 10 MB</small>}
@@ -269,7 +269,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
         </fieldset>
 
         {error && <div className="form-error" role="alert"><b>No se pudo generar.</b> {error}</div>}
-        <button className="btn btn-primary btn-large" disabled={generating || (mode === 'custom' ? prompt.trim().length < MIN_PROMPT : !selected.length)}>
+        <button className="btn btn-primary btn-large" disabled={generating || (mode === 'custom' ? prompt.trim().length < MIN_PROMPT : !selected.length && !topic.trim())}>
           {generating ? <Spinner /> : <Sparkles size={18} aria-hidden />}
           {generating ? 'Creando…' : mode === 'quiz' ? 'Crear quiz' : mode === 'custom' ? 'Crear a mi medida' : `Crear taller${selected.length > 1 ? ` con ${selected.length} materiales` : ''}`}
         </button>
