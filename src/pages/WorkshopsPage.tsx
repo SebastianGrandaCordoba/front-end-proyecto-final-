@@ -183,7 +183,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     abort.current?.abort()
     abort.current = new AbortController()
     setGenerating(true); setError(''); setResult(null)
-    window.requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }))
+    window.requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
     try {
       const response = await request<GeneratedWorkshop>(path, { method: 'POST', body: form, signal: abort.current.signal })
       const named = student ? {
@@ -193,6 +193,8 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
       const topicName = (options.topic ?? topic).trim() || (custom ? null : topicIdeas[0]?.name ?? null)
       const saved = await workspace.saveWorkshop({ ...named, topic: topicName, supportType: useMode, activityStyles: workStyles, ...(instructions ? { teacherPrompt: instructions } : {}) })
       setResult(saved)
+      // The form is above: bring the new activity into view.
+      window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
       clearIntent()
       notify(useMode === 'quiz' ? 'Quiz listo. Revísalo antes de usarlo.' : 'Listo. Revísalo antes de usarlo.')
     } catch (err) {

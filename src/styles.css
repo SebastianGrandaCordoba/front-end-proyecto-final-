@@ -314,9 +314,9 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel-2); }
 .tabs button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 16px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-weight: 500; }
 .tabs button.is-on { background: var(--sheet); color: var(--ink); box-shadow: 0 1px 2px rgb(20 35 42 / 10%), 0 0 0 1px var(--line); }
-.builder { display: grid; grid-template-columns: 5fr 7fr; gap: 16px; align-items: start; }
-.builder-form { display: grid; gap: 22px; position: sticky; top: 16px; }
-.builder-result { display: grid; gap: 16px; min-width: 0; }
+.builder { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+.builder-form { display: grid; gap: 22px; }
+.builder-result { display: grid; gap: 16px; min-width: 0; scroll-margin-top: 16px; }
 .step { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
 .step legend { display: flex; align-items: center; gap: 10px; width: 100%; padding: 0; margin-bottom: 10px; font-weight: 600; font-size: 15px; }
 .step legend .link-btn { margin-left: auto; font-size: 14px; }
