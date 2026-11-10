@@ -1230,3 +1230,4 @@ body:has(.grade-sheet th.is-dragging) { cursor: grabbing; user-select: none; }
 .tour-actions { display: flex; justify-content: space-between; gap: 8px; width: 100%; margin-top: 4px; }
 @keyframes fade-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-card { transition: none; animation: none; } }
+.publish-warning { padding: 10px 12px; border-radius: 10px; background: var(--medium-bg); color: var(--ink); font-size: 13.5px; }
