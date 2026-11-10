@@ -33,7 +33,7 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
   }
   const clear = async () => {
     if (!workshops.length) return notify('No hay propuestas guardadas en este curso.', 'info')
-    if (await confirm({ title: '¿Vaciar la biblioteca de este curso?', body: `Se borrarán ${plural(workshops.length, 'propuesta', 'propuestas')} guardadas en este navegador.`, confirm: 'Vaciar biblioteca', danger: true })) { workspace.clearWorkshops(); notify('Biblioteca vaciada.') }
+    if (await confirm({ title: '¿Vaciar la biblioteca de este curso?', body: `Se borrarán ${plural(workshops.length, 'propuesta', 'propuestas')} guardadas en este curso. Las rúbricas se conservan.`, confirm: 'Vaciar biblioteca', danger: true })) { await workspace.clearWorkshops(); notify('Biblioteca vaciada.') }
   }
 
   return <section className="page page-narrow">
@@ -48,7 +48,7 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
     <section className="panel settings">
       <h2>Ayuda</h2>
       <div className="button-row">
-        <button className="btn btn-secondary" onClick={() => { try { localStorage.removeItem(`fairteam.welcome.${user.id}`) } catch { /* private mode */ } window.location.reload() }}>Ver de nuevo la bienvenida</button>
+        <button className="btn btn-secondary" data-tour="tutorial" onClick={() => window.dispatchEvent(new Event('fairteam:tour'))}>Ver el recorrido guiado</button>
         <button className="btn btn-ghost" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))}>Atajos de teclado</button>
       </div>
     </section>

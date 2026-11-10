@@ -40,7 +40,7 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
       </span>
     </label>
 
-    <button className={`buho-nav${buhoOpen ? ' is-on' : ''}`} onClick={toggleBuho} aria-expanded={buhoOpen}>
+    <button data-tour="buho" className={`buho-nav${buhoOpen ? ' is-on' : ''}`} onClick={toggleBuho} aria-expanded={buhoOpen}>
       <span className="buho-nav-orb" aria-hidden><FairTeamMark size={26} /></span>
       <span><b>Búho</b><small>Tu asistente</small></span>
       <kbd aria-hidden>Ctrl K</kbd>
@@ -62,7 +62,7 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
       <a href="#/ajustes" className={`nav-item${route === 'ajustes' ? ' is-active' : ''}`} aria-current={route === 'ajustes' ? 'page' : undefined}><Settings size={18} aria-hidden /><span>Ajustes</span></a>
     </div>
 
-    <div className="sidebar-user">
+    <div className="sidebar-user" data-tour="perfil">
       <span className="user-initials" aria-hidden>{user.name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()}</span>
       <span className="user-meta"><b>{user.name}</b><small>{user.email}</small></span>
       <button className="icon-btn" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={17} /></button>
