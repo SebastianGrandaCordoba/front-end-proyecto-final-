@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { FolderOpen, Menu } from 'lucide-react'
-import type { TeacherProfile } from './api'
+import { request, type TeacherProfile } from './api'
 import FairTeamMark from './FairTeamMark'
-import { Spinner } from './components/ui'
+import { Spinner, useFeedback } from './components/ui'
 import { DemoButton } from './components/DemoButton'
 import { useRouter, type Route } from './app/router'
 import { useWorkspace } from './app/useWorkspace'
@@ -42,6 +42,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const [buhoOpen, setBuhoOpen] = useState(false)
   const [briefToken, setBriefToken] = useState(0)
   const { course, courses, setCourseId } = workspace
+  const { notify } = useFeedback()
 
   const buhoContext: BuhoContext = useMemo(() => ({ teacher: user.name, courseId: course?.id ?? null, courseName: course?.name ?? null, candidates: workspace.candidates, weakestSubject: workspace.insights[0]?.name ?? null }), [user.name, course, workspace.candidates, workspace.insights])
 
@@ -80,18 +81,32 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     navigate('talleres')
   }, [navigate])
 
+  /** "Crea una rúbrica para el último taller de X": find it, build the rubric from its content, save and open it. */
+  const rubricFromLatest = useCallback(async (topic?: string, target?: 'workshop' | 'quiz') => {
+    if (!course) return
+    notify('Estoy armando la rúbrica a partir del taller. Tarda unos segundos…', 'info')
+    try {
+      const rubric = await request<{ id: number; activityTitle: string | null }>(`/api/courses/${course.id}/rubrics/from-activity`,
+        { method: 'POST', body: JSON.stringify({ kind: target ?? 'workshop', topic: topic ?? null, criteriaCount: 4 }) })
+      notify(`Rúbrica lista para "${rubric.activityTitle ?? 'el taller'}". Revísala y empieza a calificar.`)
+      navigate('rubricas', { id: String(rubric.id), vista: 'rubrica' })
+    } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear la rúbrica.', 'error') }
+  }, [course, navigate, notify])
+
   const runAction = useCallback((action: BuhoAction) => {
     if (window.matchMedia('(max-width: 860px)').matches && action.kind !== 'briefing') setBuhoOpen(false)
     switch (action.kind) {
       case 'navigate': return navigate(action.route, action.params)
-      case 'workshop': return startWorkshop({ mode: action.mode, level: action.level, topic: action.topic, student: action.student })
+      // Búho's buttons do the work ("Preparar refuerzo" creates it); they never leave a form waiting for a click.
+      case 'workshop': return startWorkshop({ mode: action.mode, level: action.level, topic: action.topic, student: action.student, autoStart: true })
+      case 'rubric': return void rubricFromLatest(action.topic, action.target)
       case 'review': return setReviewing(action.student)
       case 'message': return setMessageFor(action.student)
       case 'report': return report()
       case 'briefing': return brief()
       case 'course': setCourseId(action.courseId); return navigate('inicio')
     }
-  }, [navigate, startWorkshop, report, brief, setCourseId])
+  }, [navigate, startWorkshop, report, brief, setCourseId, rubricFromLatest])
 
   const pageProps = { workspace, navigate, startWorkshop, review: setReviewing, assistant: { brief, report, message: setMessageFor, open: () => setBuhoOpen(true) } }
   const needsCourse = nav.find(item => item.route === route)?.needsCourse && !course && workspace.coursesState === 'ready'

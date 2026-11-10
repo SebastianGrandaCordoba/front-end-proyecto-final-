@@ -8,7 +8,8 @@ import type { Candidate } from './domain'
 
 export type BuhoAction =
   | { kind: 'navigate'; label: string; route: Route; params?: Record<string, string> }
-  | { kind: 'workshop'; label: string; mode: SupportMode; level: AcademicLevel; topic?: string; student?: Candidate }
+  | { kind: 'workshop'; label: string; mode: SupportMode; level: AcademicLevel; topic?: string; student?: Candidate; auto?: boolean }
+  | { kind: 'rubric'; label: string; topic?: string; target?: 'workshop' | 'quiz' }
   | { kind: 'review'; label: string; student: Candidate }
   | { kind: 'message'; label: string; student: Candidate }
   | { kind: 'report'; label: string }
@@ -39,7 +40,8 @@ function adaptAction(action: ApiAction, students: Map<number, Candidate>): BuhoA
   const student = p.studentId ? students.get(Number(p.studentId)) : undefined
   switch (action.kind) {
     case 'navigate': { const { route, ...rest } = p; return { kind: 'navigate', label: action.label, route: (route || 'inicio') as Route, params: Object.keys(rest).length ? rest : undefined } }
-    case 'workshop': return { kind: 'workshop', label: action.label, mode: p.mode === 'quiz' ? 'quiz' : 'workshop', level: (p.level || 'LOW') as AcademicLevel, topic: p.topic, student }
+    case 'workshop': return { kind: 'workshop', label: action.label, mode: p.mode === 'quiz' ? 'quiz' : 'workshop', level: (p.level || 'LOW') as AcademicLevel, topic: p.topic, student, auto: p.auto === 'true' }
+    case 'rubric': return { kind: 'rubric', label: action.label, topic: p.topic, target: p.target === 'quiz' ? 'quiz' : 'workshop' }
     case 'review': return student ? { kind: 'review', label: action.label, student } : null
     case 'message': return student ? { kind: 'message', label: action.label, student } : null
     case 'report': return { kind: 'report', label: action.label }
