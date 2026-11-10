@@ -5,6 +5,7 @@ import { Avatar, useFeedback } from '../../components/ui'
 import { formatScaled } from '../../lib/domain'
 import { plainNumber } from '../../lib/gradeSheet'
 import { LEVELS, rubricApi, rubricGrade, type RubricDetail, type RubricResult } from '../../lib/rubrics'
+import { guideDone } from '../../lib/guide'
 
 /**
  * Assessing with a rubric: pick a student, click the level reached in each criterion (or press 1–4) and
@@ -63,7 +64,7 @@ export function RubricGrader({ courseId, rubric, onResults, onPublish }: {
     const finished = level != null && rubric.criteria.every(c => nextLevels[String(c.id)] != null)
       && !(before && rubric.criteria.every(c => before.levels[String(c.id)] != null))
     if (finished) window.setTimeout(() => advance(studentId), 450)
-    try { store(await rubricApi.score(courseId, rubric.id, studentId, { levels: { [criterionId]: level } })) }
+    try { store(await rubricApi.score(courseId, rubric.id, studentId, { levels: { [criterionId]: level } })); guideDone('calificar') }
     catch (error) {
       if (before) store(before)
       notify(error instanceof Error ? error.message : 'No se pudo guardar el nivel.', 'error')

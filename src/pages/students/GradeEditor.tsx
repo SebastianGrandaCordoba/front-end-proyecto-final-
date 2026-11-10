@@ -13,6 +13,7 @@ import type { WorkshopIntent } from '../../app/types'
 import { FinalGrades } from './FinalGrades'
 import { ScalePicker } from './ScalePicker'
 import { useGradeSheet } from './useGradeSheet'
+import { guideDone } from '../../lib/guide'
 
 const FINAL = '__final__'
 
@@ -85,7 +86,7 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
       const created = known.find(s => s.name.trim().toLowerCase() === name.toLowerCase())
         ?? await request<{ id: number; name: string }>('/api/subjects', { method: 'POST', body: JSON.stringify({ name }) })
       book.editColumns(list => [...list, { id: created.id, name: created.name, weight: '' }])
-      setColumnName(''); setAddingColumn(false)
+      setColumnName(''); setAddingColumn(false); guideDone('columnas')
       window.setTimeout(() => focusCell(0, columns.length), 50)
     } catch (error) { onError(error instanceof Error ? error.message : 'No se pudo agregar la columna.') }
   }

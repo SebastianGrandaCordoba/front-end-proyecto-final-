@@ -8,6 +8,7 @@ import type { Candidate } from '../lib/domain'
 import { teacherFirstName } from '../lib/domain'
 import { canListen, canSpeak, listen, speak, stopSpeaking } from '../lib/speech'
 import { Avatar } from './ui'
+import { guideDone, openGuide } from '../lib/guide'
 
 type Message = { id: number; from: 'me' | 'buho'; text: string; reply?: BuhoReply }
 type Status = 'idle' | 'listening' | 'thinking' | 'speaking'
@@ -64,8 +65,8 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     const { courseId, candidates } = contextRef.current
     // "¿Cómo se usa?", "muéstrame el tutorial": the guided tour answers better than words.
     if (/tutorial|recorrido|c[oó]mo (se )?usa|c[oó]mo funciona (la|esta) (app|plataforma)|ens[eé]ñame a usar/i.test(question)) {
-      window.setTimeout(() => window.dispatchEvent(new Event('fairteam:tour')), 600)
-      return { text: 'Te abro el recorrido guiado: te muestro cada sección en la pantalla real. Puedes volver a verlo cuando quieras desde Ajustes.' }
+      window.setTimeout(openGuide, 500)
+      return { text: 'Te abro "Primeros pasos": te digo dónde tocar y espero a que lo hagas, paso a paso. Si prefieres solo mirar, en la guía está el recorrido rápido.' }
     }
     if (!courseId) return { text: 'Primero crea o elige un curso y te ayudo con todo lo demás.', actions: [{ kind: 'navigate', label: 'Mis cursos', route: 'cursos' }] }
     try {
@@ -82,6 +83,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     const q = question.trim()
     if (!q) return
     setError('')
+    guideDone('buho')
     const history = conversationHistory(messagesRef.current)
     setMessages(current => [...current, { id: ++counter.current, from: 'me', text: q }])
     setDraft('')

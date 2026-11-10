@@ -19,6 +19,8 @@ import ErrorBoundary from './components/ErrorBoundary'
 import OfflineBanner from './components/OfflineBanner'
 import type { BuhoAction } from './lib/buho'
 import { printCourseReport } from './lib/report'
+import { guideDone } from './lib/guide'
+import Guide from './components/Guide'
 
 const StudentsPage = lazy(() => import('./pages/StudentsPage'))
 const FollowUpPage = lazy(() => import('./pages/FollowUpPage'))
@@ -55,8 +57,9 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   useEffect(() => { document.title = `${titles[route]} · FairTeam` }, [route])
   const [showShortcuts, setShowShortcuts] = useState(false)
   const welcomeKey = `fairteam.welcome.${user.id}`
-  const [showWelcome, setShowWelcome] = useState(() => { try { return !localStorage.getItem(welcomeKey) } catch { return false } })
-  // Ajustes and Búho can open the tour again at any time.
+  // The quick tour (look only) opens on demand; new teachers get "Primeros pasos", which waits for each action.
+  const [showWelcome, setShowWelcome] = useState(false)
+  // Ajustes and the guide can open the quick tour at any time.
   useEffect(() => {
     const open = () => setShowWelcome(true)
     window.addEventListener('fairteam:tour', open)
@@ -94,6 +97,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     try {
       const rubric = await request<{ id: number; activityTitle: string | null }>(`/api/courses/${course.id}/rubrics/from-activity`,
         { method: 'POST', body: JSON.stringify({ activityId: activityId ?? null, kind: target ?? 'workshop', topic: topic ?? null, criteriaCount: 4, teacherPrompt: prompt ?? null }) })
+      guideDone('rubrica')
       notify(`Rúbrica lista para "${rubric.activityTitle ?? 'el taller'}". Revísala y empieza a calificar.`)
       navigate('rubricas', { id: String(rubric.id), vista: 'rubrica' })
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear la rúbrica.', 'error') }
@@ -155,6 +159,8 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     {messageFor && course && <MessageDialog courseId={course.id} student={messageFor} onClose={() => setMessageFor(null)} />}
     {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
     {showWelcome && <Tour navigate={navigate} onClose={closeWelcome} />}
+    {!showWelcome && <Guide userId={user.id} route={route} params={params} navigate={navigate} onQuickTour={() => setShowWelcome(true)}
+      signals={{ courses: courses.length, students: workspace.students.length, columns: workspace.insights.length > 0, workshops: workspace.workshops.length, hasCourse: !!course }} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />
   </div>
 }

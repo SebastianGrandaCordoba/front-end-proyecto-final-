@@ -9,6 +9,7 @@ import { NewRubric } from './rubrics/NewRubric'
 import { PublishDialog } from './rubrics/PublishDialog'
 import { RubricEditor } from './rubrics/RubricEditor'
 import { RubricGrader } from './rubrics/RubricGrader'
+import { guideDone } from '../lib/guide'
 
 type View = { kind: 'list' } | { kind: 'new' } | { kind: 'draft'; draft: RubricDraft } | { kind: 'open'; id: number }
 
@@ -59,7 +60,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
     try {
       if (view.kind === 'draft') {
         const created = await rubricApi.create(courseId, draft)
-        notify('Rúbrica guardada. Ya puedes evaluar a tus estudiantes con ella.')
+        notify('Rúbrica guardada. Ya puedes evaluar a tus estudiantes con ella.'); guideDone('rubrica')
         setDirty(false); open(created.id, 'evaluar')
       } else if (detail) {
         const updated = await rubricApi.update(courseId, detail.id, draft)

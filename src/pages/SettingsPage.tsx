@@ -8,6 +8,7 @@ import { canSpeak, setSpeechRate, speak, speechRate } from '../lib/speech'
 import { downloadTemplate, downloadText } from '../lib/files'
 import { plural } from '../lib/domain'
 import { DemoButton } from '../components/DemoButton'
+import { openGuide } from '../lib/guide'
 
 export default function SettingsPage({ workspace, user, onLogout }: PageProps & { user: TeacherProfile; onLogout: () => void }) {
   const { notify, confirm } = useFeedback()
@@ -47,8 +48,10 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
 
     <section className="panel settings">
       <h2>Ayuda</h2>
+      <p className="muted">"Primeros pasos" te acompaña mientras haces cada cosa; el recorrido rápido solo te muestra las secciones.</p>
       <div className="button-row">
-        <button className="btn btn-secondary" data-tour="tutorial" onClick={() => window.dispatchEvent(new Event('fairteam:tour'))}>Ver el recorrido guiado</button>
+        <button className="btn btn-primary" data-tour="tutorial" onClick={openGuide}>Primeros pasos</button>
+        <button className="btn btn-secondary" onClick={() => window.dispatchEvent(new Event('fairteam:tour'))}>Recorrido rápido</button>
         <button className="btn btn-ghost" onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))}>Atajos de teclado</button>
       </div>
     </section>

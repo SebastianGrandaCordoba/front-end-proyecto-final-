@@ -4,6 +4,7 @@ import { request } from '../../api'
 import { Field, Modal, Spinner, useFeedback } from '../../components/ui'
 import { nextPeriodName } from '../../lib/gradeSheet'
 import { rubricApi, type RubricDetail } from '../../lib/rubrics'
+import { guideDone } from '../../lib/guide'
 
 /** Sends the rubric grades to a column of the grade book, in the corte the teacher chooses. */
 export function PublishDialog({ courseId, rubric, done, onClose, onPublished }: {
@@ -45,6 +46,7 @@ export function PublishDialog({ courseId, rubric, done, onClose, onPublished }: 
     try {
       const result = await rubricApi.publish(courseId, rubric.id, { period, columnName: column.trim() })
       notify(`${result.published} ${result.published === 1 ? 'nota quedó' : 'notas quedaron'} en ${result.period}, columna "${result.columnName}".${result.pending ? ` Faltan ${result.pending} por evaluar.` : ''}`)
+      guideDone('libro')
       onPublished(result.period)
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudieron llevar las notas.', 'error') }
     finally { setSaving(false) }
