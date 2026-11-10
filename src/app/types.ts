@@ -11,4 +11,6 @@ export type WorkshopIntent = {
   student?: Candidate
   group?: number
   autoStart?: boolean
+  /** What the teacher asked Búho for, word by word: it reaches the AI as the teacher's instructions. */
+  prompt?: string
 }

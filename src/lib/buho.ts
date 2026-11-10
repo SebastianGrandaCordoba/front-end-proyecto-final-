@@ -3,13 +3,14 @@ import type { Route } from '../app/router'
 import type { SupportMode } from '../app/types'
 import type { Candidate } from './domain'
 
-/* Búho's brain lives in the backend (insights.domain.assistant, a Chain of Responsibility).
-   The browser only sends the question, speaks the answer and runs the actions it returns. */
+/* Búho's brain lives in the backend: its rules (insights.domain.assistant, a Chain of Responsibility) answer
+   first, and the AI interpreter reads long or follow-up requests. The browser sends the question with the last
+   turns of the conversation, speaks the answer and runs the actions it returns. */
 
 export type BuhoAction =
   | { kind: 'navigate'; label: string; route: Route; params?: Record<string, string> }
-  | { kind: 'workshop'; label: string; mode: SupportMode; level: AcademicLevel; topic?: string; student?: Candidate; auto?: boolean }
-  | { kind: 'rubric'; label: string; topic?: string; target?: 'workshop' | 'quiz' }
+  | { kind: 'workshop'; label: string; mode: SupportMode; level: AcademicLevel; topic?: string; student?: Candidate; auto?: boolean; prompt?: string }
+  | { kind: 'rubric'; label: string; topic?: string; target?: 'workshop' | 'quiz'; activityId?: number; prompt?: string }
   | { kind: 'review'; label: string; student: Candidate }
   | { kind: 'message'; label: string; student: Candidate }
   | { kind: 'report'; label: string }
@@ -17,9 +18,9 @@ export type BuhoAction =
   | { kind: 'course'; label: string; courseId: number }
 
 export type BuhoItem = { student: Candidate; value: string; note: string; tone: 'low' | 'medium' | 'high' | 'none' }
-export type BuhoReply = { text: string; items?: BuhoItem[]; actions?: BuhoAction[]; run?: BuhoAction; followUps?: string[] }
-
-type ApiAction = { kind: string; label: string; params: Record<string, string> }
+export type ApiAction = { kind: string; label: string; params: Record<string, string> }
+/** `api` keeps what the server sent so the next question can carry it back as conversation memory. */
+export type BuhoReply = { text: string; items?: BuhoItem[]; actions?: BuhoAction[]; run?: BuhoAction; followUps?: string[]; api?: { actions: ApiAction[]; run: ApiAction | null } }
 export type ApiReply = { text: string; intent: string; items: { studentId: number; name: string; value: string; note: string; tone: BuhoItem['tone'] }[]; actions: ApiAction[]; run: ApiAction | null }
 
 export const examples = [
@@ -40,8 +41,8 @@ function adaptAction(action: ApiAction, students: Map<number, Candidate>): BuhoA
   const student = p.studentId ? students.get(Number(p.studentId)) : undefined
   switch (action.kind) {
     case 'navigate': { const { route, ...rest } = p; return { kind: 'navigate', label: action.label, route: (route || 'inicio') as Route, params: Object.keys(rest).length ? rest : undefined } }
-    case 'workshop': return { kind: 'workshop', label: action.label, mode: p.mode === 'quiz' ? 'quiz' : 'workshop', level: (p.level || 'LOW') as AcademicLevel, topic: p.topic, student, auto: p.auto === 'true' }
-    case 'rubric': return { kind: 'rubric', label: action.label, topic: p.topic, target: p.target === 'quiz' ? 'quiz' : 'workshop' }
+    case 'workshop': return { kind: 'workshop', label: action.label, mode: p.mode === 'quiz' || p.mode === 'custom' ? p.mode : 'workshop', level: (p.level || 'LOW') as AcademicLevel, topic: p.topic, student, auto: p.auto === 'true', prompt: p.prompt }
+    case 'rubric': return { kind: 'rubric', label: action.label, topic: p.topic, target: p.target === 'quiz' ? 'quiz' : 'workshop', activityId: p.activityId ? Number(p.activityId) : undefined, prompt: p.prompt }
     case 'review': return student ? { kind: 'review', label: action.label, student } : null
     case 'message': return student ? { kind: 'message', label: action.label, student } : null
     case 'report': return { kind: 'report', label: action.label }
@@ -71,5 +72,15 @@ export function adaptReply(api: ApiReply, candidates: Candidate[]): BuhoReply {
     actions: api.actions.map(a => adaptAction(a, students)).filter((x): x is BuhoAction => x !== null),
     run: api.run ? adaptAction(api.run, students) ?? undefined : undefined,
     followUps: followUpsByIntent[api.intent] ?? [],
+    api: { actions: api.actions, run: api.run },
   }
+}
+
+export type HistoryTurn = { from: 'teacher' | 'buho'; text: string; offered?: ApiAction[]; ran?: ApiAction | null }
+
+/** The last turns of the conversation, as the backend reads them (it remembers what Búho offered and did). */
+export function conversationHistory(messages: { from: 'me' | 'buho'; text: string; reply?: BuhoReply }[], limit = 10): HistoryTurn[] {
+  return messages.slice(-limit).map(m => m.from === 'me'
+    ? { from: 'teacher', text: m.text.slice(0, 600) }
+    : { from: 'buho', text: m.text.slice(0, 600), offered: m.reply?.api?.actions ?? [], ran: m.reply?.api?.run ?? null })
 }

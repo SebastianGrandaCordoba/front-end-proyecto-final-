@@ -88,12 +88,12 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   }, [navigate])
 
   /** "Crea una rúbrica para el último taller de X": find it, build the rubric from its content, save and open it. */
-  const rubricFromLatest = useCallback(async (topic?: string, target?: 'workshop' | 'quiz') => {
+  const rubricFromLatest = useCallback(async (topic?: string, target?: 'workshop' | 'quiz', activityId?: number, prompt?: string) => {
     if (!course) return
     notify('Estoy armando la rúbrica a partir del taller. Tarda unos segundos…', 'info')
     try {
       const rubric = await request<{ id: number; activityTitle: string | null }>(`/api/courses/${course.id}/rubrics/from-activity`,
-        { method: 'POST', body: JSON.stringify({ kind: target ?? 'workshop', topic: topic ?? null, criteriaCount: 4 }) })
+        { method: 'POST', body: JSON.stringify({ activityId: activityId ?? null, kind: target ?? 'workshop', topic: topic ?? null, criteriaCount: 4, teacherPrompt: prompt ?? null }) })
       notify(`Rúbrica lista para "${rubric.activityTitle ?? 'el taller'}". Revísala y empieza a calificar.`)
       navigate('rubricas', { id: String(rubric.id), vista: 'rubrica' })
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear la rúbrica.', 'error') }
@@ -104,8 +104,8 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     switch (action.kind) {
       case 'navigate': return navigate(action.route, action.params)
       // Búho's buttons do the work ("Preparar refuerzo" creates it); they never leave a form waiting for a click.
-      case 'workshop': return startWorkshop({ mode: action.mode, level: action.level, topic: action.topic, student: action.student, autoStart: true })
-      case 'rubric': return void rubricFromLatest(action.topic, action.target)
+      case 'workshop': return startWorkshop({ mode: action.mode, level: action.level, topic: action.topic, student: action.student, autoStart: true, prompt: action.prompt })
+      case 'rubric': return void rubricFromLatest(action.topic, action.target, action.activityId, action.prompt)
       case 'review': return setReviewing(action.student)
       case 'message': return setMessageFor(action.student)
       case 'report': return report()

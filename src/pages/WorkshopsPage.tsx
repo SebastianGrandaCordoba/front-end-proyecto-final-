@@ -102,13 +102,19 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
       if (saved) { setResult(saved); notify('Ya tenías una propuesta para este estudiante. Puedes revisarla o crear otra.', 'info'); return }
     }
     const subject = intent.topic?.trim() || topicIdeas[0]?.name || ''
-    if (sortedMaterials.length) {
-      void generate({ materialIds: [sortedMaterials[0].id], mode: intent.mode, level: intent.level, student: intent.student, topic: subject })
+    // What the teacher told Búho ("en parejas", "con 5 preguntas") goes to the AI as their instructions.
+    const asked = intent.prompt?.trim() ? `Pedido del docente a Búho: ${intent.prompt.trim()}` : undefined
+    if (asked) setExtra(asked)
+    if (intent.mode === 'custom' && (intent.prompt?.trim().length ?? 0) >= MIN_PROMPT) {
+      setPrompt(intent.prompt!.trim())
+      void generate({ materialIds: sortedMaterials.length ? [sortedMaterials[0].id] : [], mode: 'custom', level: intent.level, student: intent.student, topic: subject, prompt: intent.prompt!.trim() })
+    } else if (sortedMaterials.length) {
+      void generate({ materialIds: [sortedMaterials[0].id], mode: intent.mode === 'custom' ? 'workshop' : intent.mode, level: intent.level, student: intent.student, topic: subject, extra: asked })
     } else {
       // No material: written from the topic (the one that costs the course the most if none was named).
       const about = subject || course?.name || 'el tema de la clase'
       setTopic(about); setSelected([])
-      void generate({ materialIds: [], mode: intent.mode, level: intent.level, student: intent.student, topic: about })
+      void generate({ materialIds: [], mode: intent.mode === 'custom' ? 'workshop' : intent.mode, level: intent.level, student: intent.student, topic: about, extra: asked })
     }
   }, [intent, materials])
 
@@ -133,7 +139,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     } catch (err) { notify(err instanceof Error ? err.message : 'No se pudo quitar el material.', 'error') }
   }
 
-  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop; topic?: string; prompt?: string } = {}) {
+  async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop; topic?: string; prompt?: string; extra?: string } = {}) {
     if (!course) return
     const ids = options.materialIds ?? selected
     const useMode = options.mode ?? mode
@@ -166,7 +172,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     const variant = options.variantOf
     // A level variant keeps the topic and structure of the original and only moves the difficulty.
     const instructions = [
-      variant?.teacherPrompt ?? (custom ? customPrompt : extra),
+      variant?.teacherPrompt ?? (custom ? customPrompt : options.extra ?? extra),
       variant ? `Es una versión de nivel ${levelLabel[useLevel].toLowerCase()} del trabajo "${variant.title}": conserva el tema, el tipo de actividades y la duración; cambia solo la dificultad, el apoyo y los ejemplos.` : '',
     ].map(text => text.trim()).filter(Boolean).join('\n\n')
     if (instructions) form.append('teacherPrompt', instructions.slice(0, 2000))

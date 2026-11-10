@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adaptReply, type ApiReply } from '../buho'
+import { adaptReply, conversationHistory, type ApiReply } from '../buho'
 import type { Candidate } from '../domain'
 
 const ana = { id: 1, name: 'Ana Ruiz' } as Candidate
@@ -27,5 +27,23 @@ describe('Búho reply adapter', () => {
     const reply = adaptReply({ text: 't', intent: 'x', items: [], actions: [{ kind: 'dance', label: '?', params: {} }], run: null }, [])
     expect(reply.actions).toEqual([])
     expect(reply.run).toBeUndefined()
+  })
+
+  it('carries the teacher details and the rubric target', () => {
+    const reply = adaptReply({ text: 't', intent: 'create-activity', items: [], actions: [], run: { kind: 'workshop', label: 'Ver', params: { mode: 'custom', level: 'HIGH', auto: 'true', prompt: 'un debate en parejas' } } }, [])
+    expect(reply.run).toMatchObject({ kind: 'workshop', mode: 'custom', auto: true, prompt: 'un debate en parejas' })
+    const rubric = adaptReply({ text: 't', intent: 'create-rubric', items: [], actions: [], run: { kind: 'rubric', label: 'Ver', params: { activityId: '29', prompt: 'evalúa la justificación' } } }, [])
+    expect(rubric.run).toMatchObject({ kind: 'rubric', activityId: 29, prompt: 'evalúa la justificación' })
+  })
+
+  it('remembers what Búho offered and did for the next question', () => {
+    const offered = { kind: 'workshop', label: 'Preparar refuerzo', params: { topic: 'Funciones' } }
+    const reply = adaptReply({ text: 'Te propongo un refuerzo', intent: 'teacher-advice', items: [], actions: [offered], run: null }, [])
+    const history = conversationHistory([{ from: 'me', text: '¿qué me recomiendas?' }, { from: 'buho', text: reply.text, reply }])
+    expect(history).toEqual([
+      { from: 'teacher', text: '¿qué me recomiendas?' },
+      { from: 'buho', text: 'Te propongo un refuerzo', offered: [offered], ran: null },
+    ])
+    expect(conversationHistory(Array.from({ length: 30 }, (_, i) => ({ from: 'me' as const, text: String(i) })))).toHaveLength(10)
   })
 })

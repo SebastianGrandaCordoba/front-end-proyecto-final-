@@ -3,7 +3,7 @@ import { ArrowUp, Copy, Mic, Play, Square, Trash2, Volume2, VolumeX, X } from 'l
 import FairTeamMark from '../FairTeamMark'
 import Owl from './Owl'
 import { request } from '../api'
-import { adaptReply, examples, type ApiReply, type BuhoAction, type BuhoReply } from '../lib/buho'
+import { adaptReply, conversationHistory, examples, type ApiReply, type BuhoAction, type BuhoReply, type HistoryTurn } from '../lib/buho'
 import type { Candidate } from '../lib/domain'
 import { teacherFirstName } from '../lib/domain'
 import { canListen, canSpeak, listen, speak, stopSpeaking } from '../lib/speech'
@@ -38,6 +38,13 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   }, [open, setOpen])
   useEffect(() => { if (open) window.setTimeout(() => input.current?.focus(), 60); else { stopSpeaking(); stopListening.current(); setStatus('idle') } }, [open])
   useEffect(() => { list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' }) }, [messages, status])
+  // Requests the AI reads take a few seconds: after a moment the dots say what is going on.
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    if (status !== 'thinking') { setSlow(false); return }
+    const timer = window.setTimeout(() => setSlow(true), 2500)
+    return () => window.clearTimeout(timer)
+  }, [status])
   // Keep the conversation of each course while the tab is open.
   useEffect(() => { try { setMessages(JSON.parse(sessionStorage.getItem(storageKey) || '[]') as Message[]) } catch { setMessages([]) } }, [storageKey])
   useEffect(() => { try { sessionStorage.setItem(storageKey, JSON.stringify(messages.slice(-40))) } catch { /* storage full */ } }, [messages, storageKey])
@@ -51,7 +58,9 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   }, [voiceOn])
 
   /** Asks the backend (insights assistant). Returns null when the course or the server is not available. */
-  const fetchReply = useCallback(async (question: string): Promise<BuhoReply | null> => {
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
+  const fetchReply = useCallback(async (question: string, history: HistoryTurn[] = []): Promise<BuhoReply | null> => {
     const { courseId, candidates } = contextRef.current
     // "¿Cómo se usa?", "muéstrame el tutorial": the guided tour answers better than words.
     if (/tutorial|recorrido|c[oó]mo (se )?usa|c[oó]mo funciona (la|esta) (app|plataforma)|ens[eé]ñame a usar/i.test(question)) {
@@ -60,7 +69,8 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     }
     if (!courseId) return { text: 'Primero crea o elige un curso y te ayudo con todo lo demás.', actions: [{ kind: 'navigate', label: 'Mis cursos', route: 'cursos' }] }
     try {
-      const api = await request<ApiReply>(`/api/courses/${courseId}/assistant`, { method: 'POST', body: JSON.stringify({ question }) })
+      // The question travels with the last turns so "sí", "hazlo para ella" or "ese taller" make sense.
+      const api = await request<ApiReply>(`/api/courses/${courseId}/assistant`, { method: 'POST', body: JSON.stringify({ question, history }) })
       return adaptReply(api, candidates)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pude conectarme con el servidor.')
@@ -72,10 +82,11 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
     const q = question.trim()
     if (!q) return
     setError('')
+    const history = conversationHistory(messagesRef.current)
     setMessages(current => [...current, { id: ++counter.current, from: 'me', text: q }])
     setDraft('')
     setStatus('thinking')
-    const reply = await fetchReply(q)
+    const reply = await fetchReply(q, history)
     if (!reply) { setStatus('idle'); return }
     setMessages(current => [...current, { id: ++counter.current, from: 'buho', text: reply.text, reply }])
     if (reply.run) window.setTimeout(() => onAction(reply.run!), 450)
@@ -142,7 +153,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
             {message.reply?.followUps && message.reply.followUps.length > 0 && message.id === messages[messages.length - 1]?.id && <div className="msg-followups">{message.reply.followUps.map(q => <button key={q} className="chip" onClick={() => void ask(q)}>{q}</button>)}</div>}
             {message.reply?.actions && message.reply.actions.length > 0 && <div className="msg-actions">{message.reply.actions.map((action, i) => <button key={i} className={`btn btn-small ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} onClick={() => onAction(action)}>{action.label}</button>)}</div>}
           </div>)}
-        {status === 'thinking' && <div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i /></div>}
+        {status === 'thinking' && <div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i />{slow && <span className="msg-typing-note">Leyendo tu pedido y revisando el curso…</span>}</div>}
       </div>
 
       {error && <p className="buho-error" role="alert">{error} <button className="link-btn" onClick={() => { const last = [...messages].reverse().find(m => m.from === 'me'); if (last) void ask(last.text) }}>Reintentar</button></p>}
