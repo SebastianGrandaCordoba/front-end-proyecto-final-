@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
-import { Download, Percent, Plus, Save, Sigma, Table2, Undo2, UserPlus } from 'lucide-react'
-import { request } from '../../api'
+import { Download, GripVertical, Percent, Plus, Save, Sigma, Table2, Undo2, UserPlus } from 'lucide-react'
+import { request, type GeneratedWorkshop, type Grade } from '../../api'
 import { EmptyState, Spinner, useFeedback } from '../../components/ui'
 import { formatScaled } from '../../lib/domain'
 import type { Projection, Sim, Trend } from '../../lib/insights'
@@ -8,6 +8,7 @@ import { cellKey, evenWeights, fillMissingWeights, scaleWeightsTo100, formatCell
 import { ColumnHeader } from './ColumnHeader'
 import { TopicPanel } from './TopicPanel'
 import { useColumnDrag } from './useColumnDrag'
+import { createPortal } from 'react-dom'
 import type { Navigate } from '../../app/router'
 import type { WorkshopIntent } from '../../app/types'
 import { FinalGrades } from './FinalGrades'
@@ -29,6 +30,8 @@ interface Props {
   saveScheme: (weights: number[]) => Promise<void>
   navigate: Navigate
   startWorkshop: (intent: WorkshopIntent) => void
+  grades: Grade[]
+  workshops: GeneratedWorkshop[]
 }
 
 /**
@@ -36,7 +39,7 @@ interface Props {
  * percentage) and a "Definitiva" tab that weighs the cortes. Typing never saves on its own: changes are
  * collected, checked as you type and saved together, so a slip of the keyboard is easy to undo.
  */
-export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQuickAdd, trends, projections, sim, saveScheme, navigate, startWorkshop }: Props) {
+export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQuickAdd, trends, projections, sim, saveScheme, navigate, startWorkshop, grades, workshops }: Props) {
   const { notify, confirm } = useFeedback()
   const onError = useCallback((message: string) => notify(message, 'error'), [notify])
   const book = useGradeSheet(courseId, onError)
@@ -297,7 +300,14 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
       <p className="sheet-help">Escribe la nota (de 0 a {plainNumber(max)}) y pulsa <kbd>Enter</kbd> para bajar. Las flechas mueven entre celdas, <kbd>Esc</kbd> deshace la celda y puedes <b>pegar una columna o un bloque copiado de Excel</b>. Arrastra una columna por su asa para cambiarla de lugar; toca su nombre para ver todo del tema, renombrarla o eliminarla.</p>
     </>}
 
-    {topicOf && <TopicPanel courseId={courseId} subjectId={topicOf.id} name={topicOf.name} onClose={() => setTopicOf(null)}
+    {drag.view && createPortal(<>
+      {drag.view.line && <div className="col-drop-line" style={drag.view.line} aria-hidden />}
+      <div className="col-ghost" style={drag.view.ghost} aria-hidden>
+        <GripVertical size={14} /><span>{columns.find(c => c.id === drag.view!.id)?.name}</span>
+      </div>
+    </>, document.body)}
+
+    {topicOf && <TopicPanel courseId={courseId} subjectId={topicOf.id} name={topicOf.name} grades={grades} workshops={workshops} onClose={() => setTopicOf(null)}
       onOpenActivity={title => navigate('talleres', { ver: title })} onOpenRubric={id => navigate('rubricas', { id: String(id) })}
       onCreate={mode => startWorkshop({ mode, level: 'MEDIUM', topic: topicOf.name, autoStart: true })}
       onCreateRubric={activityId => navigate('rubricas', activityId ? { taller: String(activityId) } : undefined)} />}

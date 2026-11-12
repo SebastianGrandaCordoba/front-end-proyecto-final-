@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { BookOpenCheck, ClipboardCheck, ListChecks, PenLine, Plus, Sparkles } from 'lucide-react'
 import { Modal, Spinner } from '../../components/ui'
 import { formatGrade, relativeDate } from '../../lib/domain'
-import { topicSummary, type TopicSummary } from '../../lib/activities'
+import { localTopicSummary, topicSummary, type TopicSummary } from '../../lib/activities'
+import type { GeneratedWorkshop, Grade } from '../../api'
 
 const kindLabel = { workshop: 'Taller', quiz: 'Quiz', custom: 'A tu medida' } as const
 const kindIcon = { workshop: BookOpenCheck, quiz: ListChecks, custom: PenLine } as const
@@ -11,8 +12,10 @@ const kindIcon = { workshop: BookOpenCheck, quiz: ListChecks, custom: PenLine } 
  * Everything about one topic of the course in one place: how the class did in each corte, the workshops and
  * quizzes made for it and the rubrics that graded it, with shortcuts to create what is missing.
  */
-export function TopicPanel({ courseId, subjectId, name, onClose, onOpenActivity, onOpenRubric, onCreate, onCreateRubric }: {
+export function TopicPanel({ courseId, subjectId, name, grades, workshops, onClose, onOpenActivity, onOpenRubric, onCreate, onCreateRubric }: {
   courseId: number
+  grades: Grade[]
+  workshops: GeneratedWorkshop[]
   subjectId: number
   name: string
   onClose: () => void
@@ -22,14 +25,21 @@ export function TopicPanel({ courseId, subjectId, name, onClose, onOpenActivity,
   onCreateRubric: (activityId?: number) => void
 }) {
   const [data, setData] = useState<TopicSummary | null>(null)
-  const [error, setError] = useState('')
+  const [partial, setPartial] = useState(false)
 
   useEffect(() => {
-    topicSummary(courseId, subjectId).then(setData).catch(err => setError(err instanceof Error ? err.message : 'No se pudo cargar el tema.'))
-  }, [courseId, subjectId])
+    let alive = true
+    setData(null); setPartial(false)
+    topicSummary(courseId, subjectId)
+      .then(summary => { if (alive) setData(summary) })
+      // Without the server's summary the panel still opens with the grades and workshops already on the page.
+      .catch(() => { if (alive) { setData(localTopicSummary(subjectId, name, grades, workshops)); setPartial(true) } })
+    return () => { alive = false }
+  }, [courseId, subjectId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <Modal title={name} description="Todo lo de este tema: notas por corte, talleres, quizzes y rúbricas." onClose={onClose} size="large">
-    {error ? <p className="form-error">{error}</p> : !data ? <div className="mini-loading"><Spinner /> Reuniendo lo del tema…</div> : <div className="topic-panel">
+    {!data ? <div className="mini-loading"><Spinner /> Reuniendo lo del tema…</div> : <div className="topic-panel">
+      {partial && <p className="muted topic-partial">Muestro lo que hay en esta página; las rúbricas del tema aparecerán cuando el servidor responda.</p>}
       <section>
         <h3>Notas</h3>
         {data.columns.length ? <ul className="topic-columns">{data.columns.map(column => <li key={column.period}>

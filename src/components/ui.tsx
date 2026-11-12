@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, CheckCircle2, Info, LoaderCircle, X } from 'lucide-react'
 import type { AcademicLevel } from '../api'
 import { initials, levelShort } from '../lib/domain'
@@ -83,7 +84,8 @@ export function Modal({ title, description, children, onClose, size = 'medium' }
       previous?.focus?.()
     }
   }, [])
-  return <div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
+  // Rendered on <body>: a modal opened from inside a table or a sticky header still covers the whole page.
+  return createPortal(<div className="modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <div ref={panel} className={`modal modal-${size}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="modal-head">
         <div><h2 id={titleId}>{title}</h2>{description && <p>{description}</p>}</div>
@@ -91,7 +93,7 @@ export function Modal({ title, description, children, onClose, size = 'medium' }
       </header>
       {children}
     </div>
-  </div>
+  </div>, document.body)
 }
 
 /* ---------- Small pieces ---------- */

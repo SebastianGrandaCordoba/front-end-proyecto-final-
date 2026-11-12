@@ -75,7 +75,7 @@ export default function StudentsPage({ workspace, review, params, navigate, star
     </header>
 
     {view === 'notas' && course ? <GradeEditor courseId={course.id} courseName={course.name} onSaved={() => void workspace.refreshCourse()} onScaleChanged={() => void workspace.loadCourses().then(workspace.refreshCourse)} onQuickAdd={() => setQuickAdd(true)}
-      trends={workspace.trends} projections={workspace.projections} sim={workspace.sim} saveScheme={workspace.saveScheme} navigate={navigate} startWorkshop={startWorkshop} />
+      trends={workspace.trends} projections={workspace.projections} sim={workspace.sim} saveScheme={workspace.saveScheme} navigate={navigate} startWorkshop={startWorkshop} grades={workspace.grades} workshops={workspace.workshops} />
     : view === 'asistencia' && course ? <AttendanceSheet courseId={course.id} students={candidates} summary={attendance.summary} onSaved={() => void attendance.reload()} /> : <>
 
     <details className="help">
