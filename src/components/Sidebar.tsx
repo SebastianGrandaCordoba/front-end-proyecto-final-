@@ -1,13 +1,15 @@
+import { Fragment } from 'react'
 import { BookOpenCheck, ChevronsUpDown, ClipboardCheck, FolderOpen, Home, LogOut, Settings, Users, UsersRound, Activity, X } from 'lucide-react'
 import type { Course, TeacherProfile } from '../api'
 import FairTeamMark from '../FairTeamMark'
 import type { Navigate, Route } from '../app/router'
 
-export const nav: { route: Route; label: string; icon: typeof Home; needsCourse?: boolean }[] = [
+/** `group` starts a labelled block: the menu reads in the order a teacher works (see the course, then prepare and grade). */
+export const nav: { route: Route; label: string; icon: typeof Home; needsCourse?: boolean; group?: string }[] = [
   { route: 'inicio', label: 'Inicio', icon: Home },
-  { route: 'estudiantes', label: 'Estudiantes y notas', icon: Users, needsCourse: true },
+  { route: 'estudiantes', label: 'Estudiantes y notas', icon: Users, needsCourse: true, group: 'Tu curso' },
   { route: 'seguimiento', label: 'Seguimiento', icon: Activity, needsCourse: true },
-  { route: 'talleres', label: 'Talleres y quizzes', icon: BookOpenCheck, needsCourse: true },
+  { route: 'talleres', label: 'Talleres y quizzes', icon: BookOpenCheck, needsCourse: true, group: 'Preparar y calificar' },
   { route: 'rubricas', label: 'Rúbricas', icon: ClipboardCheck, needsCourse: true },
   { route: 'equipos', label: 'Equipos', icon: UsersRound, needsCourse: true },
 ]
@@ -50,10 +52,13 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
       {nav.map(item => {
         const Icon = item.icon
         const badge = item.route === 'seguimiento' && lowCount ? lowCount : null
-        return <a key={item.route} href={`#/${item.route}`} className={`nav-item${route === item.route ? ' is-active' : ''}`} aria-current={route === item.route ? 'page' : undefined}>
-          <Icon size={18} aria-hidden /><span>{item.label}</span>
-          {badge != null && <span className="nav-badge" aria-label={`${badge} en refuerzo`}>{badge}</span>}
-        </a>
+        return <Fragment key={item.route}>
+          {item.group && <span className="nav-group">{item.group}</span>}
+          <a href={`#/${item.route}`} className={`nav-item${route === item.route ? ' is-active' : ''}`} aria-current={route === item.route ? 'page' : undefined}>
+            <Icon size={18} aria-hidden /><span>{item.label}</span>
+            {badge != null && <span className="nav-badge" aria-label={`${badge} en refuerzo`}>{badge}</span>}
+          </a>
+        </Fragment>
       })}
     </nav>
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowUp, Copy, Mic, Play, Square, Trash2, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowUp, Check, Copy, Mic, Play, Square, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import FairTeamMark from '../FairTeamMark'
 import Owl from './Owl'
 import { request } from '../api'
@@ -22,6 +22,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
   const [status, setStatus] = useState<Status>('idle')
   const [voiceOn, setVoiceOn] = useState(() => canSpeak() && localStorage.getItem('fairteam.buho.voice') !== 'off')
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState<number | null>(null)
   const counter = useRef(0)
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -145,17 +146,23 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
         </div>}
         {messages.map(message => message.from === 'me'
           ? <div key={message.id} className="msg msg-me">{message.text}</div>
-          : <div key={message.id} className="msg msg-buho">
-            <p>{message.text}</p>
-            <button className="msg-copy icon-btn" onClick={() => void navigator.clipboard?.writeText(message.text)} aria-label="Copiar respuesta" title="Copiar respuesta"><Copy size={14} /></button>
-            {message.reply?.items && message.reply.items.length > 0 && <ul className="msg-items">{message.reply.items.map(item => <li key={item.student.id}>
-              <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })}>
-                <Avatar name={item.student.name} size={28} /><span><b>{item.student.name}</b><small>{item.note}</small></span><em className={`tone-${item.tone}`}>{item.value}</em>
-              </button></li>)}</ul>}
-            {message.reply?.followUps && message.reply.followUps.length > 0 && message.id === messages[messages.length - 1]?.id && <div className="msg-followups">{message.reply.followUps.map(q => <button key={q} className="chip" onClick={() => void ask(q)}>{q}</button>)}</div>}
-            {message.reply?.actions && message.reply.actions.length > 0 && <div className="msg-actions">{message.reply.actions.map((action, i) => <button key={i} className={`btn btn-small ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} onClick={() => onAction(action)}>{action.label}</button>)}</div>}
+          : <div key={message.id} className="msg-row">
+            <span className="msg-avatar" aria-hidden><FairTeamMark size={26} /></span>
+            <div className="msg msg-buho">
+              <ReplyText text={message.text} />
+              {message.reply?.items && message.reply.items.length > 0 && <ul className="msg-items">{message.reply.items.map(item => <li key={item.student.id}>
+                <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })} title="Ver la ficha">
+                  <Avatar name={item.student.name} size={28} /><span><b>{item.student.name}</b><small>{item.note}</small></span><em className={`tone-${item.tone}`}>{item.value}</em>
+                </button></li>)}</ul>}
+              {message.reply?.actions && message.reply.actions.length > 0 && <div className="msg-actions">{message.reply.actions.map((action, i) => <button key={i} className={`btn btn-small ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} onClick={() => onAction(action)}>{action.label}</button>)}</div>}
+              <div className="msg-tools">
+                {canSpeak() && <button onClick={() => say(message.text, true)} title="Escuchar esta respuesta"><Volume2 size={14} aria-hidden />Escuchar</button>}
+                <button onClick={() => { void navigator.clipboard?.writeText(message.text); setCopied(message.id); window.setTimeout(() => setCopied(null), 1600) }} title="Copiar el texto">{copied === message.id ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}{copied === message.id ? 'Copiado' : 'Copiar'}</button>
+              </div>
+              {message.reply?.followUps && message.reply.followUps.length > 0 && message.id === messages[messages.length - 1]?.id && <div className="msg-followups"><span>También puedes preguntar</span>{message.reply.followUps.map(q => <button key={q} className="chip" onClick={() => void ask(q)}>{q}</button>)}</div>}
+            </div>
           </div>)}
-        {status === 'thinking' && <div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i />{slow && <span className="msg-typing-note">Leyendo tu pedido y revisando el curso…</span>}</div>}
+        {status === 'thinking' && <div className="msg-row"><span className="msg-avatar" aria-hidden><FairTeamMark size={26} /></span><div className="msg msg-buho msg-typing" aria-label="Pensando"><i /><i /><i />{slow && <span className="msg-typing-note">Leyendo tu pedido y revisando el curso…</span>}</div></div>}
       </div>
 
       {error && <p className="buho-error" role="alert">{error} <button className="link-btn" onClick={() => { const last = [...messages].reverse().find(m => m.from === 'me'); if (last) void ask(last.text) }}>Reintentar</button></p>}
@@ -168,4 +175,21 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
       </form>
     </aside>}
   </>
+}
+
+/**
+ * Búho's text with a little structure so it reads at a glance: "Te recomiendo: a; b." becomes a lead and
+ * a list, and long answers (the how-to steps) get one short paragraph per pair of sentences.
+ */
+function ReplyText({ text }: { text: string }) {
+  const list = /^([^:;]{4,60}:)\s(.+;.+)$/s.exec(text)
+  if (list) {
+    const items = list[2].replace(/\.$/, '').split(/;\s+/).filter(Boolean)
+    return <><p>{list[1]}</p><ul className="msg-list">{items.map((item, i) => <li key={i}>{item.charAt(0).toUpperCase() + item.slice(1)}</li>)}</ul></>
+  }
+  const sentences = text.match(/[^.!?]+[.!?]+(?:["”»)]+)?(?:\s+|$)|[^.!?]+$/g) ?? [text]
+  if (text.length < 190 || sentences.length < 3) return <p>{text}</p>
+  const paragraphs: string[] = []
+  for (let i = 0; i < sentences.length; i += 2) paragraphs.push(sentences.slice(i, i + 2).join('').trim())
+  return <>{paragraphs.map((paragraph, i) => <p key={i}>{paragraph}</p>)}</>
 }

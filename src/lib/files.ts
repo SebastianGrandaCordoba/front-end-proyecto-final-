@@ -93,17 +93,17 @@ ${item.deliverable ? `<p class="deliverable"><b>Entrega:</b> ${escape(item.deliv
   const sources = workshop.sourceReferences.map(escape).join(' · ') || 'No especificado'
   const kind = isQuiz ? 'Quiz' : 'Taller'
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(workshop.title)}</title><style>
-:root{font-family:"Instrument Sans",Inter,Arial,sans-serif;color:#15232b;background:#f4f5f2}body{margin:0;padding:32px 16px}
+:root{font-family:"Figtree",Inter,system-ui,Arial,sans-serif;color:#15232b;background:#f4f5f2}body{margin:0;padding:32px 16px}
 .sheet{max-width:780px;margin:auto;padding:48px 52px;background:#fff;border:1px solid #e4e7e6;border-radius:14px}
-.brand{color:#17708a;font-size:13px;font-weight:600}h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:36px;line-height:1.1;margin:14px 0 8px}
+.brand{color:#0e6676;font-size:13px;font-weight:600}h1{font-family:Besley,Rockwell,Georgia,serif;font-weight:500;font-size:36px;line-height:1.1;margin:14px 0 8px}
 .meta{color:#55636b;font-size:14px}.fields{display:flex;gap:24px;margin:22px 0;font-size:14px;color:#55636b}.fields span{flex:1;border-bottom:1px solid #cfd5d4;padding-bottom:4px}
 .summary{padding:14px 16px;background:#f2f7f8;border-radius:10px;line-height:1.6;margin:20px 0}h2{font-size:16px;margin:28px 0 10px}
-.intro{padding:14px 16px;border-left:3px solid #17708a;background:#fbfcfb;line-height:1.65}
+.intro{padding:14px 16px;border-left:3px solid #0e6676;background:#fbfcfb;line-height:1.65}
 li,p{line-height:1.6}article{padding:16px 0;border-top:1px solid #eef0ef;break-inside:avoid}h3{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:0 0 6px}
-h3 span{color:#17708a;font-variant-numeric:tabular-nums}h3 small{margin-left:auto;color:#55636b;font-weight:500}.body,.goal,.deliverable,.hints{margin-left:22px}
+h3 span{color:#0e6676;font-variant-numeric:tabular-nums}h3 small{margin-left:auto;color:#55636b;font-weight:500}.body,.goal,.deliverable,.hints{margin-left:22px}
 .body p{margin:4px 0;white-space:pre-line}.goal{margin-top:0;color:#55636b;font-style:italic}
 pre{margin:8px 0;padding:12px 14px;border-radius:8px;background:#15232b;color:#eef3f2;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
-.hints{margin-top:8px;font-size:14px;color:#3b4a52}.hints summary{cursor:pointer;font-weight:600;color:#17708a}.deliverable{margin-top:8px;padding:8px 12px;border-radius:8px;background:#f2f7f8;font-size:14px}
+.hints{margin-top:8px;font-size:14px;color:#3b4a52}.hints summary{cursor:pointer;font-weight:600;color:#0e6676}.deliverable{margin-top:8px;padding:8px 12px;border-radius:8px;background:#f2f7f8;font-size:14px}
 ol{margin:6px 0 0 22px}.key{margin:10px 0 0 22px;padding:10px 12px;border-radius:8px;background:#f4f5f2;font-size:14px}.answer-line{margin:12px 0 0 22px;color:#55636b;font-size:14px}
 .notes{margin-top:28px;padding:14px 18px;border-radius:10px;background:#fbf1da}.notes h2{margin-top:0}
 footer{margin-top:28px;padding-top:12px;border-top:1px solid #e4e7e6;color:#55636b;font-size:12px}

@@ -98,10 +98,10 @@ export function rubricHtml(rubric: RubricDraft, courseName: string, levelGrades:
   const value = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
   const rows = rubric.criteria.map(c => `<tr><th><b>${e(c.name)}</b><small>${e(c.description)}</small><span>${value(c.weight)} %</span></th>${LEVELS.map(l => `<td>${e(c.levels[l.key])}</td>`).join('')}</tr>`).join('')
   return `<!doctype html><html lang="es"><meta charset="utf-8"><title>${e(rubric.title)}</title><style>
-body{font-family:"Instrument Sans",Inter,Arial,sans-serif;color:#15232b;margin:0;padding:28px;background:#f4f5f2}main{max-width:1100px;margin:auto;background:#fff;border:1px solid #e4e7e6;border-radius:14px;padding:36px}
-.brand{color:#17708a;font-size:13px;font-weight:600}h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:32px;margin:10px 0 4px}p{color:#55636b}
+body{font-family:"Figtree",Inter,system-ui,Arial,sans-serif;color:#15232b;margin:0;padding:28px;background:#f4f5f2}main{max-width:1100px;margin:auto;background:#fff;border:1px solid #e4e7e6;border-radius:14px;padding:36px}
+.brand{color:#0e6676;font-size:13px;font-weight:600}h1{font-family:Besley,Rockwell,Georgia,serif;font-weight:500;font-size:32px;margin:10px 0 4px}p{color:#55636b}
 table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13.5px;line-height:1.45}th,td{border:1px solid #e4e7e6;padding:10px;vertical-align:top;text-align:left}
-thead th{background:#f2f7f8;font-size:13px}thead th small{display:block;color:#55636b;font-weight:500}tbody th{width:22%}tbody th small{display:block;color:#55636b;font-weight:400;margin-top:4px}tbody th span{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:99px;background:#e6f1f3;color:#17708a;font-size:12px}
+thead th{background:#f2f7f8;font-size:13px}thead th small{display:block;color:#55636b;font-weight:500}tbody th{width:22%}tbody th small{display:block;color:#55636b;font-weight:400;margin-top:4px}tbody th span{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:99px;background:#e6f1f3;color:#0e6676;font-size:12px}
 footer{margin-top:16px;color:#55636b;font-size:12px}@media print{body{padding:0;background:#fff}main{border:0;padding:12mm;max-width:none}}
 </style><body><main><div class="brand">FairTeam · Rúbrica · ${e(courseName)}</div><h1>${e(rubric.title)}</h1>${rubric.description ? `<p>${e(rubric.description)}</p>` : ''}
 <table><thead><tr><th>Criterio</th>${LEVELS.map((l, i) => `<th>${l.label}<small>${value(levelGrades[i] ?? 0)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>

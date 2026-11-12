@@ -17,8 +17,8 @@ export function printCourseReport({ course, teacher, summary, insights, trends, 
     return `<tr><td>${esc(t.student.name)}</td><td class="n">${t.student.hasGrades ? formatGrade(t.student.average) : '—'}</td><td>${t.student.hasGrades ? levelLabel[t.student.level] : 'Sin notas'}</td><td>${t.direction === 'down' ? '↓ baja' : t.direction === 'up' ? '↑ sube' : t.direction === 'flat' ? '= estable' : '—'}</td><td>${p ? esc(p.explanation) : '—'}</td></tr>`
   }).join('')
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Informe · ${esc(course.name)}</title><style>
-@page{size:A4;margin:16mm}body{font-family:"Instrument Sans",Arial,sans-serif;color:#14232a;font-size:12px;line-height:1.5;margin:0}
-h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:30px;margin:4px 0}h2{font-size:14px;margin:22px 0 8px}
+@page{size:A4;margin:16mm}body{font-family:"Figtree",system-ui,Arial,sans-serif;color:#14232a;font-size:12px;line-height:1.5;margin:0}
+h1{font-family:Besley,Rockwell,Georgia,serif;font-weight:500;font-size:30px;margin:4px 0}h2{font-size:14px;margin:22px 0 8px}
 .brand{color:#136f86;font-weight:600;font-size:12px}.meta{color:#5f6d73}.kpis{display:flex;gap:0;border:1px solid #e4e7e2;border-radius:10px;margin-top:16px}
 .kpis div{flex:1;padding:10px 14px}.kpis div+div{border-left:1px solid #e4e7e2}.kpis b{display:block;font-size:22px;font-weight:400}.kpis span{color:#5f6d73}
 .bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:8px 0}.bar i{display:block}

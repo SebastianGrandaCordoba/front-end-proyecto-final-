@@ -1,20 +1,14 @@
 type FairTeamMarkProps = { size?: number; className?: string }
 
-/** Original FairTeam owl mark: a thoughtful teacher's owl with a graduation cap. */
+/**
+ * FairTeam's mark: an owl whose beak is a teacher's check. Two eyes side by side (the team), one tick
+ * (the work reviewed). Flat colours so it stays legible from the favicon to the landing page.
+ */
 export default function FairTeamMark({ size = 40, className }: FairTeamMarkProps) {
-  return <svg className={className} width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="FairTeam: aprendizaje en equipo">
-    <defs>
-      <linearGradient id="fairteam-mark-gradient" x1="5" y1="4" x2="43" y2="46" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#187F94"/><stop offset="1" stopColor="#155B78"/>
-      </linearGradient>
-    </defs>
-    <rect width="48" height="48" rx="15" fill="url(#fairteam-mark-gradient)"/>
-    <path d="m13 13.5 11-6 11 6-11 5.7-11-5.7Z" fill="#e6f5f5" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/>
-    <path d="M19 16.6v3c0 2.3 2.2 3.6 5 3.6s5-1.3 5-3.6v-3" fill="none" stroke="white" strokeWidth="1.5"/>
-    <path d="M14.5 22.5c.6-6.7 4.3-10.5 9.5-10.5s8.9 3.8 9.5 10.5c.3 4.5-1 8.7-3.9 11.2L24 38l-5.6-4.3c-2.9-2.5-4.2-6.7-3.9-11.2Z" fill="url(#fairteam-mark-gradient)" stroke="white" strokeWidth="1.7" strokeLinejoin="round"/>
-    <circle cx="20.1" cy="24.8" r="4" fill="#fff"/><circle cx="27.9" cy="24.8" r="4" fill="#fff"/>
-    <circle cx="20.4" cy="24.8" r="1.5" fill="#14394a"/><circle cx="27.6" cy="24.8" r="1.5" fill="#14394a"/>
-    <path d="M20.2 24.8h7.6M24 27.2l-2.1 2.5h4.2L24 27.2Z" fill="none" stroke="#d9a745" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M18 33.2 24 37l6-3.8" fill="none" stroke="#fff" strokeOpacity=".8" strokeWidth="1.4" strokeLinecap="round"/>
+  return <svg className={className} width={size} height={size} viewBox="0 0 48 48" role="img" aria-label="FairTeam">
+    <path d="M3 15C3 8 7 4 13 4c4 0 7 1.6 11 4.4C28 5.6 31 4 35 4c6 0 10 4 10 11v17c0 7.7-5.3 13-13 13H16C8.3 45 3 39.700 3 32V15Z" fill="#0e6676" />
+    <circle cx="16" cy="22" r="8.2" fill="#fff" /><circle cx="32" cy="22" r="8.2" fill="#fff" />
+    <circle cx="17.8" cy="22.6" r="3.4" fill="#12262b" /><circle cx="30.2" cy="22.6" r="3.4" fill="#12262b" />
+    <path d="m18.600 35.200 3.900 3.700 7.400-8.300" fill="none" stroke="#f4d35e" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 }
