@@ -150,7 +150,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
       <ErrorBoundary resetKey={route}>
       <Suspense fallback={<div className="page-loading" role="status" aria-live="polite"><Spinner size={20} /> Cargando…</div>}>
         {route === 'inicio' && <HomePage {...pageProps} user={user} />}
-        {needsCourse && route !== 'inicio' ? <NoCourse onCreate={() => navigate('cursos', { nuevo: '1' })} onDemo={workspace.loadCourses} /> : <>
+        {needsCourse && route !== 'inicio' ? <NoCourse route={route} onCreate={() => navigate('cursos', { nuevo: '1' })} onDemo={workspace.loadCourses} /> : <>
           {route === 'estudiantes' && <StudentsPage {...pageProps} params={params} />}
           {route === 'seguimiento' && <FollowUpPage {...pageProps} params={params} />}
           {route === 'talleres' && <WorkshopsPage {...pageProps} intent={intent} clearIntent={() => setIntent(null)} params={params} />}
@@ -174,11 +174,21 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   </div>
 }
 
-function NoCourse({ onCreate, onDemo }: { onCreate: () => void; onDemo: () => Promise<void> }) {
+const NO_COURSE_COPY: Record<string, { title: string; text: string }> = {
+  estudiantes: { title: 'Aquí vivirá la lista de tu curso', text: 'Después de crear el curso importas tu lista y tus notas desde Excel, o agregas estudiantes uno a uno.' },
+  seguimiento: { title: 'Aquí verás a quién apoyar', text: 'Con las notas cargadas, FairTeam separa quién necesita refuerzo, quién va bajando y en qué tema.' },
+  talleres: { title: 'Aquí prepararás talleres y quizzes', text: 'Eliges un tema, el Búho propone la actividad y tú la revisas antes de descargarla.' },
+  rubricas: { title: 'Aquí armarás tus rúbricas', text: 'Describes la actividad, ajustas los criterios y la nota llega sola al libro de notas.' },
+  equipos: { title: 'Aquí formarás equipos equilibrados', text: 'Con los niveles de tu lista, propone equipos donde todos aportan y aprenden.' },
+}
+
+function NoCourse({ route, onCreate, onDemo }: { route: string; onCreate: () => void; onDemo: () => Promise<void> }) {
+  const copy = NO_COURSE_COPY[route] ?? { title: 'Primero crea un curso', text: 'Tus estudiantes, notas y materiales se guardan dentro de cada curso.' }
   return <section className="page"><div className="empty empty-page">
     <span className="empty-icon" aria-hidden><FolderOpen size={22} /></span>
-    <strong>Primero crea un curso</strong>
-    <p>Tus estudiantes, notas y materiales se guardan dentro de cada curso.</p>
+    <strong>{copy.title}</strong>
+    <p>{copy.text}</p>
+    <p className="empty-next">Primer paso: crea un curso, o carga los de demostración para explorar.</p>
     <div className="empty-action button-row"><button className="btn btn-primary" onClick={onCreate}>Crear curso</button><DemoButton onLoaded={onDemo} /></div>
   </div></section>
 }
