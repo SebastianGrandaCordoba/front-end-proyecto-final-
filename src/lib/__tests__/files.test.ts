@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GeneratedWorkshop } from '../../api'
 import { slugify, workshopAsText } from '../files'
-import { mailtoLink } from '../report'
 
 const workshop: GeneratedWorkshop = {
   title: 'Taller: ciclos', subject: 'Programación', targetLevel: 'LOW', summary: 'Repaso.',
@@ -23,7 +22,4 @@ describe('files', () => {
     expect(text).toContain('Material consultado: Unidad 3.pdf')
   })
 
-  it('builds mailto links with encoded subject and body', () => {
-    expect(mailtoLink('ana@u.co', 'Hola Ana', 'Línea 1\nLínea 2')).toBe('mailto:ana%40u.co?subject=Hola%20Ana&body=L%C3%ADnea%201%0AL%C3%ADnea%202')
-  })
 })

@@ -2,9 +2,6 @@ import type { Course, GeneratedWorkshop } from '../api'
 import { formatGrade, levelLabel, plural, todayLabel, type CourseSummary, type SubjectInsight } from './domain'
 import type { Projection, Trend } from './insights'
 
-export function mailtoLink(email: string | null | undefined, subject: string, body: string) {
-  return `mailto:${encodeURIComponent(email ?? '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-}
 
 /** Opens the browser's print dialog with a one-page course report the teacher can save as PDF. */
 export function printCourseReport({ course, teacher, summary, insights, trends, projections, workshops }: { course: Course; teacher: string; summary: CourseSummary; insights: SubjectInsight[]; trends: Trend[]; projections: Map<number, Projection>; workshops: GeneratedWorkshop[] }) {

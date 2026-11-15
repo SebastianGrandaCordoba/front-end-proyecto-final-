@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Copy, Mail } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { request } from '../api'
 import { Modal, Segmented, Spinner, useFeedback } from '../components/ui'
 import type { Candidate } from '../lib/domain'
-import { mailtoLink } from '../lib/report'
 
 type Feedback = { studentId: number; studentName: string; email: string | null; subject: string; body: string }
 
@@ -30,8 +29,7 @@ export default function MessageDialog({ courseId, student, onClose }: { courseId
         : !draft ? <div className="mini-loading"><Spinner /> Redactando…</div>
           : <textarea className="message-text" rows={14} value={text} onChange={event => setText(event.target.value)} aria-label="Texto del mensaje" />}
       <div className="modal-actions">
-        <button className="btn btn-secondary" onClick={() => void copy()} disabled={!draft}><Copy size={16} aria-hidden />Copiar</button>
-        {draft?.email ? <a className="btn btn-primary" href={mailtoLink(draft.email, draft.subject, text)}><Mail size={16} aria-hidden />Abrir en mi correo</a> : draft && <span className="muted">Sin correo registrado: cópialo y envíalo por otro medio.</span>}
+        <button className="btn btn-primary" onClick={() => void copy()} disabled={!draft}><Copy size={16} aria-hidden />Copiar</button>
       </div>
     </div>
   </Modal>
