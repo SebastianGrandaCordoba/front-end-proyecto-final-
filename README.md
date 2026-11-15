@@ -1,81 +1,83 @@
 # FairTeam · Frontend
 
-Aplicación docente para revisar notas y progreso, identificar estudiantes que podrían necesitar apoyo y crear propuestas de refuerzo a partir del material de clase.
+Teacher application to review grades and progress, identify students who may need support and create reinforcement proposals from class material.
 
 ## Stack
 
-- React, TypeScript y Vite.
-- API REST Spring Boot como punto de entrada a los datos.
-- Servicio Gemini separado para generar talleres bajo solicitud.
+- React, TypeScript and Vite.
+- Spring Boot REST API as the entry point to the data.
+- Separate Gemini service to generate workshops on request.
 
-## Organización y patrones
+## Organization and patterns
 
-- `src/api.ts`: adaptador/gateway HTTP (token, errores traducidos, tiempo límite y `warmUpBackend`, que despierta el backend de Render mientras el docente ve la página de inicio).
-- `src/lib/`: lógica pura sin React. `domain.ts` calcula niveles, promedios y temas más débiles; `assistant.ts` decide qué recomendarle al docente (curso → lista → notas → material → refuerzo) solo con datos reales; `files.ts` genera descargas e impresión.
-- `src/app/`: estado de la sesión (`useWorkspace`, con caché por curso y cargas en paralelo), enrutamiento por hash (`#/estudiantes`, `#/talleres`…) y acciones reutilizables (importar Excel, subir material).
-- `src/pages/`: una pantalla por archivo, cargadas bajo demanda (`React.lazy`).
-- `src/components/ui.tsx`: modal accesible, confirmaciones, avisos y controles compartidos.
-- `src/pages/<pantalla>/`: subcomponentes de cada pantalla (por ejemplo `followup/Simulator.tsx`, `workshops/WorkshopView.tsx`).
-- `src/components/`: piezas compartidas: `Buho`, `Sidebar`, `Owl`, `Histogram`, `Heatmap`, `ErrorBoundary`, `Welcome`.
-- `src/styles.css`: una sola hoja de estilos con tokens de color, tipografía Instrument Sans/Serif y diseño responsivo.
+- `src/api.ts`: HTTP adapter/gateway (token, translated errors, timeout and `warmUpBackend`, which wakes the Render backend while the teacher sees the home page).
+- `src/lib/`: pure logic without React. `domain.ts` computes levels, averages and weakest topics; `assistant.ts` decides what to recommend to the teacher (course → list → grades → material → reinforcement) using real data only; `files.ts` generates downloads and printing.
+- `src/app/`: session state (`useWorkspace`, with a per-course cache and parallel loads), hash routing (`#/students`, `#/workshops`…; the old Spanish routes still work) and reusable actions (import Excel, upload material).
+- `src/pages/`: one screen per file, loaded on demand (`React.lazy`).
+- `src/components/ui.tsx`: accessible modal, confirmations, notices and shared controls.
+- `src/pages/<screen>/`: subcomponents of each screen (for example `followup/Simulator.tsx`, `workshops/WorkshopView.tsx`).
+- `src/components/`: shared pieces: `Buho`, `Sidebar`, `Owl`, `Histogram`, `Heatmap`, `ErrorBoundary`, `Welcome`.
+- `src/styles.css`: a single stylesheet with color tokens, Instrument Sans/Serif typography and a responsive layout.
 
-## El asistente Búho
+Code, identifiers, comments and documentation are in English; everything the user sees is in Spanish. "Búho" is the assistant's brand name and stays as is.
 
-El cálculo vive en el backend (módulo `insights` de Spring Boot, arquitectura hexagonal). El frontend solo muestra los resultados, escucha y habla:
+## The Búho assistant
 
-- **Búho por voz o texto** (`Ctrl + K`): la pregunta se envía a `POST /api/courses/{id}/assistant`, donde una cadena de manejadores (Chain of Responsibility) la interpreta con los datos del curso. `src/lib/speech.ts` usa la Web Speech API del navegador para dictar y leer la respuesta; `src/lib/buho.ts` traduce las acciones que devuelve el servidor.
-- **Análisis, tendencias, riesgo y resumen del día**: `GET /api/courses/{id}/insights`, adaptado en `src/lib/insights.ts`.
-- **Simulador de notas**: los pesos de cada corte se guardan con `PUT /api/courses/{id}/grading-scheme` y el backend recalcula qué nota necesita cada estudiante.
-- **Mensajes de retroalimentación**: `GET /api/courses/{id}/students/{sid}/feedback?tone=`.
-- **Informe del curso en PDF**: se imprime en el navegador con los datos del análisis (`src/lib/report.ts`).
+The computation lives in the backend (the Spring Boot `insights` module, hexagonal architecture). The frontend only shows the results, listens and speaks:
 
-## Experiencia
+- **Búho by voice or text** (`Ctrl + K`): the question is sent to `POST /api/courses/{id}/assistant`, where a chain of handlers (Chain of Responsibility) interprets it with the course data. `src/lib/speech.ts` uses the browser's Web Speech API to dictate and read the answer; `src/lib/buho.ts` translates the actions the server returns.
+- **Analysis, trends, risk and the day's summary**: `GET /api/courses/{id}/insights`, adapted in `src/lib/insights.ts`.
+- **Grade simulator**: the weights of each period are saved with `PUT /api/courses/{id}/grading-scheme` and the backend recalculates what grade each student needs.
+- **Feedback messages**: `GET /api/courses/{id}/students/{sid}/feedback?tone=`.
+- **Course report as PDF**: printed from the browser with the analysis data (`src/lib/report.ts`).
 
-- **Ilustraciones propias**: el búho de FairTeam está dibujado en SVG (`src/components/Owl.tsx`) en cuatro poses (saluda, lee, piensa, celebra) y aparece en estados vacíos, mientras se genera un taller, en la bienvenida y en el Búho.
-- **Modo oscuro**: claro, oscuro o según el sistema (`src/lib/theme.ts`), elegido en Ajustes.
-- **Bienvenida en cuatro pasos** la primera vez que entra cada docente.
-- **Atajos de teclado**: `Ctrl + K` abre el Búho, `?` muestra la ayuda y `g` + letra salta entre pantallas.
-- **Visualizaciones**: distribución de promedios, mapa de calor estudiante × tema, tendencias por corte y simulador de notas.
+## Experience
 
-## Desarrollo local
+- **Own illustrations**: the FairTeam owl is drawn in SVG (`src/components/Owl.tsx`) in four poses (waving, reading, thinking, celebrating) and appears in empty states, while a workshop is generated, in the welcome and in Búho.
+- **Dark mode**: light, dark or following the system (`src/lib/theme.ts`), chosen in Settings.
+- **Four-step welcome** the first time each teacher signs in.
+- **Keyboard shortcuts**: `Ctrl + K` opens Búho, `?` shows help and `g` + letter jumps between screens.
+- **Visualizations**: distribution of averages, student × topic heat map, trends per period and grade simulator.
 
-Requiere Node.js 20.19 o posterior y pnpm.
+## Local development
+
+Requires Node.js 20.19 or later and pnpm.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Usa el backend de Render por defecto. Para cambiarlo, crea `.env.local` con:
+It uses the Render backend by default. To change it, create `.env.local` with:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-En Render crea un Static Site de este repositorio con build `pnpm install --frozen-lockfile && pnpm build`, directorio publicado `dist` y `VITE_API_BASE_URL` apuntando al backend.
+On Render, create a Static Site from this repository with build `pnpm install --frozen-lockfile && pnpm build`, published directory `dist` and `VITE_API_BASE_URL` pointing to the backend.
 
-## Pruebas
+## Tests
 
 ```bash
-pnpm test     # Vitest: lógica de dominio, adaptadores del backend, CSV, router y tema
-pnpm build    # verificación de tipos y compilación
+pnpm test     # Vitest: domain logic, backend adapters, CSV, router and theme
+pnpm build    # type check and build
 ```
 
-GitHub Actions ejecuta ambos en cada push (`.github/workflows/ci.yml`).
+GitHub Actions runs both on every push (`.github/workflows/ci.yml`).
 
-## Flujos principales
+## Main flows
 
-- Registro abierto e inicio de sesión con cuenta FairTeam; los datos académicos se aíslan por cuenta en PostgreSQL.
-- Organización de cursos por docente (por ejemplo, Cuarto semestre A/B), con selector de curso y panel separado.
-- Listado por curso, alta/edición, filtros e importación independiente de estudiantes y notas CSV.
-- Alertas con su promedio y una explicación del criterio usado.
-- Generación explícita de talleres desde PDF, DOCX o TXT usando el backend y Gemini.
-- Revisión, copia e impresión de talleres; la biblioteca se guarda localmente y se separa por cuenta.
+- Open registration and sign-in with a FairTeam account; academic data is isolated per account in PostgreSQL.
+- Course organization per teacher (for example, Fourth semester A/B), with a course selector and a separate panel.
+- Per-course listing, create/edit, filters and independent import of students and CSV grades.
+- Alerts with their average and an explanation of the criterion used.
+- Explicit workshop generation from PDF, DOCX or TXT using the backend and Gemini.
+- Review, copy and printing of workshops; the library is stored locally and separated per account.
 
-El análisis de alertas no espera a Gemini. La IA solo se consulta al pedir un taller; si la generación se demora, el backend devuelve un error controlado con tiempo límite para permitir reintentar.
+The alerts analysis does not wait for Gemini. The AI is only queried when a workshop is requested; if generation is slow, the backend returns a controlled error with a time limit so the teacher can retry.
 
-## Contrato de datos
+## Data contract
 
-La lista CSV usa `name,email,academicLevel` (email y nivel opcionales). Las notas aceptan `studentName` o `studentEmail`, `subject`, `grade`, `period`; las materias se crean al importarlas. Los niveles actuales se calculan como promedio menor de 3.0 (refuerzo), de 3.0 a menos de 4.0 (seguimiento) y 4.0 o más (progreso adecuado). Sin notas, la interfaz marca que faltan datos en vez de inferir un riesgo basado en un promedio inventado.
+The CSV list uses `name,email,academicLevel` (email and level optional). Grades accept `studentName` or `studentEmail`, `subject`, `grade`, `period`; subjects are created on import. The current levels are computed as an average below 3.0 (support), from 3.0 to below 4.0 (watch) and 4.0 or more (good progress). Without grades, the interface says data is missing instead of inferring a risk from an invented average.
 
-La API separa los datos por cuenta mediante Row Level Security de PostgreSQL. Las notas y estudiantes cargados se filtran por curso; las migraciones conservan lo existente en un curso inicial por docente.
+The API separates data per account through PostgreSQL Row Level Security. Loaded grades and students are filtered by course; the migrations keep existing data in an initial course per teacher.
