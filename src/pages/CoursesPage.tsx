@@ -25,7 +25,7 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
   }, [courses.length])
 
   const remove = async (course: Course) => {
-    const ok = await confirm({ title: `¿Eliminar “${course.name}”?`, body: 'Solo se puede eliminar un curso vacío, sin estudiantes ni notas.', confirm: 'Eliminar curso', danger: true })
+    const ok = await confirm({ title: `¿Eliminar “${course.name}”?`, body: 'Se elimina este curso con sus estudiantes, notas, rúbricas, material y asistencia. Tus otros cursos no se tocan. No se puede deshacer.', confirm: 'Eliminar curso', danger: true })
     if (!ok) return
     setDeleting(course.id)
     try {
