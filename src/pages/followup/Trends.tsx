@@ -14,7 +14,7 @@ export function Trends({ workspace, review, message }: { workspace: PageProps['w
       <caption className="visually-hidden">Promedio de cada estudiante por corte, cambio y riesgo</caption>
       <thead><tr><th scope="col">Estudiante</th>{periods.map(p => <th key={p} scope="col" className="num">{p}</th>)}<th scope="col" className="num">Cambio</th><th scope="col">Riesgo</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
       <tbody>{trends.filter(t => t.student.hasGrades).map(t => <tr key={t.student.id}>
-        <td><button className="person-cell" onClick={() => review(t.student)}><Avatar name={t.student.name} /><span><b>{t.student.name}</b><small>{t.weakest ? `Le cuesta ${t.weakest.name}` : ''}</small></span></button></td>
+        <td><button className="person-cell" onClick={() => review(t.student)}><Avatar name={t.student.name} /><span><b title={t.student.name}>{t.student.name}</b><small>{t.weakest ? `Le cuesta ${t.weakest.name}` : ''}</small></span></button></td>
         {periods.map(p => { const point = t.points.find(x => x.period === p); return <td key={p} className="num">{point ? formatGrade(point.average) : <span className="muted">—</span>}</td> })}
         <td className={`num delta-${t.direction}`}>{t.delta == null ? '—' : `${t.delta > 0 ? '+' : t.delta < 0 ? '−' : ''}${formatGrade(Math.abs(t.delta))}`}</td>
         <td><span className="risk"><span className="risk-track"><i className={`risk-${riskLabel(t.risk).toLowerCase()}`} style={{ width: `${t.risk}%` }} /></span>{riskLabel(t.risk)}</span></td>

@@ -164,8 +164,7 @@ input:disabled, select:disabled, textarea:disabled { background: var(--panel); c
 .boot span { display: flex; align-items: center; gap: 8px; }
 
 /* ---------- Page ---------- */
-.page { width: min(1100px, 100%); margin: 0 auto; padding: 40px 32px 64px; animation: page-in .18s var(--ease-out); }
-@keyframes page-in { from { opacity: 0; transform: translateY(4px); } }
+.page { width: min(1100px, 100%); margin: 0 auto; padding: 40px 32px 64px; }
 .page-narrow { width: min(760px, 100%); }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 24px; }
 .page-head h1 { font-size: 26px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
@@ -743,7 +742,7 @@ button.file-row:hover { box-shadow: 0 0 0 1px #b9c9cc; }
 .owl-wave > path:first-child { animation: owl-wave 1.6s ease-in-out 3; transform-box: fill-box; transform-origin: 0% 100%; }
 @keyframes owl-wave { 0%, 60%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 40% { transform: rotate(8deg); } }
 .owl-think .owl-sparkles { animation: pulse 1.6s ease-in-out infinite; }
-.owl-confetti { animation: owl-confetti 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.owl-confetti { animation: owl-confetti 2.4s ease-out 2; transform-box: fill-box; transform-origin: center; }
 @keyframes owl-confetti { 0% { opacity: 0; transform: translateY(6px) scale(.9); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px) scale(1.05); } }
 .owl-eyes { animation: owl-blink 6s infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes owl-blink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }

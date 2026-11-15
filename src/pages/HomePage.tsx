@@ -96,7 +96,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
           {needSupport.length ? <ul className="people">{needSupport.slice(0, 5).map(student => <li key={student.id}>
             <button className="person" onClick={() => review(student)}>
               <Avatar name={student.name} />
-              <span className="person-name"><b>{student.name}</b><small>{plural(student.gradeCount, 'nota', 'notas')}</small></span>
+              <span className="person-name"><b title={student.name}>{student.name}</b><small>{plural(student.gradeCount, 'nota', 'notas')}</small></span>
               <span className="person-grade num">{formatGrade(student.average)}</span>
               <span className="person-cta">Ver recomendación</span>
             </button>

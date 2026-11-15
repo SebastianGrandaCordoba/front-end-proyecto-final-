@@ -151,7 +151,7 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
             <div className="msg msg-buho">
               <ReplyText text={message.text} />
               {message.reply?.items && message.reply.items.length > 0 && <ul className="msg-items">{message.reply.items.map(item => <li key={item.student.id}>
-                <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })} title="Ver la ficha">
+                <button onClick={() => onAction({ kind: 'review', label: '', student: item.student })} title={`${item.student.name} · ver la ficha`}>
                   <Avatar name={item.student.name} size={28} /><span><b>{item.student.name}</b><small>{item.note}</small></span><em className={`tone-${item.tone}`}>{item.value}</em>
                 </button></li>)}</ul>}
               {message.reply?.actions && message.reply.actions.length > 0 && <div className="msg-actions">{message.reply.actions.map((action, i) => <button key={i} className={`btn btn-small ${i === 0 ? 'btn-primary' : 'btn-secondary'}`} onClick={() => onAction(action)}>{action.label}</button>)}</div>}

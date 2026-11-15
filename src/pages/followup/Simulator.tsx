@@ -55,7 +55,7 @@ export function Simulator({ workspace, review }: { workspace: PageProps['workspa
       <caption className="visually-hidden">Nota necesaria para aprobar y nota final simulada de cada estudiante</caption>
       <thead><tr><th scope="col">Estudiante</th><th scope="col" className="num">Va en</th><th scope="col" className="num">Necesita</th><th scope="col">Estado</th><th scope="col" className="num">Final si saca {formatGrade(whatIf)}</th></tr></thead>
       <tbody>{rows.map(p => { const final = finalWith(p); return <tr key={p.student.id}>
-        <td><button className="person-cell" onClick={() => review(p.student)}><Avatar name={p.student.name} /><span><b>{p.student.name}</b><small>{p.explanation}</small></span></button></td>
+        <td><button className="person-cell" onClick={() => review(p.student)}><Avatar name={p.student.name} /><span><b title={p.student.name}>{p.student.name}</b><small>{p.explanation}</small></span></button></td>
         <td className="num">{p.status === 'no-data' ? '—' : formatGrade(p.current)}</td>
         <td className="num"><b className={p.status === 'impossible' || p.status === 'hard' ? 'is-low' : ''}>{p.needed == null ? '—' : formatGrade(p.needed)}</b></td>
         <td><span className={`pill pill-${statusTone[p.status]}`}>{statusLabel[p.status]}</span></td>
