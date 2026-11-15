@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { BookOpenCheck, ChevronsUpDown, ClipboardCheck, FolderOpen, Home, LogOut, Settings, Users, UsersRound, Activity, X } from 'lucide-react'
+import { BookOpenCheck, ChevronsUpDown, ClipboardCheck, FolderOpen, Home, LogOut, Settings, ShieldCheck, Users, UsersRound, Activity, X } from 'lucide-react'
 import type { Course, TeacherProfile } from '../api'
 import FairTeamMark from '../FairTeamMark'
 import type { Navigate, Route } from '../app/router'
@@ -63,6 +63,7 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
     </nav>
 
     <div className="nav nav-secondary">
+      {user.role === 'ADMIN' && <a href="#/admin" className={`nav-item nav-admin${route === 'admin' ? ' is-active' : ''}`} aria-current={route === 'admin' ? 'page' : undefined}><ShieldCheck size={18} aria-hidden /><span>Administración</span></a>}
       <a href="#/courses" className={`nav-item${route === 'courses' ? ' is-active' : ''}`} aria-current={route === 'courses' ? 'page' : undefined}><FolderOpen size={18} aria-hidden /><span>Mis cursos</span></a>
       <a href="#/settings" className={`nav-item${route === 'settings' ? ' is-active' : ''}`} aria-current={route === 'settings' ? 'page' : undefined}><Settings size={18} aria-hidden /><span>Ajustes</span></a>
     </div>

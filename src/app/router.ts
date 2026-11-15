@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type Route = 'home' | 'students' | 'follow-up' | 'workshops' | 'rubrics' | 'teams' | 'courses' | 'settings'
-const routes: Route[] = ['home', 'students', 'follow-up', 'workshops', 'rubrics', 'teams', 'courses', 'settings']
+export type Route = 'home' | 'students' | 'follow-up' | 'workshops' | 'rubrics' | 'teams' | 'courses' | 'settings' | 'admin'
+const routes: Route[] = ['home', 'students', 'follow-up', 'workshops', 'rubrics', 'teams', 'courses', 'settings', 'admin']
 
 /** Addresses saved before the English rename keep working. */
 const LEGACY_ROUTES: Record<string, Route> = { inicio: 'home', estudiantes: 'students', seguimiento: 'follow-up', talleres: 'workshops', rubricas: 'rubrics', equipos: 'teams', cursos: 'courses', ajustes: 'settings' }

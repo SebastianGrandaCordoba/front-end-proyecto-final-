@@ -30,9 +30,10 @@ const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const RubricsPage = lazy(() => import('./pages/RubricsPage'))
 const CoursesPage = lazy(() => import('./pages/CoursesPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
 
 const titles: Record<Route, string> = {
-  home: 'Inicio', students: 'Estudiantes y notas', 'follow-up': 'Seguimiento', workshops: 'Talleres y quizzes', rubrics: 'Rúbricas', teams: 'Equipos', courses: 'Mis cursos', settings: 'Ajustes',
+  home: 'Inicio', students: 'Estudiantes y notas', 'follow-up': 'Seguimiento', workshops: 'Talleres y quizzes', rubrics: 'Rúbricas', teams: 'Equipos', courses: 'Mis cursos', settings: 'Ajustes', admin: 'Administración',
 }
 
 export default function App({ user, onLogout }: { user: TeacherProfile; onLogout: () => void }) {
@@ -55,6 +56,17 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   }, [course, user.name, workspace.summary, workspace.insights, workspace.trends, workspace.projections, workspace.workshops])
   const brief = useCallback(() => { setBuhoOpen(true); setBriefToken(value => value + 1) }, [])
 
+  // Administrators land on their panel once per session; teachers cannot open it (the server refuses it as well).
+  const isAdmin = user.role === 'ADMIN'
+  useEffect(() => {
+    if (!isAdmin) return
+    try {
+      if (sessionStorage.getItem('fairteam.adminLanded')) return
+      sessionStorage.setItem('fairteam.adminLanded', '1')
+    } catch { /* private mode: land every time */ }
+    navigate('admin')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
   useEffect(() => { document.title = `${titles[route]} · FairTeam` }, [route])
   const [showShortcuts, setShowShortcuts] = useState(false)
   const welcomeKey = `fairteam.welcome.${user.id}`
@@ -166,6 +178,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
           {route === 'teams' && <TeamsPage {...pageProps} />}
         </>}
         {route === 'courses' && <CoursesPage {...pageProps} params={params} />}
+        {route === 'admin' && isAdmin && <AdminPage user={user} />}
         {route === 'settings' && <SettingsPage {...pageProps} user={user} onLogout={onLogout} />}
       </Suspense>
       </ErrorBoundary>
@@ -176,7 +189,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
     {showWelcome && <Tour navigate={navigate} onClose={closeWelcome} />}
     <Spotlight />
-    {!showWelcome && <Guide userId={user.id} route={route} params={params} navigate={navigate} onQuickTour={() => setShowWelcome(true)}
+    {!showWelcome && !isAdmin && <Guide userId={user.id} route={route} params={params} navigate={navigate} onQuickTour={() => setShowWelcome(true)}
       signals={{ courses: courses.length, students: workspace.students.length, columns: workspace.insights.length > 0, workshops: workspace.workshops.length, hasCourse: !!course }} />}
     <Buho context={buhoContext} onAction={runAction} open={buhoOpen} setOpen={setBuhoOpen} briefToken={briefToken} />
   </div>

@@ -31,6 +31,8 @@ The computation lives in the backend (the Spring Boot `insights` module, hexagon
 - **Feedback messages**: `GET /api/courses/{id}/students/{sid}/feedback?tone=`.
 - **Course report as PDF**: printed from the browser with the analysis data (`src/lib/report.ts`).
 
+- **Administration** (`#/admin`, `src/pages/AdminPage.tsx`): visible only to accounts with the `ADMIN` role. It lists every account with usage totals, lets an administrator activate/deactivate accounts, change roles and issue a temporary password, and shows an audit log and the system status. It never shows students' data.
+
 ## Experience
 
 - **Own illustrations**: the FairTeam owl is drawn in SVG (`src/components/Owl.tsx`) in four poses (waving, reading, thinking, celebrating) and appears in empty states, while a workshop is generated, in the welcome and in Búho.
