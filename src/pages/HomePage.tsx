@@ -1,4 +1,5 @@
-import { ArrowRight, BookOpen, Check, FileText, MessageCircle, Play } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { ArrowRight, BookOpen, Check, FileText, MessageCircle, Play, TrendingDown, Users, FolderOpen, AlertCircle } from 'lucide-react'
 import type { TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import FairTeamMark from '../FairTeamMark'
@@ -6,9 +7,10 @@ import Owl from '../components/Owl'
 import Histogram from '../components/Histogram'
 import { ImportButton, MaterialUploadButton } from '../app/actions'
 import { headline, recommendations, setupSteps, type Recommendation } from '../lib/assistant'
-import { teacherFirstName, fileSize, formatGrade, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
+import { teacherFirstName, fileSize, formatGrade, formatScaled, toCourseScale, greetingFor, levelRule, plural, relativeDate, todayLabel } from '../lib/domain'
 import { Avatar, EmptyState } from '../components/ui'
 import { DemoButton } from '../components/DemoButton'
+import { useCountUp } from '../lib/motion'
 
 export default function HomePage({ workspace, navigate, startWorkshop, review, assistant, user }: PageProps & { user: TeacherProfile }) {
   const { course, courses, candidates, summary, insights, materials, workshops, courseState, coursesState } = workspace
@@ -46,16 +48,34 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
   const [lead, ...rest] = recs
 
   return <section className="page page-home">
-    <header className="greeting">
-      <Owl pose={!loading && summary.gradeCount > 0 && summary.low === 0 ? 'celebrate' : 'wave'} size={150} className="greeting-owl" />
-      <h1>{greetingFor()}, {teacherFirstName(user.name)}.</h1>
-      <p>{loading ? 'Revisando tu curso…' : headline(input)} <span className="greeting-date">· {todayLabel()}</span></p>
-      <div className="greeting-actions">
-        <button className="btn btn-primary" onClick={assistant.brief} disabled={loading}><Play size={16} aria-hidden />Escuchar el resumen</button>
-        <button className="btn btn-secondary" onClick={assistant.open}><MessageCircle size={16} aria-hidden />Preguntarle al Búho</button>
-        {summary.gradeCount > 0 && <button className="btn btn-ghost" onClick={assistant.report}><FileText size={16} aria-hidden />Informe del curso</button>}
+    <header className="hero">
+      <span className="hero-mesh" aria-hidden />
+      <div className="hero-copy">
+        <span className="hero-date">{todayLabel()}{course ? ` · ${course.name}` : ''}</span>
+        <h1>{greetingFor()}, {teacherFirstName(user.name)}.</h1>
+        <p>{loading ? 'Revisando tu curso…' : headline(input)}</p>
+        <div className="greeting-actions">
+          <button className="btn btn-primary" onClick={assistant.brief} disabled={loading}><Play size={16} aria-hidden />Escuchar el resumen</button>
+          <button className="btn btn-secondary" onClick={assistant.open}><MessageCircle size={16} aria-hidden />Preguntarle al Búho</button>
+          {summary.gradeCount > 0 && <button className="btn btn-ghost" onClick={assistant.report}><FileText size={16} aria-hidden />Informe del curso</button>}
+        </div>
       </div>
+      <Owl pose={!loading && summary.gradeCount > 0 && summary.low === 0 ? 'celebrate' : 'wave'} size={170} className="greeting-owl" />
     </header>
+
+    {course && <>
+      <dl className="stats" aria-label={`Resumen de ${course.name}`}>
+    <div className="stat stat-avg">
+      <dt>Promedio del curso</dt>
+      <dd><Ring value={summary.average} /></dd>
+      <span>{summary.gradeCount ? plural(summary.gradeCount, 'nota cargada', 'notas cargadas') : 'carga las notas'}</span>
+    </div>
+    <Stat icon={<Users size={18} />} label="Estudiantes" value={loading ? null : summary.students} note={summary.graded ? `${summary.graded} con notas` : 'sin notas aún'} />
+    <Stat icon={<AlertCircle size={18} />} tone={summary.low ? 'low' : undefined} label="Necesitan refuerzo" value={summary.gradeCount ? summary.low : null} note={levelRule.LOW.toLowerCase()} />
+    <Stat icon={<TrendingDown size={18} />} tone={summary.fallingBehind ? 'medium' : undefined} label="Vienen bajando" value={workspace.analysisState === 'ready' ? summary.fallingBehind : null} note="entre el primer y el último corte" />
+    <Stat icon={<FolderOpen size={18} />} label="Material guardado" value={materials == null ? null : materials.length} note={materials?.length ? fileSize(materials.reduce((s, m) => s + m.fileSize, 0)) + ' en total' : 'para crear talleres'} />
+  </dl>
+    </>}
 
     <section className={`assistant${course && stepsDone < steps.length ? ' has-setup' : ''}`} aria-labelledby="assistant-title">
       <div className="assistant-side">
@@ -82,13 +102,6 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
     </section>
 
     {course && <>
-      <dl className="kpis" aria-label={`Resumen de ${course.name}`}>
-        <div><dt>Estudiantes</dt><dd>{loading ? '—' : summary.students}</dd><span>{summary.graded ? `${summary.graded} con notas` : 'sin notas aún'}</span></div>
-        <div><dt>Promedio del curso</dt><dd>{summary.average == null ? '—' : formatGrade(summary.average)}<small> / 5</small></dd><span>{summary.gradeCount ? plural(summary.gradeCount, 'nota cargada', 'notas cargadas') : 'carga las notas'}</span></div>
-        <div className={summary.low ? 'kpi-alert' : ''}><dt>Necesitan refuerzo</dt><dd>{summary.gradeCount ? summary.low : '—'}</dd><span>{levelRule.LOW.toLowerCase()}</span></div>
-        <div className={summary.fallingBehind ? 'kpi-alert' : ''}><dt>Vienen bajando</dt><dd>{workspace.analysisState === 'ready' ? summary.fallingBehind : '—'}</dd><span>entre el primer y el último corte</span></div>
-        <div><dt>Material guardado</dt><dd>{materials == null ? '—' : materials.length}</dd><span>{materials?.length ? fileSize(materials.reduce((s, m) => s + m.fileSize, 0)) + ' en total' : 'para crear talleres'}</span></div>
-      </dl>
 
       <div className="home-grid">
         <section className="panel panel-wide" aria-labelledby="support-title">
@@ -96,7 +109,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
           {needSupport.length ? <ul className="people">{needSupport.slice(0, 5).map(student => <li key={student.id}>
             <button className="person" onClick={() => review(student)}>
               <Avatar name={student.name} />
-              <span className="person-name"><b title={student.name}>{student.name}</b><small>{plural(student.gradeCount, 'nota', 'notas')}</small></span>
+              <span className="person-name"><b title={student.name}>{student.name}</b><small>{plural(student.gradeCount, 'nota', 'notas')}</small><i className="person-bar" aria-hidden><u style={{ width: `${Math.max(6, Math.min(100, student.average / 5 * 100))}%` }} /></i></span>
               <span className="person-grade num">{formatGrade(student.average)}</span>
               <span className="person-cta">Ver recomendación</span>
             </button>
@@ -106,9 +119,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
         <section className="panel" aria-labelledby="levels-title">
           <header className="panel-head"><h2 id="levels-title">Cómo va el grupo</h2></header>
           {summary.graded ? <>
-            <div className="levelbar" role="img" aria-label={`${summary.low} en refuerzo, ${summary.medium} en seguimiento, ${summary.high} con buen progreso`}>
-              {(['low', 'medium', 'high'] as const).map(key => summary[key] > 0 && <span key={key} className={`levelbar-${key}`} style={{ flexGrow: summary[key] }} />)}
-            </div>
+            <Donut low={summary.low} medium={summary.medium} high={summary.high} total={summary.graded} />
             <ul className="legend">
               <li><i className="dot dot-low" />Refuerzo<b className="num">{summary.low}</b></li>
               <li><i className="dot dot-medium" />Seguimiento<b className="num">{summary.medium}</b></li>
@@ -142,3 +153,37 @@ function LevelText({ level }: { level?: string | null }) {
   return <>{value.startsWith('L') || value.startsWith('B') ? 'refuerzo' : value.startsWith('H') || value.startsWith('A') ? 'avanzado' : 'seguimiento'}</>
 }
 
+
+function Stat({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: number | null; note: string; tone?: 'low' | 'medium' }) {
+  const shown = useCountUp(value)
+  return <div className={`stat${tone ? ` stat-${tone}` : ''}`}>
+    <dt><span className="stat-icon" aria-hidden>{icon}</span>{label}</dt>
+    <dd className="num">{shown == null ? '—' : Math.round(shown)}</dd>
+    <span>{note}</span>
+  </div>
+}
+
+/** The course average as a ring: the arc is the share of the scale and the colour says how it is going. */
+function Ring({ value }: { value: number | null }) {
+  const shown = useCountUp(value)
+  const share = value == null ? 0 : Math.max(0, Math.min(1, value / 5))
+  const tone = value == null ? 'none' : value < 3 ? 'low' : value < 3.8 ? 'medium' : 'high'
+  const R = 40, C = 2 * Math.PI * R
+  return <span className={`ring ring-${tone}`}>
+    <svg viewBox="0 0 100 100" aria-hidden><circle className="ring-track" cx="50" cy="50" r={R} /><circle className="ring-arc" cx="50" cy="50" r={R} strokeDasharray={C} style={{ strokeDashoffset: C * (1 - share) }} /></svg>
+    <b className="num">{shown == null ? '—' : formatScaled(toCourseScale(shown))}</b>
+  </span>
+}
+
+function Donut({ low, medium, high, total }: { low: number; medium: number; high: number; total: number }) {
+  const R = 42, C = 2 * Math.PI * R
+  let offset = 0
+  const parts = [['low', low], ['medium', medium], ['high', high]] as const
+  return <div className="donut">
+    <svg viewBox="0 0 110 110" role="img" aria-label={`${low} en refuerzo, ${medium} en seguimiento, ${high} con buen progreso`}>
+      <circle className="donut-track" cx="55" cy="55" r={R} />
+      {parts.map(([key, n], i) => { if (!n) return null; const len = n / total * C; const seg = <circle key={key} className={`donut-seg donut-${key}`} cx="55" cy="55" r={R} strokeDasharray={`${Math.max(len - 3, 1)} ${C}`} strokeDashoffset={-offset} style={{ animationDelay: `${120 + i * 140}ms` }} />; offset += len; return seg })}
+    </svg>
+    <span className="donut-center"><b className="num">{total}</b><small>con notas</small></span>
+  </div>
+}

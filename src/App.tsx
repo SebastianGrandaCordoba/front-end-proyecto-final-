@@ -142,6 +142,14 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     </div>
 
     <main className="sheet" id="contenido" tabIndex={-1}>
+      <div className="topbar">
+        <nav className="crumbs" aria-label="Ubicación">
+          {course && <a className="crumb-course" href="#/cursos" title="Cambiar de curso"><FolderOpen size={14} aria-hidden />{course.name}</a>}
+          {course && <span aria-hidden className="crumb-sep">/</span>}
+          <b>{titles[route]}</b>
+        </nav>
+        <button className="topbar-ask" onClick={() => setBuhoOpen(true)}><FairTeamMark size={20} /><span>Pregúntale al Búho</span><kbd aria-hidden>Ctrl K</kbd></button>
+      </div>
       <OfflineBanner />
       {workspace.coursesState === 'error' && <div className="banner banner-error" role="alert">
         <span>No pudimos conectar con el servidor. Si acaba de despertar, puede tardar hasta un minuto.</span>
