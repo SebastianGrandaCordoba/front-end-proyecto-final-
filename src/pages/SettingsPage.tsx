@@ -43,7 +43,7 @@ export default function SettingsPage({ workspace, user, onLogout }: PageProps & 
 
     <section className="panel settings">
       <h2>Cuenta</h2>
-      <dl className="rows"><div><dt>Nombre</dt><dd>{user.name}</dd></div><div><dt>Correo</dt><dd>{user.email}</dd></div><div><dt>Rol</dt><dd>{user.role || 'Docente'}</dd></div></dl>
+      <dl className="rows"><div><dt>Nombre</dt><dd>{user.name}</dd></div><div><dt>Correo</dt><dd>{user.email}</dd></div><div><dt>Rol</dt><dd>{{ TEACHER: 'Docente', ADMIN: 'Administrador' }[user.role ?? ''] ?? user.role ?? 'Docente'}</dd></div></dl>
       <button className="btn btn-secondary" onClick={onLogout}><LogOut size={16} aria-hidden />Cerrar sesión</button>
     </section>
 

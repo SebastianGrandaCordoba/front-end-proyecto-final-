@@ -69,10 +69,9 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
       window.setTimeout(openGuide, 500)
       return { text: 'Te abro "Primeros pasos": te digo dónde tocar y espero a que lo hagas, paso a paso. Si prefieres solo mirar, en la guía está el recorrido rápido.' }
     }
-    if (!courseId) return { text: 'Primero crea o elige un curso y te ayudo con todo lo demás.', actions: [{ kind: 'navigate', label: 'Mis cursos', route: 'cursos' }] }
     try {
       // The question travels with the last turns so "sí", "hazlo para ella" or "ese taller" make sense.
-      const api = await request<ApiReply>(`/api/courses/${courseId}/assistant`, { method: 'POST', body: JSON.stringify({ question, history }) })
+      const api = await request<ApiReply>(courseId ? `/api/courses/${courseId}/assistant` : '/api/assistant', { method: 'POST', body: JSON.stringify({ question, history }) })
       return adaptReply(api, candidates)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pude conectarme con el servidor.')
