@@ -46,7 +46,7 @@ export function PublishDialog({ courseId, rubric, done, onClose, onPublished }: 
     try {
       const result = await rubricApi.publish(courseId, rubric.id, { period, columnName: column.trim() })
       notify(`${result.published} ${result.published === 1 ? 'nota quedó' : 'notas quedaron'} en ${result.period}, columna "${result.columnName}".${result.pending ? ` Faltan ${result.pending} por evaluar.` : ''}`)
-      guideDone('libro')
+      guideDone('gradebook')
       onPublished(result.period)
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudieron llevar las notas.', 'error') }
     finally { setSaving(false) }

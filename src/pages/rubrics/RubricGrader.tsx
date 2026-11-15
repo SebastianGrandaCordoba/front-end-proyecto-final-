@@ -64,7 +64,7 @@ export function RubricGrader({ courseId, rubric, onResults, onPublish }: {
     const finished = level != null && rubric.criteria.every(c => nextLevels[String(c.id)] != null)
       && !(before && rubric.criteria.every(c => before.levels[String(c.id)] != null))
     if (finished) window.setTimeout(() => advance(studentId), 450)
-    try { store(await rubricApi.score(courseId, rubric.id, studentId, { levels: { [criterionId]: level } })); guideDone('calificar') }
+    try { store(await rubricApi.score(courseId, rubric.id, studentId, { levels: { [criterionId]: level } })); guideDone('grade') }
     catch (error) {
       if (before) store(before)
       notify(error instanceof Error ? error.message : 'No se pudo guardar el nivel.', 'error')

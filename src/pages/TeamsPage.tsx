@@ -91,7 +91,7 @@ export default function TeamsPage({ workspace }: PageProps) {
       <div className="page-actions"><button className="btn btn-secondary" onClick={() => setEditing(null)}><Plus size={16} aria-hidden />Nuevo proyecto</button></div>
     </header>
 
-    {!candidates.length ? <div className="panel"><EmptyState icon={<UsersRound size={22} />} title="Primero carga estudiantes" text="Necesito la lista del curso para proponer equipos." action={<a className="btn btn-primary" href="#/estudiantes">Ir a estudiantes</a>} /></div> : <div className="builder">
+    {!candidates.length ? <div className="panel"><EmptyState icon={<UsersRound size={22} />} title="Primero carga estudiantes" text="Necesito la lista del curso para proponer equipos." action={<a className="btn btn-primary" href="#/students">Ir a estudiantes</a>} /></div> : <div className="builder">
       <div className="builder-form panel">
         <fieldset className="step"><legend><span className="step-n">1</span>Proyecto</legend>
           {projects.length ? <div className="step-row">

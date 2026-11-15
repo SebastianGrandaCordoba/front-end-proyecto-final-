@@ -15,7 +15,7 @@ import { Library } from './workshops/Library'
 import { KindPicker } from './workshops/KindPicker'
 import { MIN_PROMPT, PromptBox } from './workshops/PromptBox'
 
-type Tab = 'crear' | 'biblioteca'
+type Tab = 'create' | 'library'
 const stages = [
   { at: 0, text: 'Leyendo tu material…' },
   { at: 6, text: 'Buscando los conceptos clave…' },
@@ -28,8 +28,8 @@ const stages = [
 export default function WorkshopsPage({ workspace, navigate, intent, clearIntent, params }: PageProps & { intent: WorkshopIntent | null; clearIntent: () => void; params: URLSearchParams }) {
   const { course, materials, summary, insights, workshops } = workspace
   const { notify, confirm } = useFeedback()
-  const viewTitle = params.get('ver')
-  const [tab, setTab] = useState<Tab>('crear')
+  const viewTitle = params.get('open')
+  const [tab, setTab] = useState<Tab>('create')
   const [mode, setMode] = useState<SupportMode>(intent?.mode ?? 'workshop')
   const [styles, setStyles] = useState<ActivityStyleId[]>(['GUIDED'])
   // The kinds of work offered depend on the subject: a philosophy course never sees "deploy an app".
@@ -74,13 +74,13 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
   useEffect(() => {
     if (!viewTitle) return
     const found = workshops.find(item => item.title === viewTitle)
-    if (found) { setResult(found); setTab('crear') }
+    if (found) { setResult(found); setTab('create') }
   }, [viewTitle, workshops])
   useEffect(() => {
     if (!intent) return
     setMode(intent.mode); setLevel(intent.level); setTarget(intent.student ?? null)
     if (intent.topic) setTopic(intent.topic)
-    setTab('crear'); setResult(null); setError('')
+    setTab('create'); setResult(null); setError('')
   }, [intent])
   useEffect(() => {
     if (!generating) return
@@ -211,12 +211,12 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
     <header className="page-head">
       <div><h1>Talleres y quizzes</h1><p>Creo talleres, quizzes o lo que me pidas para {course?.name}. Tú los revisas antes de usarlos.</p></div>
       <div className="tabs" role="tablist" aria-label="Vista">
-        <button role="tab" aria-selected={tab === 'crear'} className={tab === 'crear' ? 'is-on' : ''} onClick={() => setTab('crear')}>Crear</button>
-        <button role="tab" aria-selected={tab === 'biblioteca'} className={tab === 'biblioteca' ? 'is-on' : ''} onClick={() => setTab('biblioteca')}>Guardados <span className="seg-count">{workshops.length}</span></button>
+        <button role="tab" aria-selected={tab === 'create'} className={tab === 'create' ? 'is-on' : ''} onClick={() => setTab('create')}>Crear</button>
+        <button role="tab" aria-selected={tab === 'library'} className={tab === 'library' ? 'is-on' : ''} onClick={() => setTab('library')}>Guardados <span className="seg-count">{workshops.length}</span></button>
       </div>
     </header>
 
-    {tab === 'biblioteca' ? <Library items={workshops} onOpen={item => { setResult(item); setTab('crear') }} onRemove={async item => {
+    {tab === 'library' ? <Library items={workshops} onOpen={item => { setResult(item); setTab('create') }} onRemove={async item => {
       if (await confirm({ title: '¿Borrar esta propuesta?', body: `“${item.title}” se quitará de tu biblioteca.${item.rubricCount ? ' Sus rúbricas se conservan.' : ''}`, confirm: 'Borrar', danger: true })) { try { await workspace.removeWorkshop(item); if (result?.id === item.id) setResult(null) } catch (err) { notify(err instanceof Error ? err.message : 'No se pudo borrar.', 'error') } }
     }} /> : <div className="builder">
       <form className="builder-form panel" onSubmit={submit} aria-label="Crear actividad">
@@ -294,7 +294,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
         </div>
           : result ? <WorkshopView workshop={result} onCopy={async () => { try { await navigator.clipboard.writeText(workshopAsText(result)); notify('Texto copiado.') } catch { notify('No se pudo copiar.', 'error') } }} onNew={() => setResult(null)} onEdit={next => { void workspace.saveWorkshop({ ...next, id: result.id }).then(setResult).catch(err => notify(err instanceof Error ? err.message : 'No se pudo guardar el cambio.', 'error')) }} onQuiz={() => { setMode('quiz'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
             onVariant={next => void generate({ mode: result.supportType ?? 'workshop', level: next, variantOf: result })}
-            onRubric={() => navigate('rubricas', { taller: String(result.id ?? result.title) })}
+            onRubric={() => navigate('rubrics', { workshop: String(result.id ?? result.title) })}
             onAdjust={() => { if (result.teacherPrompt) { if (result.supportType === 'custom') setPrompt(result.teacherPrompt); else setExtra(result.teacherPrompt) } setMode(result.supportType ?? 'workshop'); setResult(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />
             : error ? <div className="panel"><EmptyState icon={<RotateCw size={20} />} title="Vuelve a intentarlo" text="A veces el servicio tarda en despertar. Tu selección sigue lista." action={<button className="btn btn-secondary" onClick={() => void generate()}>Reintentar</button>} /></div>
               : <div className="panel preview"><EmptyState art="read" title="Aquí aparecerá tu actividad" text={mode === 'custom' ? 'Escribe lo que necesitas como se lo dirías a un colega: tema, cuántas actividades, cuánto tiempo y qué entregan. Yo lo armo con pistas, entregas y clave de respuestas.' : 'Con una explicación para empezar, actividades paso a paso con pistas y entregas, y preguntas con su respuesta. Podrás descargar la hoja para estudiantes y una clave solo para ti.'} /></div>}

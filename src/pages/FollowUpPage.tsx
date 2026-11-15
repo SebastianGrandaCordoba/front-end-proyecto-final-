@@ -10,11 +10,11 @@ import { Trends } from './followup/Trends'
 import { SubjectMap } from './followup/SubjectMap'
 import { Priorities } from './followup/Priorities'
 
-type View = 'prioridad' | 'tendencia' | 'mapa' | 'simulador'
+type View = 'priority' | 'trend' | 'map' | 'simulator'
 
 export default function FollowUpPage({ workspace, review, startWorkshop, assistant, params, navigate }: PageProps & { params: URLSearchParams }) {
   const { course, candidates, summary, insights } = workspace
-  const view = (['prioridad', 'tendencia', 'mapa', 'simulador'].includes(params.get('vista') ?? '') ? params.get('vista') : 'prioridad') as View
+  const view = (['priority', 'trend', 'map', 'simulator'].includes(params.get('view') ?? '') ? params.get('view') : 'priority') as View
   const weakest = insights[0]
   const { notify } = useFeedback()
   // The backend writes the report (with trend, risk and projection); fall back to the local CSV if it is unavailable.
@@ -41,13 +41,13 @@ export default function FollowUpPage({ workspace, review, startWorkshop, assista
     </header>
 
     <div className="tabs tabs-page" role="tablist" aria-label="Vista de seguimiento">
-      {([['prioridad', 'Prioridades'], ['tendencia', 'Tendencia'], ['mapa', 'Mapa por tema'], ['simulador', 'Simulador']] as const).map(([id, label]) => <button key={id} role="tab" aria-selected={view === id} className={view === id ? 'is-on' : ''} onClick={() => navigate('seguimiento', id === 'prioridad' ? undefined : { vista: id })}>{label}</button>)}
+      {([['priority', 'Prioridades'], ['trend', 'Tendencia'], ['map', 'Mapa por tema'], ['simulator', 'Simulador']] as const).map(([id, label]) => <button key={id} role="tab" aria-selected={view === id} className={view === id ? 'is-on' : ''} onClick={() => navigate('follow-up', id === 'priority' ? undefined : { vista: id })}>{label}</button>)}
     </div>
 
     {!candidates.length ? <div className="panel"><EmptyState art="read" title="Aún no hay estudiantes" text="Importa la lista y las notas del curso para empezar el seguimiento." action={<ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} /></div>
-      : view === 'prioridad' ? <Priorities candidates={candidates} review={review} />
-        : view === 'tendencia' ? <Trends workspace={workspace} review={review} message={assistant.message} />
-          : view === 'mapa' ? <SubjectMap workspace={workspace} review={review} />
+      : view === 'priority' ? <Priorities candidates={candidates} review={review} />
+        : view === 'trend' ? <Trends workspace={workspace} review={review} message={assistant.message} />
+          : view === 'map' ? <SubjectMap workspace={workspace} review={review} />
           : <Simulator workspace={workspace} review={review} />}
   </section>
 }

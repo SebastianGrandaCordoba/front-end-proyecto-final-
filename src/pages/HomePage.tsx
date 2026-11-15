@@ -24,12 +24,12 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
 
   const runAction = (rec: Recommendation) => {
     switch (rec.action.kind) {
-      case 'create-course': return navigate('cursos', courses.length ? {} : { nuevo: '1' })
+      case 'create-course': return navigate('courses', courses.length ? {} : { new: '1' })
       case 'support-group': return startWorkshop({ mode: 'workshop', level: 'LOW', group: summary.low, topic: weakest && weakest.average < 3.5 ? weakest.name : undefined })
-      case 'open-followup': return navigate('seguimiento')
-      case 'open-students-ungraded': return navigate('estudiantes', { filtro: 'sin-notas' })
-      case 'open-workshop': return navigate('talleres', { ver: rec.action.title })
-      case 'open-teams': return navigate('equipos')
+      case 'open-followup': return navigate('follow-up')
+      case 'open-students-ungraded': return navigate('students', { filter: 'ungraded' })
+      case 'open-workshop': return navigate('workshops', { open: rec.action.title })
+      case 'open-teams': return navigate('teams')
       default: return undefined
     }
   }
@@ -105,7 +105,7 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
 
       <div className="home-grid">
         <section className="panel panel-wide" aria-labelledby="support-title">
-          <header className="panel-head"><h2 id="support-title">Necesitan apoyo</h2>{needSupport.length > 0 && <span className="count">{needSupport.length}</span>}<a className="link" href="#/seguimiento">Ver seguimiento</a></header>
+          <header className="panel-head"><h2 id="support-title">Necesitan apoyo</h2>{needSupport.length > 0 && <span className="count">{needSupport.length}</span>}<a className="link" href="#/follow-up">Ver seguimiento</a></header>
           {needSupport.length ? <ul className="people">{needSupport.slice(0, 5).map(student => <li key={student.id}>
             <button className="person" onClick={() => review(student)}>
               <Avatar name={student.name} />
@@ -132,9 +132,9 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
         </section>
 
         <section className="panel" aria-labelledby="recent-title">
-          <header className="panel-head"><h2 id="recent-title">Talleres recientes</h2>{workshops.length > 0 && <span className="count">{workshops.length}</span>}<a className="link" href="#/talleres">Crear uno</a></header>
+          <header className="panel-head"><h2 id="recent-title">Talleres recientes</h2>{workshops.length > 0 && <span className="count">{workshops.length}</span>}<a className="link" href="#/workshops">Crear uno</a></header>
           {workshops.length ? <ul className="files">{workshops.slice(0, 4).map(item => <li key={`${item.title}-${item.savedAt}`}>
-            <button className="file-row" onClick={() => navigate('talleres', { ver: item.title })}>
+            <button className="file-row" onClick={() => navigate('workshops', { open: item.title })}>
               <BookOpen size={17} aria-hidden /><span><b>{item.title}</b><small>{item.supportType === 'quiz' ? 'Quiz' : item.supportType === 'custom' ? 'A tu medida' : 'Taller'} · <LevelText level={item.targetLevel} /> · {relativeDate(item.savedAt)}</small></span>
             </button></li>)}</ul> : <EmptyState title="Aún no has creado talleres" text="Elige un material y un tema; el taller queda listo para revisar y descargar." />}
         </section>

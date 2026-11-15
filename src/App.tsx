@@ -32,7 +32,7 @@ const CoursesPage = lazy(() => import('./pages/CoursesPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 const titles: Record<Route, string> = {
-  inicio: 'Inicio', estudiantes: 'Estudiantes y notas', seguimiento: 'Seguimiento', talleres: 'Talleres y quizzes', rubricas: 'Rúbricas', equipos: 'Equipos', cursos: 'Mis cursos', ajustes: 'Ajustes',
+  home: 'Inicio', students: 'Estudiantes y notas', 'follow-up': 'Seguimiento', workshops: 'Talleres y quizzes', rubrics: 'Rúbricas', teams: 'Equipos', courses: 'Mis cursos', settings: 'Ajustes',
 }
 
 export default function App({ user, onLogout }: { user: TeacherProfile; onLogout: () => void }) {
@@ -70,7 +70,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   // "?" shows the shortcuts; "g" then a letter jumps to a screen. Ignored while typing.
   useEffect(() => {
     let pendingG = 0
-    const goto: Record<string, Route> = { i: 'inicio', e: 'estudiantes', s: 'seguimiento', t: 'talleres', r: 'rubricas', q: 'equipos', c: 'cursos' }
+    const goto: Record<string, Route> = { i: 'home', e: 'students', s: 'follow-up', t: 'workshops', r: 'rubrics', q: 'teams', c: 'courses' }
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.closest?.('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return
@@ -88,7 +88,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
   const startWorkshop = useCallback((next: WorkshopIntent) => {
     setIntent(next)
     setReviewing(null)
-    navigate('talleres')
+    navigate('workshops')
   }, [navigate])
 
   /** "Crea una rúbrica para el último taller de X": find it, build the rubric from its content, save and open it. */
@@ -98,9 +98,9 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     try {
       const rubric = await request<{ id: number; activityTitle: string | null }>(`/api/courses/${course.id}/rubrics/from-activity`,
         { method: 'POST', body: JSON.stringify({ activityId: activityId ?? null, kind: target ?? 'workshop', topic: topic ?? null, criteriaCount: 4, teacherPrompt: prompt ?? null }) })
-      guideDone('rubrica')
+      guideDone('rubric')
       notify(`Rúbrica lista para "${rubric.activityTitle ?? 'el taller'}". Revísala y empieza a calificar.`)
-      navigate('rubricas', { id: String(rubric.id), vista: 'rubrica' })
+      navigate('rubrics', { id: String(rubric.id), view: 'rubric' })
     } catch (error) { notify(error instanceof Error ? error.message : 'No se pudo crear la rúbrica.', 'error') }
   }, [course, navigate, notify])
 
@@ -109,9 +109,9 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     switch (action.kind) {
       case 'navigate': {
         // "Llévame": open the page and ring the control Búho explained.
-        const { resaltar, ...rest } = action.params ?? {}
+        const { highlight, ...rest } = action.params ?? {}
         navigate(action.route, Object.keys(rest).length ? rest : undefined)
-        if (resaltar) spotlight(resaltar)
+        if (highlight) spotlight(highlight)
         return
       }
       case 'guide': return openGuide()
@@ -122,7 +122,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
       case 'message': return setMessageFor(action.student)
       case 'report': return report()
       case 'briefing': return brief()
-      case 'course': setCourseId(action.courseId); return navigate('inicio')
+      case 'course': setCourseId(action.courseId); return navigate('home')
     }
   }, [navigate, startWorkshop, report, brief, setCourseId, rubricFromLatest])
 
@@ -144,7 +144,7 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
     <main className="sheet" id="contenido" tabIndex={-1}>
       <div className="topbar">
         <nav className="crumbs" aria-label="Ubicación">
-          {course && <a className="crumb-course" href="#/cursos" title="Cambiar de curso"><FolderOpen size={14} aria-hidden />{course.name}</a>}
+          {course && <a className="crumb-course" href="#/courses" title="Cambiar de curso"><FolderOpen size={14} aria-hidden />{course.name}</a>}
           {course && <span aria-hidden className="crumb-sep">/</span>}
           <b>{titles[route]}</b>
         </nav>
@@ -157,16 +157,16 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
       </div>}
       <ErrorBoundary resetKey={route}>
       <Suspense fallback={<div className="page-loading" role="status" aria-live="polite"><Spinner size={20} /> Cargando…</div>}>
-        {route === 'inicio' && <HomePage {...pageProps} user={user} />}
-        {needsCourse && route !== 'inicio' ? <NoCourse route={route} onCreate={() => navigate('cursos', { nuevo: '1' })} onDemo={workspace.loadCourses} /> : <>
-          {route === 'estudiantes' && <StudentsPage {...pageProps} params={params} />}
-          {route === 'seguimiento' && <FollowUpPage {...pageProps} params={params} />}
-          {route === 'talleres' && <WorkshopsPage {...pageProps} intent={intent} clearIntent={() => setIntent(null)} params={params} />}
-          {route === 'rubricas' && <RubricsPage {...pageProps} params={params} />}
-          {route === 'equipos' && <TeamsPage {...pageProps} />}
+        {route === 'home' && <HomePage {...pageProps} user={user} />}
+        {needsCourse && route !== 'home' ? <NoCourse route={route} onCreate={() => navigate('courses', { new: '1' })} onDemo={workspace.loadCourses} /> : <>
+          {route === 'students' && <StudentsPage {...pageProps} params={params} />}
+          {route === 'follow-up' && <FollowUpPage {...pageProps} params={params} />}
+          {route === 'workshops' && <WorkshopsPage {...pageProps} intent={intent} clearIntent={() => setIntent(null)} params={params} />}
+          {route === 'rubrics' && <RubricsPage {...pageProps} params={params} />}
+          {route === 'teams' && <TeamsPage {...pageProps} />}
         </>}
-        {route === 'cursos' && <CoursesPage {...pageProps} params={params} />}
-        {route === 'ajustes' && <SettingsPage {...pageProps} user={user} onLogout={onLogout} />}
+        {route === 'courses' && <CoursesPage {...pageProps} params={params} />}
+        {route === 'settings' && <SettingsPage {...pageProps} user={user} onLogout={onLogout} />}
       </Suspense>
       </ErrorBoundary>
     </main>
@@ -183,11 +183,11 @@ export default function App({ user, onLogout }: { user: TeacherProfile; onLogout
 }
 
 const NO_COURSE_COPY: Record<string, { title: string; text: string }> = {
-  estudiantes: { title: 'Aquí vivirá la lista de tu curso', text: 'Después de crear el curso importas tu lista y tus notas desde Excel, o agregas estudiantes uno a uno.' },
-  seguimiento: { title: 'Aquí verás a quién apoyar', text: 'Con las notas cargadas, FairTeam separa quién necesita refuerzo, quién va bajando y en qué tema.' },
-  talleres: { title: 'Aquí prepararás talleres y quizzes', text: 'Eliges un tema, el Búho propone la actividad y tú la revisas antes de descargarla.' },
-  rubricas: { title: 'Aquí armarás tus rúbricas', text: 'Describes la actividad, ajustas los criterios y la nota llega sola al libro de notas.' },
-  equipos: { title: 'Aquí formarás equipos equilibrados', text: 'Con los niveles de tu lista, propone equipos donde todos aportan y aprenden.' },
+  students: { title: 'Aquí vivirá la lista de tu curso', text: 'Después de crear el curso importas tu lista y tus notas desde Excel, o agregas estudiantes uno a uno.' },
+  'follow-up': { title: 'Aquí verás a quién apoyar', text: 'Con las notas cargadas, FairTeam separa quién necesita refuerzo, quién va bajando y en qué tema.' },
+  workshops: { title: 'Aquí prepararás talleres y quizzes', text: 'Eliges un tema, el Búho propone la actividad y tú la revisas antes de descargarla.' },
+  rubrics: { title: 'Aquí armarás tus rúbricas', text: 'Describes la actividad, ajustas los criterios y la nota llega sola al libro de notas.' },
+  teams: { title: 'Aquí formarás equipos equilibrados', text: 'Con los niveles de tu lista, propone equipos donde todos aportan y aprenden.' },
 }
 
 function NoCourse({ route, onCreate, onDemo }: { route: string; onCreate: () => void; onDemo: () => Promise<void> }) {

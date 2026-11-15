@@ -19,7 +19,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode; rese
       <Owl pose="think" size={140} />
       <strong>Algo salió mal en esta pantalla</strong>
       <p>Tus datos están a salvo. Recarga la página o vuelve al inicio.</p>
-      <div className="empty-action"><button className="btn btn-primary" onClick={() => window.location.reload()}>Recargar</button> <a className="btn btn-ghost" href="#/inicio">Ir al inicio</a></div>
+      <div className="empty-action"><button className="btn btn-primary" onClick={() => window.location.reload()}>Recargar</button> <a className="btn btn-ghost" href="#/home">Ir al inicio</a></div>
     </div></section>
   }
 }

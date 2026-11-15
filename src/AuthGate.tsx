@@ -12,7 +12,7 @@ type Mode = 'home' | 'login' | 'register'
 export default function AuthGate() {
   const [user, setUser] = useState<TeacherProfile | null>(null)
   const [checking, setChecking] = useState(() => Boolean(sessionStorage.getItem(TOKEN_KEY)))
-  const [mode, setMode] = useState<Mode>(() => window.location.hash === '#/entrar' ? 'login' : window.location.hash === '#/registro' ? 'register' : 'home')
+  const [mode, setMode] = useState<Mode>(() => ['#/login', '#/entrar'].includes(window.location.hash) ? 'login' : ['#/register', '#/registro'].includes(window.location.hash) ? 'register' : 'home')
 
   useEffect(() => {
     warmUpBackend()
@@ -51,7 +51,7 @@ function AuthScreen({ mode, setMode, onAuthenticated }: { mode: 'login' | 'regis
       saveAccessToken(result.accessToken)
       // Every new account starts with "Primeros pasos", even if this browser kept an old guide for that id.
       if (!isLogin) { try { localStorage.removeItem(`fairteam.guide.${result.id}`) } catch { /* private mode */ } }
-      window.location.hash = '#/inicio'
+      window.location.hash = '#/home'
       onAuthenticated({ id: result.id, name: result.name, email: result.email, role: result.role })
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'No se pudo entrar. Inténtalo de nuevo.')

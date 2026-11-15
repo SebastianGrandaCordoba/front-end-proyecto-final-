@@ -13,22 +13,22 @@ import { GradeEditor } from './students/GradeEditor'
 import { QuickAdd } from './students/QuickAdd'
 import { useAttendanceSummary } from '../app/useAttendanceSummary'
 
-type Filter = 'todos' | 'refuerzo' | 'seguimiento' | 'progreso' | 'sin-notas'
-type Sort = 'nombre' | 'promedio'
+type Filter = 'all' | 'support' | 'watch' | 'progress' | 'ungraded'
+type Sort = 'name' | 'average'
 
 export default function StudentsPage({ workspace, review, params, navigate, startWorkshop }: PageProps & { params: URLSearchParams }) {
   const { course, candidates, summary, courseState } = workspace
   const { notify, confirm } = useFeedback()
-  const initial = (params.get('filtro') as Filter) || 'todos'
-  const [filter, setFilter] = useState<Filter>(['todos', 'refuerzo', 'seguimiento', 'progreso', 'sin-notas'].includes(initial) ? initial : 'todos')
+  const initial = (params.get('filter') as Filter) || 'all'
+  const [filter, setFilter] = useState<Filter>(['all', 'support', 'watch', 'progress', 'ungraded'].includes(initial) ? initial : 'all')
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<Sort>('nombre')
+  const [sort, setSort] = useState<Sort>('name')
   const [editing, setEditing] = useState<Student | null | undefined>(undefined)
   const [deleting, setDeleting] = useState<number | null>(null)
-  type View = 'lista' | 'notas' | 'asistencia'
-  const viewFrom = (value: string | null): View => value === 'asistencia' || value === 'notas' ? value : 'lista'
-  const [view, setView] = useState<View>(viewFrom(params.get('vista')))
-  useEffect(() => { if (params.get('vista')) setView(viewFrom(params.get('vista'))) }, [params])
+  type View = 'list' | 'grades' | 'attendance'
+  const viewFrom = (value: string | null): View => value === 'attendance' || value === 'grades' ? value : 'list'
+  const [view, setView] = useState<View>(viewFrom(params.get('view')))
+  useEffect(() => { if (params.get('view')) setView(viewFrom(params.get('view'))) }, [params])
   const [quickAdd, setQuickAdd] = useState(false)
   const attendance = useAttendanceSummary(course?.id ?? null)
   const absentees = [...attendance.summary.values()].filter(row => row.alert).length
@@ -37,14 +37,14 @@ export default function StudentsPage({ workspace, review, params, navigate, star
     const q = query.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     return candidates
       .filter(student => {
-        if (filter === 'sin-notas') return !student.hasGrades
-        if (filter === 'refuerzo') return student.hasGrades && student.level === 'LOW'
-        if (filter === 'seguimiento') return student.hasGrades && student.level === 'MEDIUM'
-        if (filter === 'progreso') return student.hasGrades && student.level === 'HIGH'
+        if (filter === 'ungraded') return !student.hasGrades
+        if (filter === 'support') return student.hasGrades && student.level === 'LOW'
+        if (filter === 'watch') return student.hasGrades && student.level === 'MEDIUM'
+        if (filter === 'progress') return student.hasGrades && student.level === 'HIGH'
         return true
       })
       .filter(student => !q || `${student.name} ${student.email ?? ''}`.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q))
-      .sort((a, b) => sort === 'promedio' ? (a.hasGrades ? a.average : 99) - (b.hasGrades ? b.average : 99) : a.name.localeCompare(b.name, 'es'))
+      .sort((a, b) => sort === 'average' ? (a.hasGrades ? a.average : 99) - (b.hasGrades ? b.average : 99) : a.name.localeCompare(b.name, 'es'))
   }, [candidates, filter, query, sort])
 
   const trendOf = useMemo(() => new Map(workspace.trends.map(t => [t.student.id, t.direction])), [workspace.trends])
@@ -62,11 +62,11 @@ export default function StudentsPage({ workspace, review, params, navigate, star
     <header className="page-head">
       <div><h1>Estudiantes y notas</h1><p>{course?.name} · {plural(summary.students, 'estudiante', 'estudiantes')}{summary.gradeCount ? ` · ${plural(summary.gradeCount, 'nota', 'notas')}` : ''}</p></div>
       <div className="tabs" role="tablist" aria-label="Vista">
-        <button role="tab" aria-selected={view === 'lista'} className={view === 'lista' ? 'is-on' : ''} onClick={() => setView('lista')}>Lista</button>
-        <button role="tab" aria-selected={view === 'notas'} className={view === 'notas' ? 'is-on' : ''} onClick={() => setView('notas')}>Notas</button>
-        <button role="tab" aria-selected={view === 'asistencia'} className={view === 'asistencia' ? 'is-on' : ''} onClick={() => setView('asistencia')}>Asistencia{absentees > 0 && <span className="seg-count seg-alert">{absentees}</span>}</button>
+        <button role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'is-on' : ''} onClick={() => setView('list')}>Lista</button>
+        <button role="tab" aria-selected={view === 'grades'} className={view === 'grades' ? 'is-on' : ''} onClick={() => setView('grades')}>Notas</button>
+        <button role="tab" aria-selected={view === 'attendance'} className={view === 'attendance' ? 'is-on' : ''} onClick={() => setView('attendance')}>Asistencia{absentees > 0 && <span className="seg-count seg-alert">{absentees}</span>}</button>
       </div>
-      {view === 'lista' && <div className="page-actions">
+      {view === 'list' && <div className="page-actions">
         <ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} />
         <ImportButton kind="grades" courseId={course?.id ?? null} onDone={workspace.refreshCourse} />
         <button className="btn btn-ghost" onClick={() => downloadRoster(candidates, course?.name ?? 'curso')} disabled={!candidates.length}><Download size={16} aria-hidden />Exportar</button>
@@ -74,9 +74,9 @@ export default function StudentsPage({ workspace, review, params, navigate, star
       </div>}
     </header>
 
-    {view === 'notas' && course ? <GradeEditor courseId={course.id} courseName={course.name} onSaved={() => void workspace.refreshCourse()} onScaleChanged={() => void workspace.loadCourses().then(workspace.refreshCourse)} onQuickAdd={() => setQuickAdd(true)}
+    {view === 'grades' && course ? <GradeEditor courseId={course.id} courseName={course.name} onSaved={() => void workspace.refreshCourse()} onScaleChanged={() => void workspace.loadCourses().then(workspace.refreshCourse)} onQuickAdd={() => setQuickAdd(true)}
       trends={workspace.trends} projections={workspace.projections} sim={workspace.sim} saveScheme={workspace.saveScheme} navigate={navigate} startWorkshop={startWorkshop} grades={workspace.grades} workshops={workspace.workshops} />
-    : view === 'asistencia' && course ? <AttendanceSheet courseId={course.id} students={candidates} summary={attendance.summary} onSaved={() => void attendance.reload()} /> : <>
+    : view === 'attendance' && course ? <AttendanceSheet courseId={course.id} students={candidates} summary={attendance.summary} onSaved={() => void attendance.reload()} /> : <>
 
     <details className="help">
       <summary>¿Cómo debe ser el archivo de Excel?</summary>
@@ -95,13 +95,13 @@ export default function StudentsPage({ workspace, review, params, navigate, star
     <div className="toolbar">
       <label className="search"><Search size={16} aria-hidden /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por nombre o correo…" aria-label="Buscar estudiante" spellCheck={false} /></label>
       <Segmented label="Filtrar por estado" value={filter} onChange={setFilter} options={[
-        { value: 'todos', label: 'Todos', count: summary.students },
-        { value: 'refuerzo', label: 'Refuerzo', count: summary.low },
-        { value: 'seguimiento', label: 'Seguimiento', count: summary.medium },
-        { value: 'progreso', label: 'Buen progreso', count: summary.high },
-        { value: 'sin-notas', label: 'Sin notas', count: summary.ungraded },
+        { value: 'all', label: 'Todos', count: summary.students },
+        { value: 'support', label: 'Refuerzo', count: summary.low },
+        { value: 'watch', label: 'Seguimiento', count: summary.medium },
+        { value: 'progress', label: 'Buen progreso', count: summary.high },
+        { value: 'ungraded', label: 'Sin notas', count: summary.ungraded },
       ]} />
-      <label className="select-inline">Ordenar<select value={sort} onChange={event => setSort(event.target.value as Sort)}><option value="nombre">Por nombre</option><option value="promedio">Promedio más bajo primero</option></select></label>
+      <label className="select-inline">Ordenar<select value={sort} onChange={event => setSort(event.target.value as Sort)}><option value="name">Por nombre</option><option value="average">Promedio más bajo primero</option></select></label>
     </div>
 
     <div className="table-card">
@@ -124,7 +124,7 @@ export default function StudentsPage({ workspace, review, params, navigate, star
           </tr>)}</tbody>
         </table>
         : <EmptyState icon={<Users size={22} />} art={summary.students ? undefined : 'read'} title={summary.students ? 'Nadie coincide con la búsqueda' : 'Aún no hay estudiantes en este curso'} text={summary.students ? 'Prueba con otro nombre o cambia el filtro.' : 'Importa el Excel con la lista del grupo o agrega estudiantes uno por uno.'}
-          action={summary.students ? <button className="btn btn-secondary" onClick={() => { setQuery(''); setFilter('todos') }}>Ver todos</button> : <div className="button-row"><button className="btn btn-primary" onClick={() => setQuickAdd(true)}><UserPlus size={16} aria-hidden />Agregar estudiantes</button><ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} /></div>} />}
+          action={summary.students ? <button className="btn btn-secondary" onClick={() => { setQuery(''); setFilter('all') }}>Ver todos</button> : <div className="button-row"><button className="btn btn-primary" onClick={() => setQuickAdd(true)}><UserPlus size={16} aria-hidden />Agregar estudiantes</button><ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} /></div>} />}
       {visible.length > 0 && <footer className="table-foot">Mostrando {visible.length} de {summary.students}. El estado se calcula con el promedio de las notas cargadas.</footer>}
     </div>
     </>}

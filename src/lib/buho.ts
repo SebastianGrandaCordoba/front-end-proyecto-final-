@@ -42,7 +42,7 @@ function adaptAction(action: ApiAction, students: Map<number, Candidate>): BuhoA
   const p = action.params ?? {}
   const student = p.studentId ? students.get(Number(p.studentId)) : undefined
   switch (action.kind) {
-    case 'navigate': { const { route, ...rest } = p; return { kind: 'navigate', label: action.label, route: (route || 'inicio') as Route, params: Object.keys(rest).length ? rest : undefined } }
+    case 'navigate': { const { route, ...rest } = p; return { kind: 'navigate', label: action.label, route: (route || 'home') as Route, params: Object.keys(rest).length ? rest : undefined } }
     case 'workshop': return { kind: 'workshop', label: action.label, mode: p.mode === 'quiz' || p.mode === 'custom' ? p.mode : 'workshop', level: (p.level || 'LOW') as AcademicLevel, topic: p.topic, student, auto: p.auto === 'true', prompt: p.prompt }
     case 'rubric': return { kind: 'rubric', label: action.label, topic: p.topic, target: p.target === 'quiz' ? 'quiz' : 'workshop', activityId: p.activityId ? Number(p.activityId) : undefined, prompt: p.prompt }
     case 'review': return student ? { kind: 'review', label: action.label, student } : null

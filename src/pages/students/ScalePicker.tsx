@@ -26,9 +26,9 @@ export function ScalePicker({ max, disabled, onChange }: { max: number; disabled
           <button type="button" className="link-btn" onClick={() => { setCustom(false); setText('') }}>usual</button>
         </form>
       : <select id="scale-select" value={String(max)} disabled={disabled}
-          onChange={event => { if (event.target.value === 'otra') setCustom(true); else onChange(Number(event.target.value)) }}>
+          onChange={event => { if (event.target.value === 'other') setCustom(true); else onChange(Number(event.target.value)) }}>
           {COMMON_SCALES.map(value => <option key={value} value={value}>0 – {value}</option>)}
-          <option value="otra">Otra…</option>
+          <option value="other">Otra…</option>
         </select>}
   </div>
 }

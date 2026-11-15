@@ -11,10 +11,10 @@ import { groupBySemester } from '../lib/semesters'
 export default function CoursesPage({ workspace, navigate, params }: PageProps & { params: URLSearchParams }) {
   const { courses, course: active, setCourseId, setCourses } = workspace
   const { notify, confirm } = useFeedback()
-  const [creating, setCreating] = useState(params.get('nuevo') === '1')
+  const [creating, setCreating] = useState(params.get('new') === '1')
   const [deleting, setDeleting] = useState<number | null>(null)
   const [editing, setEditing] = useState<Course | null>(null)
-  useEffect(() => { if (params.get('nuevo') === '1') setCreating(true) }, [params])
+  useEffect(() => { if (params.get('new') === '1') setCreating(true) }, [params])
   // One summary per course, computed by the backend (TeacherOverviewUseCase).
   type Overview = { courseId: number; students: number; average: number | null; low: number; fallingBehind: number; ungraded: number; weakestSubject: string | null }
   const [overview, setOverview] = useState<Map<number, Overview>>(new Map())
@@ -53,12 +53,12 @@ export default function CoursesPage({ workspace, navigate, params }: PageProps &
       <h2>{course.name}</h2>
       <p>{course.description || 'Sin descripción.'}</p>
       {overview.get(course.id) && <CourseStats data={overview.get(course.id)!} />}
-      <button className="btn btn-secondary" onClick={() => { setCourseId(course.id); navigate('inicio') }}>{active?.id === course.id ? 'Ir al inicio' : 'Abrir curso'}<ArrowRight size={16} aria-hidden /></button>
+      <button className="btn btn-secondary" onClick={() => { setCourseId(course.id); navigate('home') }}>{active?.id === course.id ? 'Ir al inicio' : 'Abrir curso'}<ArrowRight size={16} aria-hidden /></button>
     </li>)}</ul>
     </section>)}</div> : <div className="panel"><EmptyState art="wave" title="Crea tu primer curso" text="Por ejemplo: “Programación I · Grupo A”. Después cargas la lista y las notas. ¿Quieres explorar primero? Carga cursos de demostración." action={<div className="button-row"><button className="btn btn-primary" onClick={() => setCreating(true)}><Plus size={16} aria-hidden />Crear curso</button><DemoButton onLoaded={workspace.loadCourses} /></div>} /></div>}
 
     {editing && <CourseForm course={editing} onClose={() => setEditing(null)} onCreated={saved => { setCourses(courses.map(c => c.id === saved.id ? saved : c)); setEditing(null); notify('Curso actualizado.') }} />}
-    {creating && <CourseForm onClose={() => { setCreating(false); if (params.get('nuevo')) navigate('cursos') }} onCreated={course => { setCourses([course, ...courses]); setCourseId(course.id); setCreating(false); notify(`Creaste ${course.name}. Ahora carga la lista de estudiantes.`); navigate('inicio') }} />}
+    {creating && <CourseForm onClose={() => { setCreating(false); if (params.get('new')) navigate('courses') }} onCreated={course => { setCourses([course, ...courses]); setCourseId(course.id); setCreating(false); notify(`Creaste ${course.name}. Ahora carga la lista de estudiantes.`); navigate('home') }} />}
   </section>
 }
 

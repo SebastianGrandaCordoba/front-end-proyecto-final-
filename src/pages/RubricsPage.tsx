@@ -21,14 +21,14 @@ type View = { kind: 'list' } | { kind: 'new' } | { kind: 'draft'; draft: RubricD
 export default function RubricsPage({ workspace, navigate, params }: PageProps & { params: URLSearchParams }) {
   const { course, workshops } = workspace
   const { notify, confirm } = useFeedback()
-  const fromWorkshop = params.get('taller')
+  const fromWorkshop = params.get('workshop')
   const openId = Number(params.get('id')) || null
   const [view, setView] = useState<View>(() => fromWorkshop ? { kind: 'new' } : openId ? { kind: 'open', id: openId } : { kind: 'list' })
   const [list, setList] = useState<RubricSummary[] | null>(null)
   const [detail, setDetail] = useState<RubricDetail | null>(null)
   const [draft, setDraft] = useState<RubricDraft | null>(null)
   const [dirty, setDirty] = useState(false)
-  const [tab, setTab] = useState<'evaluar' | 'rubrica'>(params.get('vista') === 'rubrica' ? 'rubrica' : 'evaluar')
+  const [tab, setTab] = useState<'grade' | 'rubric'>(params.get('view') === 'rubric' ? 'rubric' : 'grade')
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const courseId = course?.id ?? 0
@@ -46,12 +46,12 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
       .catch(error => { notify(error instanceof Error ? error.message : 'No se encontró la rúbrica.', 'error'); setView({ kind: 'list' }) })
   }, [view, courseId, notify])
 
-  const open = (id: number, nextTab: 'evaluar' | 'rubrica' = 'evaluar') => {
-    setTab(nextTab); setView({ kind: 'open', id }); navigate('rubricas', { id: String(id), vista: nextTab })
+  const open = (id: number, nextTab: 'grade' | 'rubric' = 'grade') => {
+    setTab(nextTab); setView({ kind: 'open', id }); navigate('rubrics', { id: String(id), view: nextTab })
   }
   const back = async () => {
     if (dirty && !await confirm({ title: 'Tienes cambios sin guardar', body: 'Si sales, se pierden los cambios de la rúbrica.', confirm: 'Salir sin guardar', danger: true })) return
-    setDirty(false); setDetail(null); setDraft(null); setView({ kind: 'list' }); navigate('rubricas')
+    setDirty(false); setDetail(null); setDraft(null); setView({ kind: 'list' }); navigate('rubrics')
   }
 
   const save = async () => {
@@ -60,8 +60,8 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
     try {
       if (view.kind === 'draft') {
         const created = await rubricApi.create(courseId, draft)
-        notify('Rúbrica guardada. Ya puedes evaluar a tus estudiantes con ella.'); guideDone('rubrica')
-        setDirty(false); open(created.id, 'evaluar')
+        notify('Rúbrica guardada. Ya puedes evaluar a tus estudiantes con ella.'); guideDone('rubric')
+        setDirty(false); open(created.id, 'grade')
       } else if (detail) {
         const updated = await rubricApi.update(courseId, detail.id, draft)
         setDetail(updated); setDraft(updated); setDirty(false)
@@ -74,7 +74,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
   const remove = async (summary: { id: number; title: string; scored: number }) => {
     const ok = await confirm({ title: `¿Eliminar "${summary.title}"?`, body: summary.scored ? `Se borran las evaluaciones de ${summary.scored} estudiantes. Las notas que ya llevaste al libro se quedan.` : 'No tiene evaluaciones todavía.', confirm: 'Eliminar', danger: true })
     if (!ok) return
-    try { await rubricApi.remove(courseId, summary.id); notify('Rúbrica eliminada.'); setView({ kind: 'list' }); navigate('rubricas'); void loadList() }
+    try { await rubricApi.remove(courseId, summary.id); notify('Rúbrica eliminada.'); setView({ kind: 'list' }); navigate('rubrics'); void loadList() }
     catch (error) { notify(error instanceof Error ? error.message : 'No se pudo eliminar.', 'error') }
   }
 
@@ -97,7 +97,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
 
   if (view.kind === 'new') return <section className="page">{head}
     <NewRubric courseId={courseId} workshops={workshops} initialWorkshop={fromWorkshop ? workshops.find(w => String(w.id) === fromWorkshop || w.title === fromWorkshop) : null}
-      onBack={() => { setView({ kind: 'list' }); navigate('rubricas') }}
+      onBack={() => { setView({ kind: 'list' }); navigate('rubrics') }}
       onDraft={next => { setDraft(next); setDirty(true); setView({ kind: 'draft', draft: next }) }} />
   </section>
 
@@ -116,10 +116,10 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
       <div className="panel rubric-panel">
         <div className="rubric-bar">
           <button className="link-btn back-link" onClick={() => void back()}><ArrowLeft size={15} aria-hidden />Rúbricas</button>
-          <div className="rubric-heading"><h2>{detail.title}</h2>{detail.activityTitle && <small>Evalúa: <button className="link-btn" onClick={() => navigate('talleres', { ver: detail.activityTitle! })}>{detail.activityTitle}</button></small>}</div>
+          <div className="rubric-heading"><h2>{detail.title}</h2>{detail.activityTitle && <small>Evalúa: <button className="link-btn" onClick={() => navigate('workshops', { ver: detail.activityTitle! })}>{detail.activityTitle}</button></small>}</div>
           <div className="period-tabs" role="tablist" aria-label="Vista">
-            <button role="tab" aria-selected={tab === 'evaluar'} className={tab === 'evaluar' ? 'is-on' : ''} onClick={async () => { if (dirty && !await confirm({ title: 'Tienes cambios sin guardar', body: 'Guarda la rúbrica antes de evaluar para usar los cambios.', confirm: 'Descartar cambios', danger: true })) return; setDraft(detail); setDirty(false); setTab('evaluar') }}>Evaluar</button>
-            <button role="tab" aria-selected={tab === 'rubrica'} className={tab === 'rubrica' ? 'is-on' : ''} onClick={() => setTab('rubrica')}>Rúbrica</button>
+            <button role="tab" aria-selected={tab === 'grade'} className={tab === 'grade' ? 'is-on' : ''} onClick={async () => { if (dirty && !await confirm({ title: 'Tienes cambios sin guardar', body: 'Guarda la rúbrica antes de evaluar para usar los cambios.', confirm: 'Descartar cambios', danger: true })) return; setDraft(detail); setDirty(false); setTab('grade') }}>Evaluar</button>
+            <button role="tab" aria-selected={tab === 'rubric'} className={tab === 'rubric' ? 'is-on' : ''} onClick={() => setTab('rubric')}>Rúbrica</button>
           </div>
           <span className="push" />
           <button className="icon-btn" onClick={() => exportSheet(true)} aria-label="Imprimir la rúbrica" title="Imprimir para los estudiantes"><Printer size={17} /></button>
@@ -127,7 +127,7 @@ export default function RubricsPage({ workspace, navigate, params }: PageProps &
           <button className="icon-btn icon-danger" onClick={() => void remove({ id: detail.id, title: detail.title, scored: done })} aria-label="Eliminar rúbrica"><Trash2 size={17} /></button>
         </div>
         {detail.columnName && <p className="sheet-notice">Publicada en <b>{detail.period}</b>, columna <b>{detail.columnName}</b>. Si cambias evaluaciones, vuelve a llevarlas al libro para actualizar las notas.</p>}
-        {tab === 'evaluar'
+        {tab === 'grade'
           ? <RubricGrader key={detail.id} courseId={courseId} rubric={detail} onPublish={() => setPublishing(true)}
               onResults={(results: RubricResult[]) => setDetail(current => current ? { ...current, results } : current)} />
           : <RubricEditor draft={draft} onChange={next => { setDraft(next); setDirty(true) }} onSave={() => void save()} saving={saving} dirty={dirty} levelGrades={detail.levelGrades} isNew={false} />}

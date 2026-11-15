@@ -89,7 +89,7 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
       const created = known.find(s => s.name.trim().toLowerCase() === name.toLowerCase())
         ?? await request<{ id: number; name: string }>('/api/subjects', { method: 'POST', body: JSON.stringify({ name }) })
       book.editColumns(list => [...list, { id: created.id, name: created.name, weight: '' }])
-      setColumnName(''); setAddingColumn(false); guideDone('columnas')
+      setColumnName(''); setAddingColumn(false); guideDone('columns')
       window.setTimeout(() => focusCell(0, columns.length), 50)
     } catch (error) { onError(error instanceof Error ? error.message : 'No se pudo agregar la columna.') }
   }
@@ -308,9 +308,9 @@ export function GradeEditor({ courseId, courseName, onSaved, onScaleChanged, onQ
     </>, document.body)}
 
     {topicOf && <TopicPanel courseId={courseId} subjectId={topicOf.id} name={topicOf.name} grades={grades} workshops={workshops} onClose={() => setTopicOf(null)}
-      onOpenActivity={title => navigate('talleres', { ver: title })} onOpenRubric={id => navigate('rubricas', { id: String(id) })}
+      onOpenActivity={title => navigate('workshops', { open: title })} onOpenRubric={id => navigate('rubrics', { id: String(id) })}
       onCreate={mode => startWorkshop({ mode, level: 'MEDIUM', topic: topicOf.name, autoStart: true })}
-      onCreateRubric={activityId => navigate('rubricas', activityId ? { taller: String(activityId) } : undefined)} />}
+      onCreateRubric={activityId => navigate('rubrics', activityId ? { workshop: String(activityId) } : undefined)} />}
 
     <div className={`save-bar${book.pending || book.invalid.length ? ' is-visible' : ''}`}>
       <span>{book.blocker ?? (book.changes.length

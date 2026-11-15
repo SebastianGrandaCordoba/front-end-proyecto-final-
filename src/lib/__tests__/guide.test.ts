@@ -3,17 +3,17 @@ import { GUIDE, currentStep, initialGuide, markDone } from '../guide'
 
 describe('Primeros pasos', () => {
   it('walks the steps in order and skips what is done or skipped', () => {
-    expect(currentStep(initialGuide)?.id).toBe('perfil')
-    const state = markDone({ ...initialGuide, skipped: ['perfil'] }, ['curso'])
-    expect(currentStep(state)?.id).toBe('estudiantes')
+    expect(currentStep(initialGuide)?.id).toBe('profile')
+    const state = markDone({ ...initialGuide, skipped: ['profile'] }, ['course'])
+    expect(currentStep(state)?.id).toBe('students')
     expect(currentStep({ ...initialGuide, done: GUIDE.map(s => s.id) })).toBeNull()
   })
 
   it('marking a step twice changes nothing and un-skips it', () => {
-    const once = markDone({ ...initialGuide, skipped: ['taller'] }, ['taller'])
-    expect(once.done).toEqual(['taller'])
+    const once = markDone({ ...initialGuide, skipped: ['workshop'] }, ['workshop'])
+    expect(once.done).toEqual(['workshop'])
     expect(once.skipped).toEqual([])
-    expect(markDone(once, ['taller'])).toBe(once)
+    expect(markDone(once, ['workshop'])).toBe(once)
   })
 
   it('every step says where to go and what to point at', () => {

@@ -6,12 +6,12 @@ import type { Navigate, Route } from '../app/router'
 
 /** `group` starts a labelled block: the menu reads in the order a teacher works (see the course, then prepare and grade). */
 export const nav: { route: Route; label: string; icon: typeof Home; needsCourse?: boolean; group?: string }[] = [
-  { route: 'inicio', label: 'Inicio', icon: Home },
-  { route: 'estudiantes', label: 'Estudiantes y notas', icon: Users, needsCourse: true, group: 'Tu curso' },
-  { route: 'seguimiento', label: 'Seguimiento', icon: Activity, needsCourse: true },
-  { route: 'talleres', label: 'Talleres y quizzes', icon: BookOpenCheck, needsCourse: true, group: 'Preparar y calificar' },
-  { route: 'rubricas', label: 'Rúbricas', icon: ClipboardCheck, needsCourse: true },
-  { route: 'equipos', label: 'Equipos', icon: UsersRound, needsCourse: true },
+  { route: 'home', label: 'Inicio', icon: Home },
+  { route: 'students', label: 'Estudiantes y notas', icon: Users, needsCourse: true, group: 'Tu curso' },
+  { route: 'follow-up', label: 'Seguimiento', icon: Activity, needsCourse: true },
+  { route: 'workshops', label: 'Talleres y quizzes', icon: BookOpenCheck, needsCourse: true, group: 'Preparar y calificar' },
+  { route: 'rubrics', label: 'Rúbricas', icon: ClipboardCheck, needsCourse: true },
+  { route: 'teams', label: 'Equipos', icon: UsersRound, needsCourse: true },
 ]
 
 type SidebarProps = {
@@ -33,10 +33,10 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
       <span className="course-picker-label">Curso</span>
       <span className="course-picker-box">
         <FolderOpen size={16} aria-hidden />
-        <select title={course?.name} value={course?.id ?? ''} onChange={event => { if (event.target.value === 'nuevo') { navigate('cursos', { nuevo: '1' }); return } setCourseId(event.target.value ? Number(event.target.value) : null) }} aria-label="Curso activo">
+        <select title={course?.name} value={course?.id ?? ''} onChange={event => { if (event.target.value === 'new') { navigate('courses', { new: '1' }); return } setCourseId(event.target.value ? Number(event.target.value) : null) }} aria-label="Curso activo">
           {!courses.length && <option value="">{coursesLoading ? 'Cargando…' : 'Sin cursos'}</option>}
           {courses.map(item => <option key={item.id} value={item.id}>{item.name}{item.period ? ` · ${item.period}` : ''}</option>)}
-          <option value="nuevo">+ Crear curso nuevo</option>
+          <option value="new">+ Crear curso nuevo</option>
         </select>
         <ChevronsUpDown size={15} aria-hidden />
       </span>
@@ -51,7 +51,7 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
     <nav className="nav">
       {nav.map(item => {
         const Icon = item.icon
-        const badge = item.route === 'seguimiento' && lowCount ? lowCount : null
+        const badge = item.route === 'follow-up' && lowCount ? lowCount : null
         return <Fragment key={item.route}>
           {item.group && <span className="nav-group">{item.group}</span>}
           <a href={`#/${item.route}`} className={`nav-item${route === item.route ? ' is-active' : ''}`} aria-current={route === item.route ? 'page' : undefined}>
@@ -63,8 +63,8 @@ export default function Sidebar({ route, navigate, user, onLogout, course, cours
     </nav>
 
     <div className="nav nav-secondary">
-      <a href="#/cursos" className={`nav-item${route === 'cursos' ? ' is-active' : ''}`} aria-current={route === 'cursos' ? 'page' : undefined}><FolderOpen size={18} aria-hidden /><span>Mis cursos</span></a>
-      <a href="#/ajustes" className={`nav-item${route === 'ajustes' ? ' is-active' : ''}`} aria-current={route === 'ajustes' ? 'page' : undefined}><Settings size={18} aria-hidden /><span>Ajustes</span></a>
+      <a href="#/courses" className={`nav-item${route === 'courses' ? ' is-active' : ''}`} aria-current={route === 'courses' ? 'page' : undefined}><FolderOpen size={18} aria-hidden /><span>Mis cursos</span></a>
+      <a href="#/settings" className={`nav-item${route === 'settings' ? ' is-active' : ''}`} aria-current={route === 'settings' ? 'page' : undefined}><Settings size={18} aria-hidden /><span>Ajustes</span></a>
     </div>
 
     <div className="sidebar-user" data-tour="perfil">

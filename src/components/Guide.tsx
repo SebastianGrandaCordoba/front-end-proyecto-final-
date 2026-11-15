@@ -89,17 +89,17 @@ export default function Guide({ userId, route, params, navigate, signals, onQuic
   // Steps already done with real data count too (a course that exists, students already loaded…).
   useEffect(() => {
     const done: GuideStepId[] = []
-    if (signals.courses > 0) done.push('curso')
-    if (signals.students > 0) done.push('estudiantes')
-    if (signals.columns) done.push('columnas')
-    if (signals.workshops > 0) done.push('taller')
-    if (route === 'ajustes') done.push('perfil')
+    if (signals.courses > 0) done.push('course')
+    if (signals.students > 0) done.push('students')
+    if (signals.columns) done.push('columns')
+    if (signals.workshops > 0) done.push('workshop')
+    if (route === 'settings') done.push('profile')
     if (!done.length) return
     setState(current => {
       const value = markDone(current, done)
       if (value === current) return current
       writeGuide(key, value)
-      const fresh = GUIDE.filter(s => done.includes(s.id) && !current.done.includes(s.id) && s.id !== 'perfil')
+      const fresh = GUIDE.filter(s => done.includes(s.id) && !current.done.includes(s.id) && s.id !== 'profile')
       if (current.open && !current.minimized && fresh.length) setFlash(fresh[fresh.length - 1].title)
       return value
     })
@@ -110,7 +110,7 @@ export default function Guide({ userId, route, params, navigate, signals, onQuic
     return focused ?? currentStep(state)
   }, [focus, state])
   const doneCount = state.done.length
-  const here = !!step && step.route === route && (!step.params?.vista || params.get('vista') === step.params.vista)
+  const here = !!step && step.route === route && (!step.params?.view || params.get('view') === step.params.view)
   const blocked = !!step?.needsCourse && !signals.hasCourse
   const visible = state.open && !welcome && !state.minimized
 
@@ -203,7 +203,7 @@ export default function Guide({ userId, route, params, navigate, signals, onQuic
         {here && !blocked && !ring && <p className="guide-note">Si no ves el botón, desplázate un poco: está en esta página.</p>}
         <div className="guide-actions">
           {!here && !blocked && <button className="btn btn-primary btn-small" onClick={() => take(step)}>Llévame<ArrowRight size={15} aria-hidden /></button>}
-          {blocked && <button className="btn btn-primary btn-small" onClick={() => navigate('cursos')}>Ir a Mis cursos</button>}
+          {blocked && <button className="btn btn-primary btn-small" onClick={() => navigate('courses')}>Ir a Mis cursos</button>}
           <button className="btn btn-ghost btn-small" onClick={skip}><SkipForward size={14} aria-hidden />Saltar</button>
         </div>
       </div> : <div className="guide-step guide-done">

@@ -108,7 +108,7 @@ function Story() {
     refs.current.forEach(el => el && observer.observe(el))
     return () => observer.disconnect()
   }, [])
-  return <section className="lp-story" id="como-funciona" aria-labelledby="story-title">
+  return <section className="lp-story" id="how-it-works" aria-labelledby="story-title">
     <h2 id="story-title">De la planilla a la clase, en cuatro pasos</h2>
     <div className="lp-story-grid">
       <ol className="lp-steps">{STEPS.map((s, i) => <li key={s.title} data-i={i} ref={el => { refs.current[i] = el }} className={i === active ? 'on' : ''}>
@@ -120,7 +120,7 @@ function Story() {
 }
 
 function Bento() {
-  return <section className="lp-bento" id="que-incluye" aria-labelledby="bento-title">
+  return <section className="lp-bento" id="features" aria-labelledby="bento-title">
     <h2 id="bento-title">Todo lo que necesitas, en un solo lugar</h2>
     <div className="grid">
       <article className="tile t-chat">
@@ -172,7 +172,7 @@ function Trust() {
     return () => o.disconnect()
   }, [])
   const a = useCount(0, seen), b = useCount(1, seen), c = useCount(3, seen), d = useCount(4, seen)
-  return <section className="lp-trust" id="tus-datos" ref={ref} aria-labelledby="trust-title">
+  return <section className="lp-trust" id="your-data" ref={ref} aria-labelledby="trust-title">
     <h2 id="trust-title"><ShieldCheck size={30} aria-hidden /> Tú tienes la última palabra</h2>
     <ul>
       <li><b>{a}</b><span>nombres de estudiantes enviados a la IA: solo recibe el material y un resumen del curso</span></li>
@@ -212,7 +212,7 @@ export default function LandingPage({ onLogin, onRegister }: Props) {
   return <div className="lp">
     <header className="lp-nav" ref={navRef}>
       <a className="lp-brand" href="#" aria-label="FairTeam, inicio"><FairTeamMark size={34} /><span translate="no">FairTeam</span></a>
-      <nav aria-label="Secciones"><a href="#como-funciona">Cómo funciona</a><a href="#que-incluye">Qué incluye</a><a href="#tus-datos">Tus datos</a></nav>
+      <nav aria-label="Secciones"><a href="#how-it-works">Cómo funciona</a><a href="#features">Qué incluye</a><a href="#your-data">Tus datos</a></nav>
       <div className="lp-nav-actions"><button className="lp-btn lp-btn-ghost" onClick={onLogin}>Entrar</button><button className="lp-btn lp-btn-main small" onClick={onRegister}>Crear cuenta</button></div>
     </header>
     <main>
@@ -229,6 +229,6 @@ export default function LandingPage({ onLogin, onRegister }: Props) {
           <div className="lp-actions"><button className="lp-btn lp-btn-white" onClick={onRegister}>Crear cuenta gratis <ArrowRight size={18} aria-hidden /></button><button className="lp-btn lp-btn-glass" onClick={onLogin}>Entrar</button></div></div>
       </section>
     </main>
-    <footer className="lp-foot"><span><FairTeamMark size={22} /> FairTeam · Proyecto final de Patrones de diseño</span><a href="#como-funciona">Cómo funciona</a><button onClick={onLogin}>Entrar</button></footer>
+    <footer className="lp-foot"><span><FairTeamMark size={22} /> FairTeam · Proyecto final de Patrones de diseño</span><a href="#how-it-works">Cómo funciona</a><button onClick={onLogin}>Entrar</button></footer>
   </div>
 }

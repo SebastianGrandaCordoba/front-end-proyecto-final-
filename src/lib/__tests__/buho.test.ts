@@ -9,7 +9,7 @@ describe('Búho reply adapter', () => {
     const api: ApiReply = {
       text: 'Hola', intent: 'x', items: [{ studentId: 1, name: 'Ana Ruiz', value: '2,0', note: 'baja', tone: 'low' }],
       actions: [
-        { kind: 'navigate', label: 'Simulador', params: { route: 'seguimiento', vista: 'simulador' } },
+        { kind: 'navigate', label: 'Simulador', params: { route: 'follow-up', view: 'simulator' } },
         { kind: 'workshop', label: 'Taller', params: { mode: 'quiz', level: 'LOW', topic: 'Cinemática', studentId: '1' } },
         { kind: 'message', label: 'Escribir', params: { studentId: '99' } },
       ],
@@ -17,7 +17,7 @@ describe('Búho reply adapter', () => {
     }
     const reply = adaptReply(api, [ana])
     expect(reply.items?.[0].student).toBe(ana)
-    expect(reply.actions?.[0]).toEqual({ kind: 'navigate', label: 'Simulador', route: 'seguimiento', params: { vista: 'simulador' } })
+    expect(reply.actions?.[0]).toEqual({ kind: 'navigate', label: 'Simulador', route: 'follow-up', params: { view: 'simulator' } })
     expect(reply.actions?.[1]).toMatchObject({ kind: 'workshop', mode: 'quiz', student: ana, topic: 'Cinemática' })
     expect(reply.actions).toHaveLength(2) // unknown student is dropped
     expect(reply.run?.kind).toBe('report')
