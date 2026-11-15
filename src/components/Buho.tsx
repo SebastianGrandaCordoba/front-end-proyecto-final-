@@ -74,8 +74,9 @@ export default function Buho({ context, onAction, open, setOpen, briefToken }: {
       const api = await request<ApiReply>(courseId ? `/api/courses/${courseId}/assistant` : '/api/assistant', { method: 'POST', body: JSON.stringify({ question, history }) })
       return adaptReply(api, candidates)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pude conectarme con el servidor.')
-      return null
+      // Never leave the teacher with silence: the answer bubble says what happened and how to continue.
+      const reason = err instanceof Error && err.message ? err.message : 'No pude conectarme con el servidor.'
+      return { text: `${reason} Revisa tu conexión y vuelve a escribirme; en cuanto el servidor responda, sigo contigo.`, followUps: ['¿Cómo funciona FairTeam?'] }
     }
   }, [])
 
