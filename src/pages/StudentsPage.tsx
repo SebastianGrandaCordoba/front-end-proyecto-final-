@@ -110,7 +110,7 @@ export default function StudentsPage({ workspace, review, params, navigate, star
           <caption className="visually-hidden">Estudiantes de {course?.name} con su estado, promedio, notas y tendencia</caption>
           <thead><tr><th scope="col">Estudiante</th><th scope="col">Estado</th><th scope="col" className="num">Promedio</th><th scope="col" className="num">Notas</th><th scope="col">Tendencia</th>{attendance.summary.size > 0 && <th scope="col" className="num">Asistencia</th>}<th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
           <tbody>{visible.map(student => <tr key={student.id}>
-            <td><button className="person-cell" onClick={() => review(student)}><Avatar name={student.name} /><span><b title={student.name}>{student.name}</b><small title={student.email}>{student.email || 'Sin correo'}</small></span></button></td>
+            <td><button className="person-cell" onClick={() => review(student)}><Avatar name={student.name} /><span><b title={student.name}>{student.name}</b><small title={student.email ?? undefined}>{student.email || 'Sin correo'}</small></span></button></td>
             <td><LevelPill level={student.level} hasGrades={student.hasGrades} /></td>
             <td className="num">{student.hasGrades ? <b className={student.level === 'LOW' ? 'is-low' : ''}>{formatGrade(student.average)}</b> : <span className="muted">—</span>}</td>
             <td className="num">{student.gradeCount}</td>
