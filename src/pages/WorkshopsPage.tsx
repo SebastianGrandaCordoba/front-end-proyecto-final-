@@ -70,6 +70,14 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
 
   useEffect(() => { setSubject(course?.name ?? '') }, [course?.id])
   // Pre-select the newest material so the teacher can generate in one click.
+  // Drop ids that are no longer in this course's list (another course, a deleted file): the server would answer 404 for them.
+  useEffect(() => {
+    if (materials == null) return
+    setSelected(current => {
+      const known = current.filter(id => sortedMaterials.some(m => m.id === id))
+      return known.length === current.length ? current : known
+    })
+  }, [sortedMaterials, materials])
   useEffect(() => { if (!selected.length && sortedMaterials.length) setSelected([sortedMaterials[0].id]) }, [sortedMaterials])
   // Arriving from the home card "Material guardado": scroll to the course material and flash it once.
   const focusMaterial = params.get('focus') === 'material'
@@ -152,7 +160,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
 
   async function generate(options: { materialIds?: number[]; mode?: SupportMode; level?: AcademicLevel; student?: WorkshopIntent['student']; variantOf?: GeneratedWorkshop; topic?: string; prompt?: string; extra?: string } = {}) {
     if (!course) return
-    const ids = options.materialIds ?? selected
+    const ids = (options.materialIds ?? selected).filter(id => sortedMaterials.some(m => m.id === id))
     const useMode = options.mode ?? mode
     const useLevel = options.level ?? level
     const student = options.student ?? target
