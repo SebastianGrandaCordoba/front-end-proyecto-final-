@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { ArrowRight, BookOpen, Check, FileText, MessageCircle, Play, TrendingDown, Users, FolderOpen, AlertCircle } from 'lucide-react'
+import type { KeyboardEvent, ReactNode } from 'react'
+import { ArrowRight, ArrowUpRight, BookOpen, Check, FileText, MessageCircle, Play, TrendingDown, Users, FolderOpen, AlertCircle } from 'lucide-react'
 import type { TeacherProfile } from '../api'
 import type { PageProps } from '../App'
 import FairTeamMark from '../FairTeamMark'
@@ -65,15 +65,16 @@ export default function HomePage({ workspace, navigate, startWorkshop, review, a
 
     {course && <>
       <dl className="stats" aria-label={`Resumen de ${course.name}`}>
-    <div className="stat stat-avg">
+    <div className="stat stat-avg stat-link" {...linkProps('Ver las notas del curso', () => navigate('students', { view: 'grades' }))}>
       <dt>Promedio del curso</dt>
       <dd><Ring value={summary.average} /></dd>
       <span>{summary.gradeCount ? plural(summary.gradeCount, 'nota cargada', 'notas cargadas') : 'carga las notas'}</span>
+      <ArrowUpRight className="stat-go" size={16} aria-hidden />
     </div>
-    <Stat icon={<Users size={18} />} label="Estudiantes" value={loading ? null : summary.students} note={summary.graded ? `${summary.graded} con notas` : 'sin notas aún'} />
-    <Stat icon={<AlertCircle size={18} />} tone={summary.low ? 'low' : undefined} label="Necesitan refuerzo" value={summary.gradeCount ? summary.low : null} note={levelRule.LOW.toLowerCase()} />
-    <Stat icon={<TrendingDown size={18} />} tone={summary.fallingBehind ? 'medium' : undefined} label="Vienen bajando" value={workspace.analysisState === 'ready' ? summary.fallingBehind : null} note="entre el primer y el último corte" />
-    <Stat icon={<FolderOpen size={18} />} label="Material guardado" value={materials == null ? null : materials.length} note={materials?.length ? fileSize(materials.reduce((s, m) => s + m.fileSize, 0)) + ' en total' : 'para crear talleres'} />
+    <Stat onOpen={() => navigate('students')} hint="Ver todos los estudiantes" icon={<Users size={18} />} label="Estudiantes" value={loading ? null : summary.students} note={summary.graded ? `${summary.graded} con notas` : 'sin notas aún'} />
+    <Stat onOpen={() => navigate('students', { filter: 'support' })} hint="Ver quién necesita refuerzo" icon={<AlertCircle size={18} />} tone={summary.low ? 'low' : undefined} label="Necesitan refuerzo" value={summary.gradeCount ? summary.low : null} note={levelRule.LOW.toLowerCase()} />
+    <Stat onOpen={() => navigate('follow-up', { view: 'trend', filter: 'falling' })} hint="Ver quién viene bajando" icon={<TrendingDown size={18} />} tone={summary.fallingBehind ? 'medium' : undefined} label="Vienen bajando" value={workspace.analysisState === 'ready' ? summary.fallingBehind : null} note="entre el primer y el último corte" />
+    <Stat onOpen={() => navigate('workshops', { focus: 'material' })} hint="Ver el material guardado" icon={<FolderOpen size={18} />} label="Material guardado" value={materials == null ? null : materials.length} note={materials?.length ? fileSize(materials.reduce((s, m) => s + m.fileSize, 0)) + ' en total' : 'para crear talleres'} />
   </dl>
     </>}
 
@@ -154,12 +155,24 @@ function LevelText({ level }: { level?: string | null }) {
 }
 
 
-function Stat({ icon, label, value, note, tone }: { icon: ReactNode; label: string; value: number | null; note: string; tone?: 'low' | 'medium' }) {
+/** Makes a card behave as a link for mouse and keyboard without nesting interactive markup inside the list. */
+function linkProps(label: string, open: () => void) {
+  return {
+    role: 'link' as const,
+    tabIndex: 0,
+    'aria-label': label,
+    onClick: open,
+    onKeyDown: (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open() } },
+  }
+}
+
+function Stat({ icon, label, value, note, tone, onOpen, hint }: { icon: ReactNode; label: string; value: number | null; note: string; tone?: 'low' | 'medium'; onOpen: () => void; hint: string }) {
   const shown = useCountUp(value)
-  return <div className={`stat${tone ? ` stat-${tone}` : ''}`}>
+  return <div className={`stat stat-link${tone ? ` stat-${tone}` : ''}`} {...linkProps(`${label}: ${shown == null ? 'sin datos' : Math.round(shown)}. ${hint}`, onOpen)}>
     <dt><span className="stat-icon" aria-hidden>{icon}</span>{label}</dt>
     <dd className="num">{shown == null ? '—' : Math.round(shown)}</dd>
     <span>{note}</span>
+    <ArrowUpRight className="stat-go" size={16} aria-hidden />
   </div>
 }
 

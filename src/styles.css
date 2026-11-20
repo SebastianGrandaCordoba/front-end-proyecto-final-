@@ -1399,6 +1399,11 @@ h1, h2 { letter-spacing: -.025em; }
 .stat-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-ink); }
 .stat dd { margin: 6px 0 0; font: 800 44px/1 var(--serif); letter-spacing: -.045em; }
 .stat > span { color: var(--ink-3); font-size: 13px; line-height: 1.35; }
+.stat-link { cursor: pointer; }
+.stat-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.stat-go { position: absolute; top: 14px; right: 14px; color: var(--ink-3); opacity: 0; transform: translate(-3px, 3px); transition: opacity .2s, transform .2s; }
+.stat-link:hover .stat-go, .stat-link:focus-visible .stat-go { opacity: 1; transform: none; }
+@media (hover: none) { .stat-go { opacity: .6; transform: none; } }
 .stat-low { background: linear-gradient(160deg, var(--low-bg), var(--sheet) 70%); border-color: color-mix(in srgb, var(--low-dot) 35%, var(--line)); }
 .stat-low dd { color: var(--low); } .stat-low .stat-icon { background: var(--low-dot); color: #fff; }
 .stat-low .stat-icon::after { content: ""; position: absolute; inset: 0; border-radius: inherit; animation: ping 2s ease-out infinite; }
@@ -1510,3 +1515,8 @@ h1, h2 { letter-spacing: -.025em; }
 .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); padding-top: 16px; }
 @media (max-width: 1100px) { .admin-stats { grid-template-columns: repeat(3, 1fr); } .admin-row { grid-template-columns: 1fr; } }
 @media (max-width: 860px) { .admin-stats { grid-template-columns: 1fr 1fr; } .admin-counts { grid-template-columns: 1fr 1fr; } .admin-table { overflow-x: auto; } }
+
+.step-flash { animation: step-flash 1.8s ease-out; border-radius: var(--r-card); }
+@keyframes step-flash { 0%, 40% { box-shadow: 0 0 0 3px var(--accent), 0 0 30px -4px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.filter-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .step-flash { animation: none; box-shadow: 0 0 0 3px var(--accent); } }

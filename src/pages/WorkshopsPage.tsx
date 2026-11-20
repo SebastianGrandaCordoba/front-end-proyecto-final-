@@ -71,6 +71,17 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
   useEffect(() => { setSubject(course?.name ?? '') }, [course?.id])
   // Pre-select the newest material so the teacher can generate in one click.
   useEffect(() => { if (!selected.length && sortedMaterials.length) setSelected([sortedMaterials[0].id]) }, [sortedMaterials])
+  // Arriving from the home card "Material guardado": scroll to the course material and flash it once.
+  const focusMaterial = params.get('focus') === 'material'
+  useEffect(() => {
+    if (!focusMaterial || materials == null) return
+    const el = document.getElementById('course-material')
+    if (!el) return
+    el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+    el.classList.add('step-flash')
+    const timer = window.setTimeout(() => el.classList.remove('step-flash'), 1800)
+    return () => window.clearTimeout(timer)
+  }, [focusMaterial, materials])
   useEffect(() => {
     if (!viewTitle) return
     const found = workshops.find(item => item.title === viewTitle)
@@ -250,7 +261,7 @@ export default function WorkshopsPage({ workspace, navigate, intent, clearIntent
           ]} />
         </fieldset>
 
-        <fieldset className="step"><legend><span className="step-n">4</span>Material del curso <span className="optional">opcional</span></legend>
+        <fieldset className="step" id="course-material"><legend><span className="step-n">4</span>Material del curso <span className="optional">opcional</span></legend>
           <p className="step-hint">{selected.length ? 'Usaré el material marcado como fuente; de un libro largo tomo las páginas del tema.' : 'Sin material, lo armo con conocimiento general del tema. Marca un archivo si quieres que me base en él.'}</p>
           {materials == null ? <div className="mini-loading"><Spinner /> Cargando material…</div>
             : sortedMaterials.length ? <ul className="materials" aria-label="Material del curso">{sortedMaterials.map(material => {

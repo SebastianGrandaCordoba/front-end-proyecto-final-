@@ -46,7 +46,7 @@ export default function FollowUpPage({ workspace, review, startWorkshop, assista
 
     {!candidates.length ? <div className="panel"><EmptyState art="read" title="Aún no hay estudiantes" text="Importa la lista y las notas del curso para empezar el seguimiento." action={<ImportButton kind="roster" courseId={course?.id ?? null} onDone={workspace.refreshCourse} variant="primary" />} /></div>
       : view === 'priority' ? <Priorities candidates={candidates} review={review} />
-        : view === 'trend' ? <Trends workspace={workspace} review={review} message={assistant.message} />
+        : view === 'trend' ? <Trends workspace={workspace} review={review} message={assistant.message} onlyFalling={params.get('filter') === 'falling'} onShowAll={() => navigate('follow-up', { view: 'trend' })} />
           : view === 'map' ? <SubjectMap workspace={workspace} review={review} />
           : <Simulator workspace={workspace} review={review} />}
   </section>

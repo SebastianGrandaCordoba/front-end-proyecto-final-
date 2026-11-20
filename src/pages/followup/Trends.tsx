@@ -3,17 +3,19 @@ import type { PageProps } from '../../App'
 import { Avatar, EmptyState } from '../../components/ui'
 import { formatGrade, type Candidate } from '../../lib/domain'
 
-export function Trends({ workspace, review, message }: { workspace: PageProps['workspace']; review: (s: Candidate) => void; message: (s: Candidate) => void }) {
+export function Trends({ workspace, review, message, onlyFalling = false, onShowAll }: { workspace: PageProps['workspace']; review: (s: Candidate) => void; message: (s: Candidate) => void; onlyFalling?: boolean; onShowAll?: () => void }) {
   const { trends, sim } = workspace
   const periods = sim.observed
   if (periods.length < 2) return <div className="panel"><EmptyState title="Necesito dos cortes o más" text={`Por ahora hay notas de ${periods.length ? `un solo periodo (${periods[0]})` : 'ningún periodo'}. Cuando cargues el siguiente corte verás quién sube y quién baja.`} /></div>
+  const rows = trends.filter(t => t.student.hasGrades && (!onlyFalling || t.direction === 'down'))
   const riskLabel = (risk: number) => risk >= 60 ? 'Alto' : risk >= 35 ? 'Medio' : 'Bajo'
   return <>
+    {onlyFalling && <div className="filter-note"><span>Mostrando solo quienes vienen bajando ({rows.length})</span><button className="btn btn-ghost" onClick={onShowAll}>Ver a todos</button></div>}
     <p className="explainer">El riesgo combina el promedio con la tendencia entre {periods[0]} y {periods[periods.length - 1]}. Una caída de 0,3 o más se marca como “baja”.</p>
     <div className="table-card"><table className="table">
       <caption className="visually-hidden">Promedio de cada estudiante por corte, cambio y riesgo</caption>
       <thead><tr><th scope="col">Estudiante</th>{periods.map(p => <th key={p} scope="col" className="num">{p}</th>)}<th scope="col" className="num">Cambio</th><th scope="col">Riesgo</th><th scope="col"><span className="visually-hidden">Acciones</span></th></tr></thead>
-      <tbody>{trends.filter(t => t.student.hasGrades).map(t => <tr key={t.student.id}>
+      <tbody>{rows.map(t => <tr key={t.student.id}>
         <td><button className="person-cell" onClick={() => review(t.student)}><Avatar name={t.student.name} /><span><b title={t.student.name}>{t.student.name}</b><small>{t.weakest ? `Le cuesta ${t.weakest.name}` : ''}</small></span></button></td>
         {periods.map(p => { const point = t.points.find(x => x.period === p); return <td key={p} className="num">{point ? formatGrade(point.average) : <span className="muted">—</span>}</td> })}
         <td className={`num delta-${t.direction}`}>{t.delta == null ? '—' : `${t.delta > 0 ? '+' : t.delta < 0 ? '−' : ''}${formatGrade(Math.abs(t.delta))}`}</td>
